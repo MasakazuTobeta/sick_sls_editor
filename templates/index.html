@@ -431,6 +431,14 @@
         font-size: 0.85rem;
       }
 
+      .debug-hidden {
+        display: none !important;
+      }
+
+      body.debug-mode .debug-hidden {
+        display: flex !important;
+      }
+
       .fieldset-field label,
       .field-attribute label {
         margin-bottom: 0.2rem;
@@ -494,6 +502,10 @@
         font-weight: 600;
         margin-bottom: 0.3rem;
         color: #475569;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.5rem;
       }
 
       .shape-badges {
@@ -512,13 +524,36 @@
         color: #475569;
       }
 
+      .shape-point {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.3rem;
+        align-items: center;
+      }
+
+      .shape-point label {
+        margin: 0;
+        font-weight: 500;
+      }
+
+      .shape-point input {
+        width: 5rem;
+      }
+
       .fieldset-actions,
-      .field-actions,
-      .shape-actions {
+      .field-actions {
         margin-top: 0.5rem;
         display: flex;
         justify-content: flex-end;
         gap: 0.5rem;
+      }
+
+      .shape-actions {
+        margin-top: 0.5rem;
+        display: flex;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+        justify-content: flex-start;
       }
 
       .fieldset-global-grid {
@@ -540,6 +575,11 @@
         margin-bottom: 0.4rem;
         font-weight: 600;
         color: #334155;
+      }
+
+      .shape-mini-btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
       }
 
       footer {
@@ -627,13 +667,13 @@
             {% elif item.tag == "Export_FieldsetsAndFields" %}
               <p class="menu-description">{{ item.summary }}</p>
               <button type="button" class="inline-btn" id="btn-add-fieldset">Add Fieldset</button>
-              <details class="menu-section" id="fieldset-global-section" open>
+              <details class="menu-section" id="fieldset-global-section">
                 <summary>GlobalGeometry</summary>
                 <div class="menu-content">
                   <div class="fieldset-global-grid" id="fieldset-global"></div>
                 </div>
               </details>
-              <details class="menu-section" id="fieldset-devices-section" open>
+              <details class="menu-section" id="fieldset-devices-section">
                 <summary>Devices</summary>
                 <div class="menu-content">
                   <div class="fieldset-actions">
@@ -682,6 +722,32 @@
                   min="2"
                   max="16"
                   value="2"
+                />
+              </div>
+              <div class="triorb-field">
+                <label>Resolution</label>
+                <input
+                  id="global-resolution"
+                  type="number"
+                  min="1"
+                  max="1000"
+                  value="70"
+                />
+              </div>
+              <div class="triorb-field">
+                <label>TolerancePositive</label>
+                <input
+                  id="global-tolerance-positive"
+                  type="number"
+                  value="0"
+                />
+              </div>
+              <div class="triorb-field">
+                <label>ToleranceNegative</label>
+                <input
+                  id="global-tolerance-negative"
+                  type="number"
+                  value="0"
                 />
               </div>
             </div>
@@ -755,6 +821,9 @@
         const uncheckAllBtn = document.getElementById("btn-fieldset-uncheck-all");
         const toggleLegendBtn = document.getElementById("btn-toggle-legend");
         const fieldOfViewInput = document.getElementById("triorb-field-of-view");
+        const globalResolutionInput = document.getElementById("global-resolution");
+        const globalTolerancePositiveInput = document.getElementById("global-tolerance-positive");
+        const globalToleranceNegativeInput = document.getElementById("global-tolerance-negative");
         const originTrace = findOriginTrace(defaultFigure);
 
         let currentFigure = cloneFigure(defaultFigure);
@@ -765,10 +834,30 @@
         let globalMultipleSampling = deriveInitialMultipleSampling(fieldsets);
         let legendVisible = true;
         let fieldOfViewDegrees = parseNumeric(fieldOfViewInput?.value, 270);
+        const debugMode = Boolean(new URLSearchParams(window.location.search).get("debug"));
+        if (debugMode) {
+          document.body.classList.add("debug-mode");
+        }
+        let globalResolution = parseNumeric(globalResolutionInput?.value, 70);
+        let globalTolerancePositive = parseNumeric(globalTolerancePositiveInput?.value, 0);
+        let globalToleranceNegative = parseNumeric(globalToleranceNegativeInput?.value, 0);
+        globalResolution = deriveFieldAttribute(fieldsets, "Resolution", globalResolution);
+        globalTolerancePositive = deriveFieldAttribute(fieldsets, "TolerancePositive", globalTolerancePositive);
+        globalToleranceNegative = deriveFieldAttribute(fieldsets, "ToleranceNegative", globalToleranceNegative);
         applyGlobalMultipleSampling(globalMultipleSampling, { rerender: false });
         if (globalMultipleSamplingInput) {
           globalMultipleSamplingInput.value = globalMultipleSampling;
         }
+        if (globalResolutionInput) {
+          globalResolutionInput.value = globalResolution;
+        }
+        if (globalTolerancePositiveInput) {
+          globalTolerancePositiveInput.value = globalTolerancePositive;
+        }
+        if (globalToleranceNegativeInput) {
+          globalToleranceNegativeInput.value = globalToleranceNegative;
+        }
+        updateGlobalFieldAttributes();
 
         renderScanPlanes();
         renderFieldsets();
@@ -1585,17 +1674,24 @@
           return "2";
         }
 
+        function deriveFieldAttribute(fieldsetList, key, fallback) {
+          for (const fieldset of fieldsetList) {
+            if (!fieldset.fields) continue;
+            for (const field of fieldset.fields) {
+              if (field.attributes && key in field.attributes) {
+                return parseNumeric(field.attributes[key], fallback);
+              }
+            }
+          }
+          return fallback;
+        }
+
         function applyGlobalMultipleSampling(value, { rerender = true } = {}) {
           globalMultipleSampling = value;
           if (globalMultipleSamplingInput) {
             globalMultipleSamplingInput.value = value;
           }
-          fieldsets.forEach((fieldset) => {
-            (fieldset.fields || []).forEach((field) => {
-              field.attributes = field.attributes || {};
-              field.attributes.MultipleSampling = value;
-            });
-          });
+          updateGlobalFieldAttributes();
           if (rerender) {
             renderFieldsets();
           }
@@ -1645,19 +1741,7 @@
           fieldsetsContainer.innerHTML = fieldsets
             .map((fieldset, fieldsetIndex) => {
               const fieldsetFields = Object.entries(fieldset.attributes || {})
-                .map(
-                  ([key, value]) => `
-              <div class="fieldset-field">
-                <label>${escapeHtml(key)}</label>
-                <input
-                  type="text"
-                  class="fieldset-attr"
-                  data-fieldset-index="${fieldsetIndex}"
-                  data-field="${escapeHtml(key)}"
-                  value="${escapeHtml(value ?? "")}"
-                />
-              </div>`
-                )
+                .map(([key, value]) => formatFieldsetAttribute(fieldsetIndex, key, value))
                 .join("");
 
               const fieldCards = (fieldset.fields || [])
@@ -1702,18 +1786,7 @@
                 />
               </div>`;
                       }
-                      return `
-              <div class="field-attribute">
-                <label>${escapeHtml(key)}</label>
-                <input
-                  type="text"
-                  class="field-attr"
-                  data-fieldset-index="${fieldsetIndex}"
-                  data-field-index="${fieldIndex}"
-                  data-field="${escapeHtml(key)}"
-                  value="${escapeHtml(value ?? "")}"
-                />
-              </div>`;
+                      return formatFieldAttribute(fieldsetIndex, fieldIndex, key, value);
                     })
                     .join("");
 
@@ -1762,14 +1835,47 @@
                 <div class="shape-section">
                   <h4>Polygons</h4>
                   <div class="shape-list">${polygons}</div>
+                  <div class="shape-actions">
+                    <button
+                      type="button"
+                      class="inline-btn"
+                      data-action="add-polygon"
+                      data-fieldset-index="${fieldsetIndex}"
+                      data-field-index="${fieldIndex}"
+                    >
+                      + Polygon
+                    </button>
+                  </div>
                 </div>
                 <div class="shape-section">
                   <h4>Circles</h4>
                   <div class="shape-list">${circles}</div>
+                  <div class="shape-actions">
+                    <button
+                      type="button"
+                      class="inline-btn"
+                      data-action="add-circle"
+                      data-fieldset-index="${fieldsetIndex}"
+                      data-field-index="${fieldIndex}"
+                    >
+                      + Circle
+                    </button>
+                  </div>
                 </div>
                 <div class="shape-section">
                   <h4>Rectangles</h4>
                   <div class="shape-list">${rectangles}</div>
+                  <div class="shape-actions">
+                    <button
+                      type="button"
+                      class="inline-btn"
+                      data-action="add-rectangle"
+                      data-fieldset-index="${fieldsetIndex}"
+                      data-field-index="${fieldIndex}"
+                    >
+                      + Rectangle
+                    </button>
+                  </div>
                 </div>
               </details>
             </div>`;
@@ -1812,6 +1918,108 @@
           renderFieldsetCheckboxes();
           renderFigure();
           restoreFieldsetDetailState(detailState);
+        }
+
+        function formatFieldsetAttribute(fieldsetIndex, key, value) {
+          return `
+              <div class="fieldset-field">
+                <label>${escapeHtml(key)}</label>
+                <input
+                  type="text"
+                  class="fieldset-attr"
+                  data-fieldset-index="${fieldsetIndex}"
+                  data-field="${escapeHtml(key)}"
+                  value="${escapeHtml(value ?? "")}"
+                />
+              </div>`;
+        }
+
+        function formatFieldAttribute(fieldsetIndex, fieldIndex, key, value) {
+          const debugOnly =
+            key === "MultipleSampling" ||
+            key === "Resolution" ||
+            key === "TolerancePositive" ||
+            key === "ToleranceNegative";
+          if (debugOnly && !debugMode) {
+            return "";
+          }
+          const hiddenClass = debugOnly ? "field-attribute debug-hidden" : "field-attribute";
+          if (key === "Fieldtype") {
+            const options = [
+              "ProtectiveSafeBlanking",
+              "WarningSafeBlanking",
+            ]
+              .map(
+                (opt) =>
+                  `<option value="${opt}"${
+                    opt === value ? " selected" : ""
+                  }>${opt}</option>`
+              )
+              .join("");
+            return `
+              <div class="${hiddenClass}">
+                <label>${escapeHtml(key)}</label>
+                <select
+                  class="field-attr"
+                  data-fieldset-index="${fieldsetIndex}"
+                  data-field-index="${fieldIndex}"
+                  data-field="${escapeHtml(key)}"
+                >
+                  ${options}
+                </select>
+              </div>`;
+          }
+          if (key === "MultipleSampling") {
+            return `
+              <div class="${hiddenClass}">
+                <label>${escapeHtml(key)}</label>
+                <input
+                  type="number"
+                  value="${escapeHtml(globalMultipleSampling)}"
+                  min="2"
+                  max="16"
+                  readonly
+                />
+              </div>`;
+          }
+          if (key === "Resolution") {
+            return `
+              <div class="${hiddenClass}">
+                <label>${escapeHtml(key)}</label>
+                <input
+                  type="number"
+                  value="${escapeHtml(String(globalResolution))}"
+                  readonly
+                />
+              </div>`;
+          }
+          if (key === "TolerancePositive" || key === "ToleranceNegative") {
+            const boundValue =
+              key === "TolerancePositive"
+                ? globalTolerancePositive
+                : globalToleranceNegative;
+            return `
+              <div class="${hiddenClass}">
+                <label>${escapeHtml(key)}</label>
+                <input
+                  type="number"
+                  value="${escapeHtml(String(boundValue))}"
+                  readonly
+                />
+              </div>`;
+          }
+          return `
+              <div class="field-attribute">
+                <label>${escapeHtml(key)}</label>
+                <input
+                  type="text"
+                  class="field-attr"
+                  data-fieldset-index="${fieldsetIndex}"
+                  data-field-index="${fieldIndex}"
+                  data-field="${escapeHtml(key)}"
+                  value="${escapeHtml(value ?? "")}"
+                />
+              </div>`;
         }
 
         function captureFieldsetDetailState() {
@@ -1915,18 +2123,53 @@
                   data-axis="Y"
                   value="${escapeHtml(point.Y ?? "0")}"
                 />
+                <button
+                  type="button"
+                  class="inline-btn inline-danger shape-mini-btn"
+                  data-action="remove-polygon-point"
+                  data-fieldset-index="${fieldsetIndex}"
+                  data-field-index="${fieldIndex}"
+                  data-polygon-index="${polygonIndex}"
+                  data-point-index="${pointIndex}"
+                >
+                  Remove
+                </button>
               </div>`
             )
             .join("");
           return `
             <div class="shape-entry" data-shape="polygon">
-              <div class="shape-title">Polygon #${polygonIndex + 1}</div>
+              <div class="shape-title">
+                <span>Polygon #${polygonIndex + 1}</span>
+                <button
+                  type="button"
+                  class="inline-btn inline-danger shape-mini-btn"
+                  data-action="remove-polygon"
+                  data-fieldset-index="${fieldsetIndex}"
+                  data-field-index="${fieldIndex}"
+                  data-polygon-index="${polygonIndex}"
+                >
+                  Remove
+                </button>
+              </div>
               <div class="shape-fields">
                 <label>Type</label>
                 ${typeSelect}
               </div>
               <div class="shape-points">
                 ${pointInputs || "<p>No points.</p>"}
+              </div>
+              <div class="shape-actions">
+                <button
+                  type="button"
+                  class="inline-btn shape-mini-btn"
+                  data-action="add-polygon-point"
+                  data-fieldset-index="${fieldsetIndex}"
+                  data-field-index="${fieldIndex}"
+                  data-polygon-index="${polygonIndex}"
+                >
+                  + Point
+                </button>
               </div>
             </div>`;
         }
@@ -1959,7 +2202,19 @@
           );
           return `
             <div class="shape-entry" data-shape="rectangle">
-              <div class="shape-title">Rectangle #${rectangleIndex + 1}</div>
+              <div class="shape-title">
+                <span>Rectangle #${rectangleIndex + 1}</span>
+                <button
+                  type="button"
+                  class="inline-btn inline-danger shape-mini-btn"
+                  data-action="remove-rectangle"
+                  data-fieldset-index="${fieldsetIndex}"
+                  data-field-index="${fieldIndex}"
+                  data-rectangle-index="${rectangleIndex}"
+                >
+                  Remove
+                </button>
+              </div>
               <div class="shape-fields">
                 <label>Type</label>
                 ${typeSelect}
@@ -1998,7 +2253,19 @@
           );
           return `
             <div class="shape-entry" data-shape="circle">
-              <div class="shape-title">Circle #${circleIndex + 1}</div>
+              <div class="shape-title">
+                <span>Circle #${circleIndex + 1}</span>
+                <button
+                  type="button"
+                  class="inline-btn inline-danger shape-mini-btn"
+                  data-action="remove-circle"
+                  data-fieldset-index="${fieldsetIndex}"
+                  data-field-index="${fieldIndex}"
+                  data-circle-index="${circleIndex}"
+                >
+                  Remove
+                </button>
+              </div>
               <div class="shape-fields">
                 <label>Type</label>
                 ${typeSelect}
@@ -2087,6 +2354,76 @@
           circle[key] = value;
           renderFieldsets();
           renderFigure();
+        }
+
+        function getFieldEntry(fieldsetIndex, fieldIndex) {
+          const fieldset = fieldsets[fieldsetIndex];
+          if (!fieldset || !fieldset.fields) {
+            return null;
+          }
+          return fieldset.fields[fieldIndex] || null;
+        }
+
+        function addPolygon(fieldsetIndex, fieldIndex) {
+          const field = getFieldEntry(fieldsetIndex, fieldIndex);
+          if (!field) return;
+          field.polygons = field.polygons || [];
+          field.polygons.push(createDefaultPolygon());
+          renderFieldsets();
+        }
+
+        function removePolygon(fieldsetIndex, fieldIndex, polygonIndex) {
+          const field = getFieldEntry(fieldsetIndex, fieldIndex);
+          if (!field || !field.polygons) return;
+          field.polygons.splice(polygonIndex, 1);
+          renderFieldsets();
+        }
+
+        function addPolygonPoint(fieldsetIndex, fieldIndex, polygonIndex) {
+          const field = getFieldEntry(fieldsetIndex, fieldIndex);
+          const polygon = field?.polygons?.[polygonIndex];
+          if (!polygon) return;
+          polygon.points = polygon.points || [];
+          polygon.points.push({ X: "0", Y: "0" });
+          renderFieldsets();
+        }
+
+        function removePolygonPoint(fieldsetIndex, fieldIndex, polygonIndex, pointIndex) {
+          const field = getFieldEntry(fieldsetIndex, fieldIndex);
+          const polygon = field?.polygons?.[polygonIndex];
+          if (!polygon || !polygon.points) return;
+          polygon.points.splice(pointIndex, 1);
+          renderFieldsets();
+        }
+
+        function addCircle(fieldsetIndex, fieldIndex) {
+          const field = getFieldEntry(fieldsetIndex, fieldIndex);
+          if (!field) return;
+          field.circles = field.circles || [];
+          field.circles.push(createDefaultCircle());
+          renderFieldsets();
+        }
+
+        function removeCircle(fieldsetIndex, fieldIndex, circleIndex) {
+          const field = getFieldEntry(fieldsetIndex, fieldIndex);
+          if (!field || !field.circles) return;
+          field.circles.splice(circleIndex, 1);
+          renderFieldsets();
+        }
+
+        function addRectangle(fieldsetIndex, fieldIndex) {
+          const field = getFieldEntry(fieldsetIndex, fieldIndex);
+          if (!field) return;
+          field.rectangles = field.rectangles || [];
+          field.rectangles.push(createDefaultRectangle());
+          renderFieldsets();
+        }
+
+        function removeRectangle(fieldsetIndex, fieldIndex, rectangleIndex) {
+          const field = getFieldEntry(fieldsetIndex, fieldIndex);
+          if (!field || !field.rectangles) return;
+          field.rectangles.splice(rectangleIndex, 1);
+          renderFieldsets();
         }
 
         function formatAttributeBadges(attrs) {
@@ -3033,6 +3370,52 @@
             value = Math.min(16, Math.max(2, value));
             event.target.value = value;
             applyGlobalMultipleSampling(String(value));
+            handleTriOrbFieldChange();
+          });
+        }
+
+        function updateGlobalFieldAttributes() {
+          fieldsets.forEach((fieldset) => {
+            (fieldset.fields || []).forEach((field) => {
+              field.attributes = field.attributes || {};
+              field.attributes.MultipleSampling = String(globalMultipleSampling);
+              field.attributes.Resolution = String(globalResolution);
+              field.attributes.TolerancePositive = String(globalTolerancePositive);
+              field.attributes.ToleranceNegative = String(globalToleranceNegative);
+            });
+          });
+        }
+
+        function handleTriOrbFieldChange() {
+          updateGlobalFieldAttributes();
+          renderFieldsets();
+          renderFigure();
+        }
+
+        if (globalResolutionInput) {
+          globalResolutionInput.addEventListener("input", (event) => {
+            const value = parseNumeric(event.target.value, globalResolution);
+            globalResolution = Number.isFinite(value) ? value : globalResolution;
+            event.target.value = globalResolution;
+            handleTriOrbFieldChange();
+          });
+        }
+
+        if (globalTolerancePositiveInput) {
+          globalTolerancePositiveInput.addEventListener("input", (event) => {
+            const value = parseNumeric(event.target.value, globalTolerancePositive);
+            globalTolerancePositive = Number.isFinite(value) ? value : globalTolerancePositive;
+            event.target.value = globalTolerancePositive;
+            handleTriOrbFieldChange();
+          });
+        }
+
+        if (globalToleranceNegativeInput) {
+          globalToleranceNegativeInput.addEventListener("input", (event) => {
+            const value = parseNumeric(event.target.value, globalToleranceNegative);
+            globalToleranceNegative = Number.isFinite(value) ? value : globalToleranceNegative;
+            event.target.value = globalToleranceNegative;
+            handleTriOrbFieldChange();
           });
         }
 
@@ -3207,41 +3590,96 @@
 
         if (fieldsetsContainer) {
           fieldsetsContainer.addEventListener("click", (event) => {
-            const removeFieldsetTarget = event.target.closest("[data-action='remove-fieldset']");
-            if (removeFieldsetTarget) {
-              event.preventDefault();
-              event.stopPropagation();
-              const fieldsetIndex = Number(removeFieldsetTarget.dataset.fieldsetIndex);
-              fieldsets.splice(fieldsetIndex, 1);
-              renderFieldsets();
+            const actionTarget = event.target.closest("[data-action]");
+            if (!actionTarget) {
               return;
             }
-
-            const addFieldTarget = event.target.closest("[data-action='add-field']");
-            if (addFieldTarget) {
-              event.preventDefault();
-              event.stopPropagation();
-              const fieldsetIndex = Number(addFieldTarget.dataset.fieldsetIndex);
-              const fieldset = fieldsets[fieldsetIndex];
-              if (fieldset) {
-                fieldset.fields = fieldset.fields || [];
-                fieldset.fields.push(createDefaultField(fieldset.fields.length));
+            event.preventDefault();
+            event.stopPropagation();
+            const action = actionTarget.dataset.action;
+            switch (action) {
+              case "remove-fieldset": {
+                const fieldsetIndex = Number(actionTarget.dataset.fieldsetIndex);
+                fieldsets.splice(fieldsetIndex, 1);
                 renderFieldsets();
+                break;
               }
-              return;
-            }
-
-            const removeFieldTarget = event.target.closest("[data-action='remove-field']");
-            if (removeFieldTarget) {
-              event.preventDefault();
-              event.stopPropagation();
-              const fieldsetIndex = Number(removeFieldTarget.dataset.fieldsetIndex);
-              const fieldIndex = Number(removeFieldTarget.dataset.fieldIndex);
-              const fieldset = fieldsets[fieldsetIndex];
-              if (fieldset && fieldset.fields) {
-                fieldset.fields.splice(fieldIndex, 1);
-                renderFieldsets();
+              case "add-field": {
+                const fieldsetIndex = Number(actionTarget.dataset.fieldsetIndex);
+                const fieldset = fieldsets[fieldsetIndex];
+                if (fieldset) {
+                  fieldset.fields = fieldset.fields || [];
+                  fieldset.fields.push(createDefaultField(fieldset.fields.length));
+                  renderFieldsets();
+                }
+                break;
               }
+              case "remove-field": {
+                const fieldsetIndex = Number(actionTarget.dataset.fieldsetIndex);
+                const fieldIndex = Number(actionTarget.dataset.fieldIndex);
+                const fieldset = fieldsets[fieldsetIndex];
+                if (fieldset && fieldset.fields) {
+                  fieldset.fields.splice(fieldIndex, 1);
+                  renderFieldsets();
+                }
+                break;
+              }
+              case "add-polygon": {
+                const fieldsetIndex = Number(actionTarget.dataset.fieldsetIndex);
+                const fieldIndex = Number(actionTarget.dataset.fieldIndex);
+                addPolygon(fieldsetIndex, fieldIndex);
+                break;
+              }
+              case "remove-polygon": {
+                const fieldsetIndex = Number(actionTarget.dataset.fieldsetIndex);
+                const fieldIndex = Number(actionTarget.dataset.fieldIndex);
+                const polygonIndex = Number(actionTarget.dataset.polygonIndex);
+                removePolygon(fieldsetIndex, fieldIndex, polygonIndex);
+                break;
+              }
+              case "add-polygon-point": {
+                const fieldsetIndex = Number(actionTarget.dataset.fieldsetIndex);
+                const fieldIndex = Number(actionTarget.dataset.fieldIndex);
+                const polygonIndex = Number(actionTarget.dataset.polygonIndex);
+                addPolygonPoint(fieldsetIndex, fieldIndex, polygonIndex);
+                break;
+              }
+              case "remove-polygon-point": {
+                const fieldsetIndex = Number(actionTarget.dataset.fieldsetIndex);
+                const fieldIndex = Number(actionTarget.dataset.fieldIndex);
+                const polygonIndex = Number(actionTarget.dataset.polygonIndex);
+                const pointIndex = Number(actionTarget.dataset.pointIndex);
+                removePolygonPoint(fieldsetIndex, fieldIndex, polygonIndex, pointIndex);
+                break;
+              }
+              case "add-circle": {
+                const fieldsetIndex = Number(actionTarget.dataset.fieldsetIndex);
+                const fieldIndex = Number(actionTarget.dataset.fieldIndex);
+                addCircle(fieldsetIndex, fieldIndex);
+                break;
+              }
+              case "remove-circle": {
+                const fieldsetIndex = Number(actionTarget.dataset.fieldsetIndex);
+                const fieldIndex = Number(actionTarget.dataset.fieldIndex);
+                const circleIndex = Number(actionTarget.dataset.circleIndex);
+                removeCircle(fieldsetIndex, fieldIndex, circleIndex);
+                break;
+              }
+              case "add-rectangle": {
+                const fieldsetIndex = Number(actionTarget.dataset.fieldsetIndex);
+                const fieldIndex = Number(actionTarget.dataset.fieldIndex);
+                addRectangle(fieldsetIndex, fieldIndex);
+                break;
+              }
+              case "remove-rectangle": {
+                const fieldsetIndex = Number(actionTarget.dataset.fieldsetIndex);
+                const fieldIndex = Number(actionTarget.dataset.fieldIndex);
+                const rectangleIndex = Number(actionTarget.dataset.rectangleIndex);
+                removeRectangle(fieldsetIndex, fieldIndex, rectangleIndex);
+                break;
+              }
+              default:
+                break;
             }
           });
 
