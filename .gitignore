@@ -1,4 +1,7 @@
-﻿# Byte-compiled / optimized / DLL files
+﻿# GitHub Pages公開用docsディレクトリは管理対象
+!docs/
+!mkdocs.yml
+# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class

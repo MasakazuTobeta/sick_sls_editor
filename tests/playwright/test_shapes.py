@@ -33,6 +33,19 @@ def run_playwright_test():
         ).first
         if positive_field.input_value() != "3" or negative_field.input_value() != "2":
             raise AssertionError("Tolerance values did not propagate.")
+        buttons = [
+            "#btn-new",
+            "#btn-save",
+            "#btn-toggle-legend",
+            "#btn-fieldset-check-all",
+            "#btn-fieldset-uncheck-all",
+            "#btn-triorb-shape-check-all",
+            "#btn-triorb-shape-uncheck-all",
+        ]
+        for selector in buttons:
+            if page.is_visible(selector):
+                page.click(selector)
+                page.wait_for_timeout(200)
         if errors:
             raise AssertionError("Playwright logged console errors: " + "; ".join(err.text for err in errors))
         browser.close()
@@ -45,6 +58,7 @@ if __name__ == "__main__":
         print(f"Playwright test failure: {exc}")
         sys.exit(1)
     except Exception as exc:
-        print(f"Playwright test error: {exc}")
+        message = str(exc).encode("ascii", "replace").decode("ascii")
+        print(f"Playwright test error: {message}")
         sys.exit(2)
     print("Playwright sanity test passed.")

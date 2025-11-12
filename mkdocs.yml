@@ -1,0 +1,37 @@
+site_name: "TriOrb SLS Editor"
+site_author: TriOrb Inc.
+copyright: TriOrb Inc.
+
+site_dir: site
+docs_dir: docs
+
+theme:
+  name: material
+  logo: 'https://triorb.co.jp/wp/wp-content/themes/triorb/img/logo-w.png'
+  favicon: 'https://triorb.co.jp/favicon.ico'
+  palette:
+    - scheme: default
+      primary: custom
+      accent: blue
+      toggle:
+        icon: material/weather-night
+        name: ダークモードに切り替え
+    - scheme: slate
+      primary: custom
+      accent: blue
+      toggle:
+        icon: material/weather-sunny
+        name: ライトモードに切り替え
+  features:
+    - toc.integrate
+
+# スタイルシート
+extra_css:
+  - stylesheets/extra.css
+
+# Copyright
+copyright: Copyright © 2025 TriOrb Inc.
+  
+extra:
+  version:
+    provider: mike   # Materialのバージョンセレクタを有効化

@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>SICK SLS Editor (Web)</title>
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.ico') }}" />
+    <link rel="icon" type="image/png" href="/static/favicon.ico" />
     <script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
     <style>
       :root {
@@ -192,11 +192,6 @@
         border-radius: 8px;
         padding: 0.75rem;
         background: #f1f5f9;
-      }
-      .triorb-structure-actions {
-        margin-top: 0.75rem;
-        display: flex;
-        justify-content: flex-start;
       }
 
       .triorb-shape-checkbox {
@@ -707,17 +702,6 @@
         padding: 0.25rem 0.5rem;
         font-size: 0.75rem;
       }
-      .plot-overlay-controls {
-        position: absolute;
-        top: 1rem;
-        right: 1rem;
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-      }
-      .plot-wrapper {
-        position: relative;
-      }
 
       footer {
         text-align: center;
@@ -761,9 +745,9 @@
       <section class="content-area">
         <div class="toolbar">
           <div class="toolbar-primary">
-            <button id="btn-new" type="button">New</button>
+            <button id="btn-new" type="button">New Plot</button>
         <button id="btn-save-triorb" type="button" class="secondary">Save (TriOrb)</button>
-        <button id="btn-save-sick" type="button" class="inline-btn">Save (SICK)</button>
+        <button id="btn-save-legacy" type="button" class="inline-btn">Save (SICK)</button>
             <label class="upload-btn">
               Load (XML)
               <input id="file-input" type="file" accept=".xml,.sgexml" />
@@ -776,9 +760,6 @@
         </div>
         <div class="plot-wrapper">
           <div id="plot"></div>
-          <div class="plot-overlay-controls">
-            <button id="btn-add-shape-overlay" type="button">+ Shape</button>
-          </div>
         </div>
         <div class="fieldset-filter">
           <div class="fieldset-filter-controls">
@@ -793,48 +774,117 @@
             <button type="button" class="inline-btn" id="btn-triorb-shape-uncheck-all">Hide All Shapes</button>
           </div>
           <div id="triorb-shape-checkboxes"></div>
-          <div class="triorb-structure-actions">
-            <button type="button" class="inline-btn" id="btn-add-shape-right">
-              + Shape
-            </button>
-          </div>
         </div>
       </section>
       <aside class="side-menu">
         <h2>Structure Menu</h2>
-        {% for item in menu_items %}
-        {% if item.tag == "FileInfo" %}
-        <details class="menu-section" open>
-        {% else %}
-        <details class="menu-section" {% if loop.first %}open{% endif %}>
-        {% endif %}
-          <summary>{{ item.tag }}</summary>
+        
+        
+        <details class="menu-section">
+        
+          <summary>FileInfo</summary>
           <div class="menu-content">
-            {% if item.tag == "FileInfo" %}
-              <p class="menu-description">{{ item.summary }}</p>
-              {% if fileinfo_fields %}
+            
+              <p class="menu-description">No additional attributes</p>
+              
               <div class="menu-fileinfo-grid" data-scope="fileinfo">
-                {% for field in fileinfo_fields %}
+                
                 <div class="menu-fileinfo-field">
-                  <label for="fileinfo-{{ field.tag }}">{{ field.tag }}</label>
+                  <label for="fileinfo-ContentId">ContentId</label>
                   <input
-                    id="fileinfo-{{ field.tag }}"
+                    id="fileinfo-ContentId"
                     type="text"
-                    value="{{ field.value }}"
-                    data-field="{{ field.tag }}"
+                    value="Scanner Complete Export"
+                    data-field="ContentId"
                   />
                 </div>
-                {% endfor %}
+                
+                <div class="menu-fileinfo-field">
+                  <label for="fileinfo-ContentVersion">ContentVersion</label>
+                  <input
+                    id="fileinfo-ContentVersion"
+                    type="text"
+                    value="1.6"
+                    data-field="ContentVersion"
+                  />
+                </div>
+                
+                <div class="menu-fileinfo-field">
+                  <label for="fileinfo-Company">Company</label>
+                  <input
+                    id="fileinfo-Company"
+                    type="text"
+                    value="SICK AG"
+                    data-field="Company"
+                  />
+                </div>
+                
+                <div class="menu-fileinfo-field">
+                  <label for="fileinfo-CreationToolName">CreationToolName</label>
+                  <input
+                    id="fileinfo-CreationToolName"
+                    type="text"
+                    value="SAFETY DESIGNER ENGINEERING TOOL"
+                    data-field="CreationToolName"
+                  />
+                </div>
+                
+                <div class="menu-fileinfo-field">
+                  <label for="fileinfo-CreationToolVersion">CreationToolVersion</label>
+                  <input
+                    id="fileinfo-CreationToolVersion"
+                    type="text"
+                    value="2025.02"
+                    data-field="CreationToolVersion"
+                  />
+                </div>
+                
+                <div class="menu-fileinfo-field">
+                  <label for="fileinfo-CreationComponentName">CreationComponentName</label>
+                  <input
+                    id="fileinfo-CreationComponentName"
+                    type="text"
+                    value="nanoScan3"
+                    data-field="CreationComponentName"
+                  />
+                </div>
+                
+                <div class="menu-fileinfo-field">
+                  <label for="fileinfo-CreationComponentVersion">CreationComponentVersion</label>
+                  <input
+                    id="fileinfo-CreationComponentVersion"
+                    type="text"
+                    value="1.19.23369.0"
+                    data-field="CreationComponentVersion"
+                  />
+                </div>
+                
               </div>
-              {% else %}
-              <p>No FileInfo entries.</p>
-              {% endif %}
-            {% elif item.tag == "Export_ScanPlanes" %}
-              <p class="menu-description">{{ item.summary }}</p>
+              
+            
+          </div>
+        </details>
+        
+        
+        <details class="menu-section" >
+        
+          <summary>Export_ScanPlanes</summary>
+          <div class="menu-content">
+            
+              <p class="menu-description">No additional attributes</p>
               <button type="button" class="inline-btn" id="btn-add-scanplane">Add ScanPlane</button>
               <div class="scanplanes-editor" id="scanplanes-editor"></div>
-            {% elif item.tag == "Export_FieldsetsAndFields" %}
-              <p class="menu-description">{{ item.summary }}</p>
+            
+          </div>
+        </details>
+        
+        
+        <details class="menu-section" >
+        
+          <summary>Export_FieldsetsAndFields</summary>
+          <div class="menu-content">
+            
+              <p class="menu-description">No additional attributes</p>
               <button type="button" class="inline-btn" id="btn-add-fieldset">Add Fieldset</button>
               <details class="menu-section" id="fieldset-global-section">
                 <summary>GlobalGeometry</summary>
@@ -854,12 +904,21 @@
                 </div>
               </details>
               <div class="fieldsets-editor" id="fieldsets-editor"></div>
-            {% else %}
-              <p>{{ item.summary }}</p>
-            {% endif %}
+            
           </div>
         </details>
-        {% endfor %}
+        
+        
+        <details class="menu-section" >
+        
+          <summary>Export_CasetablesAndCases</summary>
+          <div class="menu-content">
+            
+              <p>No additional attributes</p>
+            
+          </div>
+        </details>
+        
         <h2>TriOrb Menu</h2>
         <details class="menu-section">
           <summary>Device</summary>
@@ -949,11 +1008,11 @@
 
     <script>
       document.addEventListener("DOMContentLoaded", () => {
-        const defaultFigure = {{ plot_spec|tojson }};
+        const defaultFigure = {"data": [], "layout": {"legend": {"orientation": "h", "y": 1.02, "yanchor": "bottom"}, "margin": {"b": 60, "l": 60, "r": 20, "t": 30}, "paper_bgcolor": "#ffffff", "plot_bgcolor": "#ffffff", "shapes": [{"line": {"color": "#cbd5f5", "dash": "dot", "width": 1}, "type": "line", "x0": -1000, "x1": 1000, "xref": "x", "y0": -750, "y1": -750, "yref": "y"}, {"line": {"color": "#cbd5f5", "dash": "dot", "width": 1}, "type": "line", "x0": -750, "x1": -750, "xref": "x", "y0": -1000, "y1": 1000, "yref": "y"}, {"line": {"color": "#cbd5f5", "dash": "dot", "width": 1}, "type": "line", "x0": -1000, "x1": 1000, "xref": "x", "y0": -500, "y1": -500, "yref": "y"}, {"line": {"color": "#cbd5f5", "dash": "dot", "width": 1}, "type": "line", "x0": -500, "x1": -500, "xref": "x", "y0": -1000, "y1": 1000, "yref": "y"}, {"line": {"color": "#cbd5f5", "dash": "dot", "width": 1}, "type": "line", "x0": -1000, "x1": 1000, "xref": "x", "y0": -250, "y1": -250, "yref": "y"}, {"line": {"color": "#cbd5f5", "dash": "dot", "width": 1}, "type": "line", "x0": -250, "x1": -250, "xref": "x", "y0": -1000, "y1": 1000, "yref": "y"}, {"line": {"color": "#cbd5f5", "dash": "dot", "width": 1}, "type": "line", "x0": -1000, "x1": 1000, "xref": "x", "y0": 250, "y1": 250, "yref": "y"}, {"line": {"color": "#cbd5f5", "dash": "dot", "width": 1}, "type": "line", "x0": 250, "x1": 250, "xref": "x", "y0": -1000, "y1": 1000, "yref": "y"}, {"line": {"color": "#cbd5f5", "dash": "dot", "width": 1}, "type": "line", "x0": -1000, "x1": 1000, "xref": "x", "y0": 500, "y1": 500, "yref": "y"}, {"line": {"color": "#cbd5f5", "dash": "dot", "width": 1}, "type": "line", "x0": 500, "x1": 500, "xref": "x", "y0": -1000, "y1": 1000, "yref": "y"}, {"line": {"color": "#cbd5f5", "dash": "dot", "width": 1}, "type": "line", "x0": -1000, "x1": 1000, "xref": "x", "y0": 750, "y1": 750, "yref": "y"}, {"line": {"color": "#cbd5f5", "dash": "dot", "width": 1}, "type": "line", "x0": 750, "x1": 750, "xref": "x", "y0": -1000, "y1": 1000, "yref": "y"}], "template": {"data": {"bar": [{"error_x": {"color": "#2a3f5f"}, "error_y": {"color": "#2a3f5f"}, "marker": {"line": {"color": "#E5ECF6", "width": 0.5}, "pattern": {"fillmode": "overlay", "size": 10, "solidity": 0.2}}, "type": "bar"}], "barpolar": [{"marker": {"line": {"color": "#E5ECF6", "width": 0.5}, "pattern": {"fillmode": "overlay", "size": 10, "solidity": 0.2}}, "type": "barpolar"}], "carpet": [{"aaxis": {"endlinecolor": "#2a3f5f", "gridcolor": "white", "linecolor": "white", "minorgridcolor": "white", "startlinecolor": "#2a3f5f"}, "baxis": {"endlinecolor": "#2a3f5f", "gridcolor": "white", "linecolor": "white", "minorgridcolor": "white", "startlinecolor": "#2a3f5f"}, "type": "carpet"}], "choropleth": [{"colorbar": {"outlinewidth": 0, "ticks": ""}, "type": "choropleth"}], "contour": [{"colorbar": {"outlinewidth": 0, "ticks": ""}, "colorscale": [[0.0, "#0d0887"], [0.1111111111111111, "#46039f"], [0.2222222222222222, "#7201a8"], [0.3333333333333333, "#9c179e"], [0.4444444444444444, "#bd3786"], [0.5555555555555556, "#d8576b"], [0.6666666666666666, "#ed7953"], [0.7777777777777778, "#fb9f3a"], [0.8888888888888888, "#fdca26"], [1.0, "#f0f921"]], "type": "contour"}], "contourcarpet": [{"colorbar": {"outlinewidth": 0, "ticks": ""}, "type": "contourcarpet"}], "heatmap": [{"colorbar": {"outlinewidth": 0, "ticks": ""}, "colorscale": [[0.0, "#0d0887"], [0.1111111111111111, "#46039f"], [0.2222222222222222, "#7201a8"], [0.3333333333333333, "#9c179e"], [0.4444444444444444, "#bd3786"], [0.5555555555555556, "#d8576b"], [0.6666666666666666, "#ed7953"], [0.7777777777777778, "#fb9f3a"], [0.8888888888888888, "#fdca26"], [1.0, "#f0f921"]], "type": "heatmap"}], "histogram": [{"marker": {"pattern": {"fillmode": "overlay", "size": 10, "solidity": 0.2}}, "type": "histogram"}], "histogram2d": [{"colorbar": {"outlinewidth": 0, "ticks": ""}, "colorscale": [[0.0, "#0d0887"], [0.1111111111111111, "#46039f"], [0.2222222222222222, "#7201a8"], [0.3333333333333333, "#9c179e"], [0.4444444444444444, "#bd3786"], [0.5555555555555556, "#d8576b"], [0.6666666666666666, "#ed7953"], [0.7777777777777778, "#fb9f3a"], [0.8888888888888888, "#fdca26"], [1.0, "#f0f921"]], "type": "histogram2d"}], "histogram2dcontour": [{"colorbar": {"outlinewidth": 0, "ticks": ""}, "colorscale": [[0.0, "#0d0887"], [0.1111111111111111, "#46039f"], [0.2222222222222222, "#7201a8"], [0.3333333333333333, "#9c179e"], [0.4444444444444444, "#bd3786"], [0.5555555555555556, "#d8576b"], [0.6666666666666666, "#ed7953"], [0.7777777777777778, "#fb9f3a"], [0.8888888888888888, "#fdca26"], [1.0, "#f0f921"]], "type": "histogram2dcontour"}], "mesh3d": [{"colorbar": {"outlinewidth": 0, "ticks": ""}, "type": "mesh3d"}], "parcoords": [{"line": {"colorbar": {"outlinewidth": 0, "ticks": ""}}, "type": "parcoords"}], "pie": [{"automargin": true, "type": "pie"}], "scatter": [{"fillpattern": {"fillmode": "overlay", "size": 10, "solidity": 0.2}, "type": "scatter"}], "scatter3d": [{"line": {"colorbar": {"outlinewidth": 0, "ticks": ""}}, "marker": {"colorbar": {"outlinewidth": 0, "ticks": ""}}, "type": "scatter3d"}], "scattercarpet": [{"marker": {"colorbar": {"outlinewidth": 0, "ticks": ""}}, "type": "scattercarpet"}], "scattergeo": [{"marker": {"colorbar": {"outlinewidth": 0, "ticks": ""}}, "type": "scattergeo"}], "scattergl": [{"marker": {"colorbar": {"outlinewidth": 0, "ticks": ""}}, "type": "scattergl"}], "scattermap": [{"marker": {"colorbar": {"outlinewidth": 0, "ticks": ""}}, "type": "scattermap"}], "scattermapbox": [{"marker": {"colorbar": {"outlinewidth": 0, "ticks": ""}}, "type": "scattermapbox"}], "scatterpolar": [{"marker": {"colorbar": {"outlinewidth": 0, "ticks": ""}}, "type": "scatterpolar"}], "scatterpolargl": [{"marker": {"colorbar": {"outlinewidth": 0, "ticks": ""}}, "type": "scatterpolargl"}], "scatterternary": [{"marker": {"colorbar": {"outlinewidth": 0, "ticks": ""}}, "type": "scatterternary"}], "surface": [{"colorbar": {"outlinewidth": 0, "ticks": ""}, "colorscale": [[0.0, "#0d0887"], [0.1111111111111111, "#46039f"], [0.2222222222222222, "#7201a8"], [0.3333333333333333, "#9c179e"], [0.4444444444444444, "#bd3786"], [0.5555555555555556, "#d8576b"], [0.6666666666666666, "#ed7953"], [0.7777777777777778, "#fb9f3a"], [0.8888888888888888, "#fdca26"], [1.0, "#f0f921"]], "type": "surface"}], "table": [{"cells": {"fill": {"color": "#EBF0F8"}, "line": {"color": "white"}}, "header": {"fill": {"color": "#C8D4E3"}, "line": {"color": "white"}}, "type": "table"}]}, "layout": {"annotationdefaults": {"arrowcolor": "#2a3f5f", "arrowhead": 0, "arrowwidth": 1}, "autotypenumbers": "strict", "coloraxis": {"colorbar": {"outlinewidth": 0, "ticks": ""}}, "colorscale": {"diverging": [[0, "#8e0152"], [0.1, "#c51b7d"], [0.2, "#de77ae"], [0.3, "#f1b6da"], [0.4, "#fde0ef"], [0.5, "#f7f7f7"], [0.6, "#e6f5d0"], [0.7, "#b8e186"], [0.8, "#7fbc41"], [0.9, "#4d9221"], [1, "#276419"]], "sequential": [[0.0, "#0d0887"], [0.1111111111111111, "#46039f"], [0.2222222222222222, "#7201a8"], [0.3333333333333333, "#9c179e"], [0.4444444444444444, "#bd3786"], [0.5555555555555556, "#d8576b"], [0.6666666666666666, "#ed7953"], [0.7777777777777778, "#fb9f3a"], [0.8888888888888888, "#fdca26"], [1.0, "#f0f921"]], "sequentialminus": [[0.0, "#0d0887"], [0.1111111111111111, "#46039f"], [0.2222222222222222, "#7201a8"], [0.3333333333333333, "#9c179e"], [0.4444444444444444, "#bd3786"], [0.5555555555555556, "#d8576b"], [0.6666666666666666, "#ed7953"], [0.7777777777777778, "#fb9f3a"], [0.8888888888888888, "#fdca26"], [1.0, "#f0f921"]]}, "colorway": ["#636efa", "#EF553B", "#00cc96", "#ab63fa", "#FFA15A", "#19d3f3", "#FF6692", "#B6E880", "#FF97FF", "#FECB52"], "font": {"color": "#2a3f5f"}, "geo": {"bgcolor": "white", "lakecolor": "white", "landcolor": "#E5ECF6", "showlakes": true, "showland": true, "subunitcolor": "white"}, "hoverlabel": {"align": "left"}, "hovermode": "closest", "mapbox": {"style": "light"}, "paper_bgcolor": "white", "plot_bgcolor": "#E5ECF6", "polar": {"angularaxis": {"gridcolor": "white", "linecolor": "white", "ticks": ""}, "bgcolor": "#E5ECF6", "radialaxis": {"gridcolor": "white", "linecolor": "white", "ticks": ""}}, "scene": {"xaxis": {"backgroundcolor": "#E5ECF6", "gridcolor": "white", "gridwidth": 2, "linecolor": "white", "showbackground": true, "ticks": "", "zerolinecolor": "white"}, "yaxis": {"backgroundcolor": "#E5ECF6", "gridcolor": "white", "gridwidth": 2, "linecolor": "white", "showbackground": true, "ticks": "", "zerolinecolor": "white"}, "zaxis": {"backgroundcolor": "#E5ECF6", "gridcolor": "white", "gridwidth": 2, "linecolor": "white", "showbackground": true, "ticks": "", "zerolinecolor": "white"}}, "shapedefaults": {"line": {"color": "#2a3f5f"}}, "ternary": {"aaxis": {"gridcolor": "white", "linecolor": "white", "ticks": ""}, "baxis": {"gridcolor": "white", "linecolor": "white", "ticks": ""}, "bgcolor": "#E5ECF6", "caxis": {"gridcolor": "white", "linecolor": "white", "ticks": ""}}, "title": {"x": 0.05}, "xaxis": {"automargin": true, "gridcolor": "white", "linecolor": "white", "ticks": "", "title": {"standoff": 15}, "zerolinecolor": "white", "zerolinewidth": 2}, "yaxis": {"automargin": true, "gridcolor": "white", "linecolor": "white", "ticks": "", "title": {"standoff": 15}, "zerolinecolor": "white", "zerolinewidth": 2}}}, "xaxis": {"constrain": "range", "dtick": 100, "gridcolor": "#d9dee7", "gridwidth": 1, "linecolor": "#6b7a99", "linewidth": 2, "minor": {"dtick": 50, "gridcolor": "#f2f5fb", "gridwidth": 0.5, "showgrid": true}, "range": [-1000, 1000], "showgrid": true, "showline": true, "tick0": 0, "title": {"text": "X[mm]"}, "zeroline": true, "zerolinecolor": "#9fb3d1", "zerolinewidth": 2}, "yaxis": {"constrain": "range", "dtick": 100, "gridcolor": "#d9dee7", "gridwidth": 1, "linecolor": "#6b7a99", "linewidth": 2, "minor": {"dtick": 50, "gridcolor": "#f2f5fb", "gridwidth": 0.5, "showgrid": true}, "range": [-1000, 1000], "scaleanchor": "x", "scaleratio": 1, "showgrid": true, "showline": true, "tick0": 0, "title": {"text": "Y[mm]"}, "zeroline": true, "zerolinecolor": "#9fb3d1", "zerolinewidth": 2}}};
         defaultFigure.data = defaultFigure.data || [];
-        const rootAttributes = {{ root_attrs|tojson }};
-        const initialScanPlanes = {{ scan_planes|tojson }};
-        const fieldsetData = {{ fieldsets|tojson }};
+        const rootAttributes = {"Commentary": "", "Hash": "0835FD278D7CC3C3C7CF2A2872DA772020A46E3D1E4B6FF93D5FC242CB2EA042CB9F33C38E4006EA160A969DA725A1134AC8FE5A45A87380DBC5C998B757CB5F", "Timestamp": "2025-11-11T01:58:44.6531564Z"};
+        const initialScanPlanes = [{"attributes": {"Index": "0", "MultipleSampling": "2", "MultipleSamplingOff2OnActivated": "false", "Name": "Monitoring plane 1", "ObjectSize": "70", "ScanPlaneDirection": "Horizontal", "SelectedCaseSwitching": "Fast", "UseReferenceContour": "false"}, "devices": [{"attributes": {"DeviceName": "Right", "Index": "0", "ResponseTime": "30", "ScanResolutionAddition": "0", "Typekey": "NANS3-CAAZ30ZA1P02", "TypekeyDisplayVersion": "V 1.0.0", "TypekeyVersion": "1.0"}}]}];
+        const fieldsetData = {"devices": [{"attributes": {"PositionX": "170", "PositionY": "156", "Rotation": "290", "StandingUpsideDown": "true", "Typekey": "NANS3-CAAZ30ZA1P02", "TypekeyDisplayVersion": "V 1.0.0", "TypekeyVersion": "1.0"}}], "fieldsets": [{"attributes": {"Name": "\u53f30.65", "NameLatin9Key": "_FSN000_9516"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-f3c9f8c6"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed down", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-89be8384"}]}]}, {"attributes": {"Name": "\u53f3\u524d0.65", "NameLatin9Key": "_FSN001_2740"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-d245e03c"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed down", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-c63f8bfd"}]}]}, {"attributes": {"Name": "\u524d0.65", "NameLatin9Key": "_FSN002_363F"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-03fdedf5"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed down", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-7b81c71a"}]}]}, {"attributes": {"Name": "\u5de6\u524d0.65", "NameLatin9Key": "_FSN003_D5B2"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-0b64a33d"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed down", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-cac04ef4"}]}]}, {"attributes": {"Name": "\u5de60.65", "NameLatin9Key": "_FSN004_EE1F"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-5d29e876"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed down", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-9aa6ccb0"}]}]}, {"attributes": {"Name": "\u5de6\u5f8c0.65", "NameLatin9Key": "_FSN005_528B"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-5b35c961"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed down", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-3d1e1856"}]}]}, {"attributes": {"Name": "\u5f8c0.65", "NameLatin9Key": "_FSN006_B106"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-1146fc79"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed down", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-d30a3b3d"}]}]}, {"attributes": {"Name": "\u53f3\u5f8c0.65", "NameLatin9Key": "_FSN007_A079"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-5c354162"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed down", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-b2cb2e98"}]}]}, {"attributes": {"Name": "\u53f30.3", "NameLatin9Key": "_FSN008_D438"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-d4c558c2"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed down", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-40e41b95"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed up", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-ba04d30f"}]}]}, {"attributes": {"Name": "\u53f3\u524d0.3", "NameLatin9Key": "_FSN009_4381"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-85319026"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed down", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-dada42e9"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed up", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-4661e771"}]}]}, {"attributes": {"Name": "\u524d0.3", "NameLatin9Key": "_FSN010_3CBD"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-a21507a6"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed down", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-b6dfa23b"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed up", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-aaa4c98c"}]}]}, {"attributes": {"Name": "\u5de6\u524d0.3", "NameLatin9Key": "_FSN011_30C7"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-9a7ad549"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed down", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-1c55e02c"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed up", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-ac8ba56d"}]}]}, {"attributes": {"Name": "\u5de60.3", "NameLatin9Key": "_FSN012_1D9D"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-b1195069"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed down", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-c5123045"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed up", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-aa762fc1"}]}]}, {"attributes": {"Name": "\u5de6\u5f8c0.3", "NameLatin9Key": "_FSN013_0833"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-903069eb"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed down", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-42f41ead"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed up", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-46a1d468"}]}]}, {"attributes": {"Name": "\u5f8c0.3", "NameLatin9Key": "_FSN014_0449"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-9afbfdac"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed down", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-8aa07212"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed up", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-1943c2a4"}]}]}, {"attributes": {"Name": "\u53f3\u5f8c0.3", "NameLatin9Key": "_FSN015_7B75"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-304c41d1"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed down", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-ab5bbac7"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed up", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-642d2586"}]}]}, {"attributes": {"Name": "\u53f30.15", "NameLatin9Key": "_FSN016_A514"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-3c5070bd"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed up", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-a7fdd216"}]}]}, {"attributes": {"Name": "\u53f3\u524d0.15", "NameLatin9Key": "_FSN017_1742"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-d9f1df83"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed up", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-ff6b0afc"}]}]}, {"attributes": {"Name": "\u524d0.15", "NameLatin9Key": "_FSN018_063D"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-1f8f9857"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed up", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-fdc6b054"}]}]}, {"attributes": {"Name": "\u5de6\u524d0.15", "NameLatin9Key": "_FSN019_E5B0"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-f2b041f4"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed up", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-e845f2ef"}]}]}, {"attributes": {"Name": "\u5de60.15", "NameLatin9Key": "_FSN020_DE1D"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-ef93506e"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed up", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-33910a95"}]}]}, {"attributes": {"Name": "\u5de6\u5f8c0.15", "NameLatin9Key": "_FSN021_6289"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-f7585b29"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed up", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-3b094552"}]}]}, {"attributes": {"Name": "\u5f8c0.15", "NameLatin9Key": "_FSN022_8104"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-8762e3dd"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed up", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-d1e78034"}]}]}, {"attributes": {"Name": "\u53f3\u5f8c0.15", "NameLatin9Key": "_FSN023_907B"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-54a8e8e9"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed up", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-2837d67e"}]}]}, {"attributes": {"Name": "\u56de\u8ee2", "NameLatin9Key": "_FSN024_7C2F"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-48390845"}]}]}, {"attributes": {"Name": "Stop(minimum)"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "4", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-44a93288"}, {"shapeId": "shape-9723422d"}, {"shapeId": "shape-5c45a7d5"}, {"shapeId": "shape-6be78c0c"}, {"shapeId": "shape-05b6c553"}, {"shapeId": "shape-b27e3efe"}]}]}], "global_geometry": {"UseGlobalGeometry": "false"}};
         const initialFieldsets = fieldsetData.fieldsets || [];
         const initialFieldsetDevices = fieldsetData.devices || [];
         const initialFieldsetGlobal = fieldsetData.global_geometry || {};
@@ -976,65 +1035,14 @@
           { DeviceName: "Left" },
         ];
         const defaultFieldsetDeviceTemplates = [
-          {
-            DeviceName: "Right",
-            PositionX: "170",
-            PositionY: "156",
-            Rotation: "290",
-            StandingUpsideDown: "true",
-          },
-          {
-            DeviceName: "Left",
-            PositionX: "-170",
-            PositionY: "156",
-            Rotation: "70",
-            StandingUpsideDown: "true",
-          },
+          { PositionX: "170", PositionY: "156", Rotation: "290", StandingUpsideDown: "true" },
+          { PositionX: "-170", PositionY: "156", Rotation: "70", StandingUpsideDown: "true" },
         ];
         const shapeTypeOptions = {
           polygon: ["CutOut", "Field"],
           rectangle: ["Field"],
           circle: ["Field"],
         };
-        const fieldTypeColorScales = {
-          ProtectiveSafeBlanking: [
-            "#fcf3cf",
-            "#f9e79f",
-            "#f7dc6f",
-            "#f4d03f",
-            "#f1c40f",
-          ],
-          WarningSafeBlanking: [
-            "#f7fbff",
-            "#deebf7",
-            "#c6dbef",
-            "#6baed6",
-            "#2171b5",
-          ],
-        };
-        const triOrbColorScale = [
-          "#f4f5f7",
-          "#d9e3f0",
-          "#b4c1d8",
-          "#6e7c8b",
-          "#2f3d49",
-        ];
-        function sampleColorFromScale(scale, index, total = 1) {
-          if (!Array.isArray(scale) || !scale.length) {
-            return "#888";
-          }
-          const steps = Math.max(total - 1, 1);
-          const ratio = Math.min(scale.length - 1, Math.floor((index / steps) * (scale.length - 1)));
-          return scale[ratio];
-        }
-        function pickFieldColor(fieldType, shapeIndex, totalShapes) {
-          const scale =
-            fieldTypeColorScales[fieldType] || fieldTypeColorScales.ProtectiveSafeBlanking;
-          return sampleColorFromScale(scale, shapeIndex, totalShapes);
-        }
-        function pickTriOrbColor(shapeIndex) {
-          return sampleColorFromScale(triOrbColorScale, shapeIndex, triorbShapes.length || 1);
-        }
         const plotNode = document.getElementById("plot");
         const statusText = document.getElementById("status-text");
         const fileInput = document.getElementById("file-input");
@@ -1060,7 +1068,7 @@
         const triorbShapeCheckboxes = document.getElementById("triorb-shape-checkboxes");
         const triorbShapeCheckAllBtn = document.getElementById("btn-triorb-shape-check-all");
         const triorbShapeUncheckAllBtn = document.getElementById("btn-triorb-shape-uncheck-all");
-        const initialTriOrbShapes = {{ triorb_shapes|tojson }};
+        const initialTriOrbShapes = [{"id": "shape-6be1a623", "name": "\u53f30.65 Protective Polygon", "polygon": {"Type": "CutOut", "points": [{"X": "0", "Y": "245"}, {"X": "170", "Y": "156"}, {"X": "0", "Y": "-299"}, {"X": "-170", "Y": "156"}]}, "type": "Polygon"}, {"id": "shape-f3c9f8c6", "name": "\u53f30.65 Protective Rectangle", "rectangle": {"Height": "924", "OriginX": "-200", "OriginY": "464", "Rotation": "0", "Type": "Field", "Width": "950"}, "type": "Rectangle"}, {"id": "shape-89be8384", "name": "\u53f30.65 Speed down Rectangle", "rectangle": {"Height": "1024", "OriginX": "-200", "OriginY": "512", "Rotation": "0", "Type": "Field", "Width": "1600"}, "type": "Rectangle"}, {"id": "shape-d245e03c", "name": "\u53f3\u524d0.65 Protective Rectangle", "rectangle": {"Height": "924", "OriginX": "-325", "OriginY": "329", "Rotation": "45", "Type": "Field", "Width": "826"}, "type": "Rectangle"}, {"id": "shape-c63f8bfd", "name": "\u53f3\u524d0.65 Speed down Rectangle", "rectangle": {"Height": "1024", "OriginX": "-361", "OriginY": "363", "Rotation": "45", "Type": "Field", "Width": "1474"}, "type": "Rectangle"}, {"id": "shape-03fdedf5", "name": "\u524d0.65 Protective Rectangle", "rectangle": {"Height": "950", "OriginX": "-462", "OriginY": "750", "Rotation": "0", "Type": "Field", "Width": "924"}, "type": "Rectangle"}, {"id": "shape-7b81c71a", "name": "\u524d0.65 Speed down Rectangle", "rectangle": {"Height": "1600", "OriginX": "-512", "OriginY": "1400", "Rotation": "0", "Type": "Field", "Width": "1024"}, "type": "Rectangle"}, {"id": "shape-0b64a33d", "name": "\u5de6\u524d0.65 Protective Rectangle", "rectangle": {"Height": "924", "OriginX": "-268", "OriginY": "916", "Rotation": "315", "Type": "Field", "Width": "839"}, "type": "Rectangle"}, {"id": "shape-cac04ef4", "name": "\u5de6\u524d0.65 Speed down Rectangle", "rectangle": {"Height": "1024", "OriginX": "-682", "OriginY": "1404", "Rotation": "315", "Type": "Field", "Width": "1477"}, "type": "Rectangle"}, {"id": "shape-5d29e876", "name": "\u5de60.65 Protective Rectangle", "rectangle": {"Height": "924", "OriginX": "-750", "OriginY": "462", "Rotation": "0", "Type": "Field", "Width": "950"}, "type": "Rectangle"}, {"id": "shape-9aa6ccb0", "name": "\u5de60.65 Speed down Rectangle", "rectangle": {"Height": "1024", "OriginX": "-1400", "OriginY": "512", "Rotation": "0", "Type": "Field", "Width": "1600"}, "type": "Rectangle"}, {"id": "shape-5b35c961", "name": "\u5de6\u5f8c0.65 Protective Rectangle", "rectangle": {"Height": "924", "OriginX": "-916", "OriginY": "-262", "Rotation": "45", "Type": "Field", "Width": "833"}, "type": "Rectangle"}, {"id": "shape-3d1e1856", "name": "\u5de6\u5f8c0.65 Speed down Rectangle", "rectangle": {"Height": "1024", "OriginX": "-1407", "OriginY": "-687", "Rotation": "45", "Type": "Field", "Width": "1481"}, "type": "Rectangle"}, {"id": "shape-1146fc79", "name": "\u5f8c0.65 Protective Rectangle", "rectangle": {"Height": "950", "OriginX": "-462", "OriginY": "200", "Rotation": "0", "Type": "Field", "Width": "924"}, "type": "Rectangle"}, {"id": "shape-d30a3b3d", "name": "\u5f8c0.65 Speed down Rectangle", "rectangle": {"Height": "1600", "OriginX": "-512", "OriginY": "200", "Rotation": "0", "Type": "Field", "Width": "1024"}, "type": "Rectangle"}, {"id": "shape-5c354162", "name": "\u53f3\u5f8c0.65 Protective Rectangle", "rectangle": {"Height": "924", "OriginX": "325", "OriginY": "325", "Rotation": "315", "Type": "Field", "Width": "830"}, "type": "Rectangle"}, {"id": "shape-b2cb2e98", "name": "\u53f3\u5f8c0.65 Speed down Rectangle", "rectangle": {"Height": "1024", "OriginX": "361", "OriginY": "361", "Rotation": "315", "Type": "Field", "Width": "1486"}, "type": "Rectangle"}, {"id": "shape-d4c558c2", "name": "\u53f30.3 Protective Rectangle", "rectangle": {"Height": "724", "OriginX": "-200", "OriginY": "362", "Rotation": "0", "Type": "Field", "Width": "750"}, "type": "Rectangle"}, {"id": "shape-40e41b95", "name": "\u53f30.3 Speed down Rectangle", "rectangle": {"Height": "824", "OriginX": "-200", "OriginY": "412", "Rotation": "0", "Type": "Field", "Width": "1200"}, "type": "Rectangle"}, {"id": "shape-ba04d30f", "name": "\u53f30.3 Speed up Rectangle", "rectangle": {"Height": "1124", "OriginX": "-200", "OriginY": "562", "Rotation": "0", "Type": "Field", "Width": "1700"}, "type": "Rectangle"}, {"id": "shape-85319026", "name": "\u53f3\u524d0.3 Protective Rectangle", "rectangle": {"Height": "724", "OriginX": "-257", "OriginY": "257", "Rotation": "45", "Type": "Field", "Width": "634"}, "type": "Rectangle"}, {"id": "shape-dada42e9", "name": "\u53f3\u524d0.3 Speed down Rectangle", "rectangle": {"Height": "824", "OriginX": "-291", "OriginY": "291", "Rotation": "45", "Type": "Field", "Width": "1078"}, "type": "Rectangle"}, {"id": "shape-4661e771", "name": "\u53f3\u524d0.3 Speed up Rectangle", "rectangle": {"Height": "1124", "OriginX": "-396", "OriginY": "396", "Rotation": "45", "Type": "Field", "Width": "1579"}, "type": "Rectangle"}, {"id": "shape-a21507a6", "name": "\u524d0.3 Protective Rectangle", "rectangle": {"Height": "750", "OriginX": "-362", "OriginY": "550", "Rotation": "0", "Type": "Field", "Width": "724"}, "type": "Rectangle"}, {"id": "shape-b6dfa23b", "name": "\u524d0.3 Speed down Rectangle", "rectangle": {"Height": "1200", "OriginX": "-412", "OriginY": "1000", "Rotation": "0", "Type": "Field", "Width": "824"}, "type": "Rectangle"}, {"id": "shape-aaa4c98c", "name": "\u524d0.3 Speed up Rectangle", "rectangle": {"Height": "1700", "OriginX": "-562", "OriginY": "1500", "Rotation": "0", "Type": "Field", "Width": "1124"}, "type": "Rectangle"}, {"id": "shape-9a7ad549", "name": "\u5de6\u524d0.3 Protective Rectangle", "rectangle": {"Height": "724", "OriginX": "-195", "OriginY": "705", "Rotation": "315", "Type": "Field", "Width": "635"}, "type": "Rectangle"}, {"id": "shape-1c55e02c", "name": "\u5de6\u524d0.3 Speed down Rectangle", "rectangle": {"Height": "824", "OriginX": "-456", "OriginY": "1040", "Rotation": "315", "Type": "Field", "Width": "1058"}, "type": "Rectangle"}, {"id": "shape-ac8ba56d", "name": "\u5de6\u524d0.3 Speed up Rectangle", "rectangle": {"Height": "1124", "OriginX": "-629", "OriginY": "1421", "Rotation": "315", "Type": "Field", "Width": "1451"}, "type": "Rectangle"}, {"id": "shape-b1195069", "name": "\u5de60.3 Protective Rectangle", "rectangle": {"Height": "724", "OriginX": "-550", "OriginY": "362", "Rotation": "0", "Type": "Field", "Width": "750"}, "type": "Rectangle"}, {"id": "shape-c5123045", "name": "\u5de60.3 Speed down Rectangle", "rectangle": {"Height": "824", "OriginX": "-1000", "OriginY": "412", "Rotation": "0", "Type": "Field", "Width": "1200"}, "type": "Rectangle"}, {"id": "shape-aa762fc1", "name": "\u5de60.3 Speed up Rectangle", "rectangle": {"Height": "1124", "OriginX": "-1500", "OriginY": "562", "Rotation": "0", "Type": "Field", "Width": "1700"}, "type": "Rectangle"}, {"id": "shape-903069eb", "name": "\u5de6\u5f8c0.3 Protective Rectangle", "rectangle": {"Height": "724", "OriginX": "-699", "OriginY": "-191", "Rotation": "45", "Type": "Field", "Width": "629"}, "type": "Rectangle"}, {"id": "shape-42f41ead", "name": "\u5de6\u5f8c0.3 Speed down Rectangle", "rectangle": {"Height": "824", "OriginX": "-1058", "OriginY": "-474", "Rotation": "45", "Type": "Field", "Width": "1084"}, "type": "Rectangle"}, {"id": "shape-46a1d468", "name": "\u5de6\u5f8c0.3 Speed up Rectangle", "rectangle": {"Height": "1124", "OriginX": "-1519", "OriginY": "-721", "Rotation": "45", "Type": "Field", "Width": "1585"}, "type": "Rectangle"}, {"id": "shape-9afbfdac", "name": "\u5f8c0.3 Protective Rectangle", "rectangle": {"Height": "750", "OriginX": "-362", "OriginY": "200", "Rotation": "0", "Type": "Field", "Width": "724"}, "type": "Rectangle"}, {"id": "shape-8aa07212", "name": "\u5f8c0.3 Speed down Rectangle", "rectangle": {"Height": "1200", "OriginX": "-412", "OriginY": "200", "Rotation": "0", "Type": "Field", "Width": "824"}, "type": "Rectangle"}, {"id": "shape-1943c2a4", "name": "\u5f8c0.3 Speed up Rectangle", "rectangle": {"Height": "1700", "OriginX": "-562", "OriginY": "200", "Rotation": "0", "Type": "Field", "Width": "1124"}, "type": "Rectangle"}, {"id": "shape-304c41d1", "name": "\u53f3\u5f8c0.3 Protective Rectangle", "rectangle": {"Height": "724", "OriginX": "259", "OriginY": "255", "Rotation": "315", "Type": "Field", "Width": "634"}, "type": "Rectangle"}, {"id": "shape-ab5bbac7", "name": "\u53f3\u5f8c0.3 Speed down Rectangle", "rectangle": {"Height": "824", "OriginX": "294", "OriginY": "290", "Rotation": "315", "Type": "Field", "Width": "1072"}, "type": "Rectangle"}, {"id": "shape-642d2586", "name": "\u53f3\u5f8c0.3 Speed up Rectangle", "rectangle": {"Height": "1024", "OriginX": "361", "OriginY": "361", "Rotation": "315", "Type": "Field", "Width": "1575"}, "type": "Rectangle"}, {"id": "shape-3c5070bd", "name": "\u53f30.15 Protective Rectangle", "rectangle": {"Height": "724", "OriginX": "-200", "OriginY": "362", "Rotation": "0", "Type": "Field", "Width": "700"}, "type": "Rectangle"}, {"id": "shape-a7fdd216", "name": "\u53f30.15 Speed up Rectangle", "rectangle": {"Height": "924", "OriginX": "-200", "OriginY": "462", "Rotation": "0", "Type": "Field", "Width": "1300"}, "type": "Rectangle"}, {"id": "shape-d9f1df83", "name": "\u53f3\u524d0.15 Protective Rectangle", "rectangle": {"Height": "724", "OriginX": "-255", "OriginY": "259", "Rotation": "45", "Type": "Field", "Width": "585"}, "type": "Rectangle"}, {"id": "shape-ff6b0afc", "name": "\u53f3\u524d0.15 Speed up Rectangle", "rectangle": {"Height": "924", "OriginX": "-324", "OriginY": "324", "Rotation": "45", "Type": "Field", "Width": "1183"}, "type": "Rectangle"}, {"id": "shape-1f8f9857", "name": "\u524d0.15 Protective Rectangle", "rectangle": {"Height": "700", "OriginX": "-362", "OriginY": "500", "Rotation": "0", "Type": "Field", "Width": "724"}, "type": "Rectangle"}, {"id": "shape-fdc6b054", "name": "\u524d0.15 Speed up Rectangle", "rectangle": {"Height": "1300", "OriginX": "-462", "OriginY": "1100", "Rotation": "0", "Type": "Field", "Width": "924"}, "type": "Rectangle"}, {"id": "shape-f2b041f4", "name": "\u5de6\u524d0.15 Protective Rectangle", "rectangle": {"Height": "724", "OriginX": "-158", "OriginY": "668", "Rotation": "315", "Type": "Field", "Width": "585"}, "type": "Rectangle"}, {"id": "shape-e845f2ef", "name": "\u5de6\u524d0.15 Speed up Rectangle", "rectangle": {"Height": "924", "OriginX": "-509", "OriginY": "1167", "Rotation": "315", "Type": "Field", "Width": "1187"}, "type": "Rectangle"}, {"id": "shape-ef93506e", "name": "\u5de60.15 Protective Rectangle", "rectangle": {"Height": "724", "OriginX": "-500", "OriginY": "362", "Rotation": "0", "Type": "Field", "Width": "700"}, "type": "Rectangle"}, {"id": "shape-33910a95", "name": "\u5de60.15 Speed up Rectangle", "rectangle": {"Height": "924", "OriginX": "-1100", "OriginY": "462", "Rotation": "0", "Type": "Field", "Width": "1300"}, "type": "Rectangle"}, {"id": "shape-f7585b29", "name": "\u5de6\u5f8c0.15 Protective Rectangle", "rectangle": {"Height": "724", "OriginX": "-666", "OriginY": "-158", "Rotation": "45", "Type": "Field", "Width": "587"}, "type": "Rectangle"}, {"id": "shape-3b094552", "name": "\u5de6\u5f8c0.15 Speed up Rectangle", "rectangle": {"Height": "924", "OriginX": "-1159", "OriginY": "-503", "Rotation": "45", "Type": "Field", "Width": "1177"}, "type": "Rectangle"}, {"id": "shape-8762e3dd", "name": "\u5f8c0.15 Protective Rectangle", "rectangle": {"Height": "700", "OriginX": "-362", "OriginY": "200", "Rotation": "0", "Type": "Field", "Width": "724"}, "type": "Rectangle"}, {"id": "shape-d1e78034", "name": "\u5f8c0.15 Speed up Rectangle", "rectangle": {"Height": "1300", "OriginX": "-462", "OriginY": "200", "Rotation": "0", "Type": "Field", "Width": "924"}, "type": "Rectangle"}, {"id": "shape-54a8e8e9", "name": "\u53f3\u5f8c0.15 Protective Rectangle", "rectangle": {"Height": "724", "OriginX": "257", "OriginY": "257", "Rotation": "315", "Type": "Field", "Width": "586"}, "type": "Rectangle"}, {"id": "shape-2837d67e", "name": "\u53f3\u5f8c0.15 Speed up Rectangle", "rectangle": {"Height": "1024", "OriginX": "362", "OriginY": "360", "Rotation": "315", "Type": "Field", "Width": "1180"}, "type": "Rectangle"}, {"circle": {"CenterX": "0", "CenterY": "0", "Radius": "542", "Type": "Field"}, "id": "shape-48390845", "name": "\u56de\u8ee2 Protective Circle", "type": "Circle"}, {"id": "shape-44a93288", "name": "Stop(minimum) Protective Polygon", "polygon": {"Type": "Field", "points": [{"X": "-245", "Y": "86"}, {"X": "-98", "Y": "-161"}, {"X": "98", "Y": "-163"}, {"X": "240", "Y": "79"}, {"X": "139", "Y": "250"}, {"X": "-137", "Y": "247"}]}, "type": "Polygon"}, {"id": "shape-9723422d", "name": "Stop(minimum) Protective Polygon", "polygon": {"Type": "CutOut", "points": [{"X": "-173", "Y": "160"}, {"X": "-1", "Y": "227"}, {"X": "165", "Y": "157"}, {"X": "0", "Y": "-242"}]}, "type": "Polygon"}, {"circle": {"CenterX": "-1", "CenterY": "-163", "Radius": "1", "Type": "Field"}, "id": "shape-5c45a7d5", "name": "Stop(minimum) Protective Circle", "type": "Circle"}, {"circle": {"CenterX": "0", "CenterY": "-167", "Radius": "99", "Type": "Field"}, "id": "shape-6be78c0c", "name": "Stop(minimum) Protective Circle", "type": "Circle"}, {"circle": {"CenterX": "-190", "CenterY": "166", "Radius": "99", "Type": "Field"}, "id": "shape-05b6c553", "name": "Stop(minimum) Protective Circle", "type": "Circle"}, {"circle": {"CenterX": "188", "CenterY": "164", "Radius": "99", "Type": "Field"}, "id": "shape-b27e3efe", "name": "Stop(minimum) Protective Circle", "type": "Circle"}];
         const shapeModal = document.getElementById("shape-modal");
         const shapeModalBody = document.getElementById("shape-modal-body");
         const shapeModalTitle = document.getElementById("shape-modal-title");
@@ -1070,14 +1078,13 @@
         const shapeModalWindow = document.querySelector("#shape-modal .modal-window");
         const shapeModalHeader = shapeModalWindow?.querySelector(".modal-header");
         const saveTriOrbBtn = document.getElementById("btn-save-triorb");
-        const saveSickBtn = document.getElementById("btn-save-sick");
-        const newPlotBtn = document.getElementById("btn-new");
+        const saveLegacyBtn = document.getElementById("btn-save-legacy");
         const originTrace = findOriginTrace(defaultFigure);
 
         let currentFigure = cloneFigure(defaultFigure);
         let scanPlanes = initializeScanPlanes(initialScanPlanes);
         let triorbShapes = initializeTriOrbShapes(initialTriOrbShapes);
-        let triorbSource = {{ triorb_source|tojson }} || "";
+        let triorbSource = "" || "";
         let fieldsets = initializeFieldsets(initialFieldsets);
         let fieldsetDevices = initializeFieldsetDevices(initialFieldsetDevices);
         let fieldsetGlobalGeometry = initializeGlobalGeometry(initialFieldsetGlobal);
@@ -1214,6 +1221,7 @@
               const fieldName =
                 field.attributes?.Name || `Field ${fieldIndex + 1}`;
               const labelPrefix = `${fieldsetName} / ${fieldName}`;
+              const color = getFieldsetColor(fieldsetIndex + fieldIndex);
               const fieldType = field.attributes?.Fieldtype || "ProtectiveSafeBlanking";
               (field.shapeRefs || []).forEach((shapeRef, shapeRefIndex) => {
                 const shapeIndex = triorbShapes.findIndex(
@@ -1227,14 +1235,13 @@
                   return;
                 }
                 const shapeLabel = `${labelPrefix} / ${shape.name || shape.type}`;
-                const color = pickFieldColor(fieldType, shapeRefIndex, field.shapeRefs?.length || 1);
                 let shapeTrace = null;
                 switch (shape.type) {
                   case "Rectangle":
                     if (shape.rectangle) {
                       shapeTrace = buildRectangleTrace(
                         shape.rectangle,
-                        pickFieldColor(fieldType, shapeRefIndex, field.shapeRefs?.length || 1),
+                        color,
                         shapeLabel,
                         fieldType,
                         fieldsetIndex,
@@ -1247,7 +1254,7 @@
                     if (shape.circle) {
                       shapeTrace = buildCircleTrace(
                         shape.circle,
-                        pickFieldColor(fieldType, shapeRefIndex, field.shapeRefs?.length || 1),
+                        color,
                         shapeLabel,
                         fieldType,
                         fieldsetIndex,
@@ -1261,7 +1268,7 @@
                     if (shape.polygon) {
                       shapeTrace = buildPolygonTrace(
                         shape.polygon,
-                        pickFieldColor(fieldType, shapeRefIndex, field.shapeRefs?.length || 1),
+                        color,
                         shapeLabel,
                         fieldType,
                         fieldsetIndex,
@@ -1488,6 +1495,14 @@ function buildCircleTrace(circle, color, label, fieldType, fieldsetIndex, fieldI
           return `rgba(${r}, ${g}, ${b}, ${alpha})`;
         }
 
+        function getFieldsetColor(index) {
+          if (!Array.isArray(fieldsetColorPalette) || !fieldsetColorPalette.length) {
+            return "#0f172a";
+          }
+          const safeIndex = Number.isFinite(index) && index >= 0 ? index : 0;
+          return fieldsetColorPalette[safeIndex % fieldsetColorPalette.length];
+        }
+
         function calculateVisibleFieldsetRadius() {
           let maxDistance = 0;
           fieldsets.forEach((fieldset) => {
@@ -1597,7 +1612,7 @@ function buildCircleTrace(circle, color, label, fieldType, fieldsetIndex, fieldI
               if (shape.visible === false) {
                 return null;
               }
-              const color = pickTriOrbColor(shapeIndex);
+              const color = getFieldsetColor(shapeIndex + 2);
               const label = `${shape.name || `Shape ${shapeIndex + 1}`} (${shape.type})`;
               const fieldType = shape.type === "Warning" ? "WarningSafeBlanking" : "ProtectiveSafeBlanking";
               switch (shape.type) {
@@ -1919,23 +1934,23 @@ function buildCircleTrace(circle, color, label, fieldType, fieldsetIndex, fieldI
           const options = [];
           const seen = new Set();
           scanPlanes.forEach((plane) => {
-            (plane.devices || []).forEach((device, index) => {
+            (plane.devices || []).forEach((device) => {
               const attrs = device.attributes || {};
-              const name = (attrs.DeviceName || attrs.Typekey || `Device ${index + 1}`).trim();
-              if (!name) {
+              const typekey = attrs.Typekey;
+              if (!typekey) {
                 return;
               }
-              const key = name.toLowerCase();
-              if (seen.has(key)) {
+              if (seen.has(typekey)) {
                 return;
               }
-              seen.add(key);
+              seen.add(typekey);
               options.push({
-                deviceName: name,
-                typekey: attrs.Typekey || "",
+                typekey,
                 typekeyDisplayVersion: attrs.TypekeyDisplayVersion || "",
                 typekeyVersion: attrs.TypekeyVersion || "",
-                label: attrs.Typekey ? `${name} (${attrs.Typekey})` : name,
+                label: attrs.DeviceName
+                  ? `${attrs.DeviceName} (${typekey})`
+                  : typekey,
               });
             });
           });
@@ -1956,40 +1971,16 @@ function buildCircleTrace(circle, color, label, fieldType, fieldsetIndex, fieldI
           return null;
         }
 
-        function findScanPlaneDeviceByName(name) {
-          if (!name) {
-            return null;
-          }
-          const normalized = name.trim().toLowerCase();
-          for (const plane of scanPlanes) {
-            for (const device of plane.devices || []) {
-              const deviceName = (device.attributes || {}).DeviceName || "";
-              if (deviceName.trim().toLowerCase() === normalized) {
-                return device;
-              }
-            }
-          }
-          return null;
-        }
-
-        function applyScanPlaneDeviceAttributes(targetDevice, { deviceName, typekey } = {}) {
+        function applyScanPlaneDeviceAttributes(targetDevice, typekey) {
           targetDevice.attributes = targetDevice.attributes || {};
-          if (deviceName) {
-            targetDevice.attributes.DeviceName = deviceName;
-          }
-          let source =
-            (deviceName && findScanPlaneDeviceByName(deviceName)) ||
-            (typekey && findScanPlaneDeviceByTypekey(typekey)) ||
-            null;
-          if (!source) {
-            return;
-          }
-          const attrs = source.attributes || {};
-          targetDevice.attributes.Typekey = attrs.Typekey || typekey || targetDevice.attributes.Typekey || "";
-          targetDevice.attributes.TypekeyDisplayVersion =
-            attrs.TypekeyDisplayVersion || targetDevice.attributes.TypekeyDisplayVersion || "";
-          targetDevice.attributes.TypekeyVersion =
-            attrs.TypekeyVersion || targetDevice.attributes.TypekeyVersion || "";
+          targetDevice.attributes.Typekey = typekey || "";
+
+          const source = findScanPlaneDeviceByTypekey(typekey);
+          const keys = ["TypekeyDisplayVersion", "TypekeyVersion"];
+          keys.forEach((key) => {
+            targetDevice.attributes[key] =
+              (source?.attributes || {})[key] || "";
+          });
         }
 
         function findTriOrbShapeById(shapeId) {
@@ -3254,28 +3245,12 @@ function buildCircleTrace(circle, color, label, fieldType, fieldsetIndex, fieldI
           if (!Array.isArray(data) || !data.length) {
             devices = getDefaultFieldsetDevices();
           } else {
-            devices = data.map((device, index) => {
-              const attrs = { ...(device.attributes || {}) };
-              if (!attrs.DeviceName) {
-                const scanDeviceByName = findScanPlaneDeviceByName(attrs.DeviceName);
-                if (scanDeviceByName?.attributes?.DeviceName) {
-                  attrs.DeviceName = scanDeviceByName.attributes.DeviceName;
-                } else {
-                  const scanDevice = findScanPlaneDeviceByTypekey(attrs.Typekey);
-                  if (scanDevice?.attributes?.DeviceName) {
-                    attrs.DeviceName = scanDevice.attributes.DeviceName;
-                  } else {
-                    attrs.DeviceName = `Device ${index + 1}`;
-                  }
-                }
-              }
-              const wrapper = { attributes: attrs };
-              applyScanPlaneDeviceAttributes(wrapper, {
-                deviceName: attrs.DeviceName,
-                typekey: attrs.Typekey,
-              });
-              return wrapper;
-            });
+            devices = data.map((device, index) => ({
+              attributes: {
+                DeviceName: device.attributes?.DeviceName || `Device ${index + 1}`,
+                ...device.attributes,
+              },
+            }));
           }
           ensureDefaultFieldsetDevices(devices);
           return devices;
@@ -3290,29 +3265,13 @@ function buildCircleTrace(circle, color, label, fieldType, fieldsetIndex, fieldI
 
         function createDefaultFieldsetDevice(index = 0, overrides = {}) {
           const options = getScanPlaneDeviceOptions();
-          const fallbackOption =
-            options[Math.min(index, Math.max(0, options.length - 1))] ||
-            options[0];
-          const defaultTypekey =
-            fallbackOption?.typekey || "NANS3-CAAZ30ZA1P02";
-          const optionLabel = (fallbackOption?.label || "").trim();
-          const optionName = optionLabel.includes("(")
-            ? optionLabel.split("(")[0].trim()
-            : optionLabel;
-          const templateName =
-            defaultFieldsetDeviceTemplates[index]?.DeviceName || "";
-          const resolvedName =
-            overrides.DeviceName ||
-            optionName ||
-            templateName ||
-            `Device ${index + 1}`;
+          const fallbackOption = options[Math.min(index, Math.max(0, options.length - 1))] || options[0];
+          const defaultTypekey = fallbackOption?.typekey || "NANS3-CAAZ30ZA1P02";
           const device = {
             attributes: {
-              DeviceName: resolvedName,
               Typekey: defaultTypekey,
               TypekeyVersion: fallbackOption?.typekeyVersion || "1.0",
-              TypekeyDisplayVersion:
-                fallbackOption?.typekeyDisplayVersion || "V 1.0.0",
+              TypekeyDisplayVersion: fallbackOption?.typekeyDisplayVersion || "V 1.0.0",
               PositionX: "0",
               PositionY: "0",
               Rotation: "0",
@@ -3320,10 +3279,9 @@ function buildCircleTrace(circle, color, label, fieldType, fieldsetIndex, fieldI
               ...overrides,
             },
           };
-          applyScanPlaneDeviceAttributes(device, {
-            deviceName: resolvedName,
-            typekey: defaultTypekey,
-          });
+          if (defaultTypekey) {
+            applyScanPlaneDeviceAttributes(device, defaultTypekey);
+          }
           return device;
         }
 
@@ -3362,47 +3320,35 @@ function buildCircleTrace(circle, color, label, fieldType, fieldsetIndex, fieldI
           const deviceOptions = getScanPlaneDeviceOptions();
           fieldsetDevicesContainer.innerHTML = fieldsetDevices
             .map((device, deviceIndex) => {
-              const attributeEntries = Object.entries(device.attributes || {});
-              const deviceFields = attributeEntries
+              const sanitizedAttributes = Object.entries(device.attributes || {}).filter(
+                ([key]) => key !== "DeviceName"
+              );
+              const deviceFields = sanitizedAttributes
                 .map(([key, value]) => {
-                  if (key === "DeviceName") {
-                    const selectionExists = deviceOptions.some(
-                      (opt) => opt.deviceName === value
-                    );
+                  if (key === "Typekey") {
                     const optionsHtml =
-                      '<option value="">-- Select Device --</option>' +
+                      '<option value="">-- Select Typekey --</option>' +
                       (deviceOptions.length
                         ? deviceOptions
                             .map(
                               (opt) =>
-                                `<option value="${escapeHtml(opt.deviceName)}"${
-                                  opt.deviceName === value ? " selected" : ""
+                                `<option value="${escapeHtml(opt.typekey)}"${
+                                  opt.typekey === value ? " selected" : ""
                                 }>${escapeHtml(opt.label)}</option>`
                             )
                             .join("")
-                        : "");
-                    const fallbackOption =
-                      !selectionExists && value
-                        ? `<option value="${escapeHtml(value)}" selected>${escapeHtml(
-                            value
-                          )}</option>`
-                        : "";
-                    return `
-              <div class="device-field">
-                <label>DeviceName</label>
-                <select
-                  class="fieldset-device-name"
-                  data-device-index="${deviceIndex}"
-                >
-                  ${optionsHtml}${fallbackOption}
-                </select>
-              </div>`;
-                  }
-                  if (key === "Typekey") {
+                        : `<option value="${escapeHtml(value || "")}" selected>${escapeHtml(
+                            value || ""
+                          )}</option>`);
                     return `
               <div class="device-field">
                 <label>${escapeHtml(key)}</label>
-                <input type="text" value="${escapeHtml(value ?? "")}" readonly />
+                <select
+                  class="fieldset-device-typekey"
+                  data-device-index="${deviceIndex}"
+                >
+                  ${optionsHtml}
+                </select>
               </div>`;
                   }
                   if (["TypekeyDisplayVersion", "TypekeyVersion"].includes(key)) {
@@ -3489,11 +3435,11 @@ function buildCircleTrace(circle, color, label, fieldType, fieldsetIndex, fieldI
           fieldsetGlobalGeometry[key] = value;
         }
 
-function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAttrs = null } = {}) {
+        function buildBaseSdImportExportLines() {
           const figure = currentFigure || defaultFigure;
           const fileInfoLines = buildFileInfoLines();
-          const scanPlaneLines = buildScanPlanesXml(scanDeviceAttrs);
-          const fieldsetLines = buildFieldsetsXml(fieldsetDeviceAttrs);
+          const scanPlaneLines = buildScanPlanesXml();
+          const fieldsetLines = buildFieldsetsXml();
           const rootAttrOverrides = {
             ...rootAttributes,
             Timestamp: new Date().toISOString(),
@@ -3576,21 +3522,7 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
           return lines.join("\n");
         }
 
-        function buildDeviceAttributeString(attrs, { keepDeviceName = false } = {}) {
-          if (!attrs) return "";
-          const sanitized = { ...attrs };
-          if (!keepDeviceName) {
-            delete sanitized.DeviceName;
-          }
-          return buildAttributeString(sanitized, getAttributeOrder("Device"));
-        }
-
-        function formatDeviceFilePrefix(attrs, index) {
-          const rawName = (attrs?.DeviceName || "").trim() || attrs?.Typekey || `device${index + 1}`;
-          return rawName.replace(/[^a-zA-Z0-9._-]/g, "_");
-        }
-
-        function buildScanPlanesXml(scanDeviceAttrs = null) {
+        function buildScanPlanesXml() {
           if (!scanPlanes.length) {
             return ["    <!-- ScanPlane not set -->"];
           }
@@ -3601,39 +3533,37 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
               getAttributeOrder("ScanPlane")
             );
             lines.push(`    <ScanPlane${attrText ? " " + attrText : ""}>`);
-            const devicesToRender = scanDeviceAttrs
-              ? [{ attributes: scanDeviceAttrs }]
-              : plane.devices || [];
-            lines.push("      <Devices>");
-            if (devicesToRender.length) {
-              devicesToRender.forEach((device) => {
-                const attrs = buildDeviceAttributeString(device.attributes, {
-                  keepDeviceName: true,
-                });
-                lines.push(`        <Device${attrs ? " " + attrs : ""} />`);
+            if (plane.devices && plane.devices.length) {
+              lines.push("      <Devices>");
+              plane.devices.forEach((device) => {
+                const deviceAttrs = buildAttributeString(
+                  device.attributes,
+                  getAttributeOrder("Device")
+                );
+                lines.push(`        <Device${deviceAttrs ? " " + deviceAttrs : ""} />`);
               });
+              lines.push("      </Devices>");
             } else {
-              lines.push("        <!-- No devices -->");
+              lines.push("      <Devices />");
             }
-            lines.push("      </Devices>");
             lines.push("    </ScanPlane>");
           });
           return lines;
         }
 
-        function buildFieldsetsXml(fieldsetDeviceAttrs = null) {
+        function buildFieldsetsXml() {
           const lines = [];
           lines.push('    <ScanPlane Index="0">');
 
           lines.push("      <Devices>");
-          const devicesToRender = fieldsetDeviceAttrs
-            ? [{ attributes: fieldsetDeviceAttrs }]
-            : fieldsetDevices;
-          if (devicesToRender && devicesToRender.length) {
-            devicesToRender.forEach((device) => {
-              const deviceAttrs = buildDeviceAttributeString(device.attributes, {
-                keepDeviceName: false,
-              });
+          if (fieldsetDevices.length) {
+            fieldsetDevices.forEach((device) => {
+              const sanitizedDeviceAttrs = { ...(device.attributes || {}) };
+              delete sanitizedDeviceAttrs.DeviceName;
+              const deviceAttrs = buildAttributeString(
+                sanitizedDeviceAttrs,
+                getAttributeOrder("Device")
+              );
               lines.push(`        <Device${deviceAttrs ? " " + deviceAttrs : ""} />`);
             });
           } else {
@@ -3654,62 +3584,54 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
           lines.push("      <Fieldsets>");
           if (fieldsets.length) {
             fieldsets.forEach((fieldset) => {
-              const attrText = buildAttributeString(
-                fieldset.attributes,
-                getAttributeOrder("Fieldset")
-              );
-              lines.push(`        <Fieldset${attrText ? " " + attrText : ""}>`);
-              if (fieldset.fields && fieldset.fields.length) {
-                fieldset.fields.forEach((field) => {
-                  const fieldAttrs = buildAttributeString(
-                    field.attributes,
-                    getAttributeOrder("Field")
-                  );
-                  lines.push(`          <Field${fieldAttrs ? " " + fieldAttrs : ""}>`);
-                  if (field.shapeRefs && field.shapeRefs.length) {
-                    field.shapeRefs.forEach((shapeRef) => {
-                      const shape = findTriOrbShapeById(shapeRef.shapeId);
-                      if (!shape) {
-                        return;
-                      }
-                      if (shape.type === "Polygon" && shape.polygon) {
-                        const polygonAttr = buildAttributeString(
-                          { Type: shape.polygon.Type },
-                          getAttributeOrder("Polygon")
+            const attrText = buildAttributeString(
+              fieldset.attributes,
+              getAttributeOrder("Fieldset")
+            );
+            lines.push(`        <Fieldset${attrText ? " " + attrText : ""}>`);
+            if (fieldset.fields && fieldset.fields.length) {
+              fieldset.fields.forEach((field) => {
+                const fieldAttrs = buildAttributeString(
+                  field.attributes,
+                  getAttributeOrder("Field")
+                );
+                lines.push(`          <Field${fieldAttrs ? " " + fieldAttrs : ""}>`);
+                if (field.polygons && field.polygons.length) {
+                  field.polygons.forEach((polygon) => {
+                    const polygonAttrs = buildAttributeString(
+                      polygon.attributes,
+                      getAttributeOrder("Polygon")
+                    );
+                    lines.push(`            <Polygon${polygonAttrs ? " " + polygonAttrs : ""}>`);
+                    if (polygon.points && polygon.points.length) {
+                      polygon.points.forEach((point) => {
+                        const pointAttrs = buildAttributeString(
+                          point,
+                          getAttributeOrder("Point")
                         );
-                        lines.push(
-                          `            <Polygon${polygonAttr ? " " + polygonAttr : ""}>`
-                        );
-                        (shape.polygon.points || []).forEach((point) => {
-                          const pointAttrs = buildAttributeString(
-                            point,
-                            getAttributeOrder("Point")
-                          );
-                          lines.push(
-                            `              <Point${pointAttrs ? " " + pointAttrs : ""} />`
-                          );
-                        });
-                        lines.push("            </Polygon>");
-                      } else if (shape.type === "Rectangle" && shape.rectangle) {
-                        const rectAttrs = buildAttributeString(
-                          shape.rectangle,
-                          getAttributeOrder("Rectangle")
-                        );
-                        lines.push(
-                          `            <Rectangle${rectAttrs ? " " + rectAttrs : ""} />`
-                        );
-                      } else if (shape.type === "Circle" && shape.circle) {
-                        const circleAttrs = buildAttributeString(
-                          shape.circle,
-                          getAttributeOrder("Circle")
-                        );
-                        lines.push(
-                          `            <Circle${circleAttrs ? " " + circleAttrs : ""} />`
-                        );
-                      }
-                    });
-                  } else {
-                    lines.push("            <!-- No shapes assigned -->");
+                        lines.push(`              <Point${pointAttrs ? " " + pointAttrs : ""} />`);
+                      });
+                    }
+                    lines.push("            </Polygon>");
+                  });
+                }
+                if (field.circles && field.circles.length) {
+                  field.circles.forEach((circle) => {
+                    const circleAttrs = buildAttributeString(
+                      circle,
+                      getAttributeOrder("Circle")
+                    );
+                    lines.push(`            <Circle${circleAttrs ? " " + circleAttrs : ""} />`);
+                  });
+                }
+                if (field.rectangles && field.rectangles.length) {
+                  field.rectangles.forEach((rectangle) => {
+                    const rectAttrs = buildAttributeString(
+                      rectangle,
+                      getAttributeOrder("Rectangle")
+                    );
+                    lines.push(`            <Rectangle${rectAttrs ? " " + rectAttrs : ""} />`);
+                  });
                   }
                   lines.push("          </Field>");
                 });
@@ -3842,12 +3764,12 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
           return lines;
         }
 
-        function downloadXml(xmlString, filename) {
+        function downloadXml(xmlString) {
           const blob = new Blob([xmlString], { type: "application/xml" });
           const url = URL.createObjectURL(blob);
           const anchor = document.createElement("a");
           anchor.href = url;
-          anchor.download = filename || `plot_${Date.now()}.sgexml`;
+          anchor.download = `plot_${Date.now()}.sgexml`;
           document.body.appendChild(anchor);
           anchor.click();
           document.body.removeChild(anchor);
@@ -3942,93 +3864,67 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
         function parseXmlToFigure(xmlText) {
           const parser = new DOMParser();
           let doc = parser.parseFromString(xmlText, "application/xml");
-          let sanitized = xmlText.replace(/<\?xml[^>]*\?>/gi, "").trim();
-          let wrapperText = `<TriOrbWrapper>${sanitized}</TriOrbWrapper>`;
-          let triOrbDoc = parser.parseFromString(wrapperText, "application/xml");
           if (doc.querySelector("parsererror")) {
-            const wrapped = wrapperText;
+            const sanitized = xmlText.replace(/<\?xml[^>]*\?>/gi, "").trim();
+            const wrapped = `<TriOrbWrapper>${sanitized}</TriOrbWrapper>`;
             doc = parser.parseFromString(wrapped, "application/xml");
           }
           if (doc.querySelector("parsererror")) {
             throw new Error("Failed to parse XML.");
           }
-          console.log("parseXmlToFigure TriOrb root exists", Boolean(doc.querySelector("TriOrb_SICK_SLS_Editor")));
 
           populateFileInfoFromDoc(doc);
           populateScanPlanesFromDoc(doc);
-          populateTriOrbShapesFromDoc(triOrbDoc);
           populateFieldsetsFromDoc(doc);
 
           const tracesFromPlotData = parsePlotDataTraces(doc);
           if (tracesFromPlotData.length) {
-            const triOrbPresent = Boolean(triOrbDoc.querySelector("TriOrb_SICK_SLS_Editor"));
-            return { traces: tracesFromPlotData, warning: "", triOrbPresent };
+            return { traces: tracesFromPlotData, warning: "" };
           }
 
           const polygonTrace = parsePolygonTrace(doc);
           if (polygonTrace.length) {
-            const triOrbPresent = Boolean(triOrbDoc.querySelector("TriOrb_SICK_SLS_Editor"));
-            return { traces: polygonTrace, warning: "", triOrbPresent };
+            return { traces: polygonTrace, warning: "" };
           }
 
           return {
             traces: [],
             warning: "Plot data was not found; displaying an empty plot.",
-            triOrbPresent: Boolean(triOrbDoc.querySelector("TriOrb_SICK_SLS_Editor")),
           };
         }
-        function buildTraceFromPoints(x, y, opts = {}, index = 0) {
-          return {
-            type: "scatter",
-            mode: opts.mode || "lines",
-            x,
-            y,
-            line: {
-              color: opts.color || "#1f77b4",
-              width: 2,
-            },
-            name: formatLegendLabel(opts.name || `Trace ${index + 1}`),
-            hovertemplate: "<b>%{text}</b><extra></extra>",
-            text: opts.name,
-            meta: {
-              fullLabel: opts.name || `Trace ${index + 1}`,
-            },
-          };
-        }
-
         function parsePlotDataTraces(doc) {
-  const traces = Array.from(
-    doc.querySelectorAll(
-      "PlotData > Trace, PlotlyData > Trace, PlotlyData > Traces > Trace, TriOrb_SICK_SLS_Editor > PlotlyData > Traces > Trace"
-    )
-  );
-  return traces.map((traceNode, index) => {
+          const traces = Array.from(
+            doc.querySelectorAll(
+              "PlotData > Trace, PlotlyData > Trace, PlotlyData > Traces > Trace, TriOrb_SICK_SLS_Editor > PlotlyData > Traces > Trace"
+            )
+          );
+          return traces.map((traceNode, index) => {
             const points = Array.from(traceNode.getElementsByTagName("Point"));
             const x = [];
             const y = [];
             points.forEach((pt) => {
               const xVal = Number(pt.getAttribute("X"));
-            const yVal = Number(pt.getAttribute("Y"));
-            if (Number.isFinite(xVal) && Number.isFinite(yVal)) {
-              x.push(xVal);
-              y.push(yVal);
-            }
+              const yVal = Number(pt.getAttribute("Y"));
+              if (Number.isFinite(xVal) && Number.isFinite(yVal)) {
+                x.push(xVal);
+                y.push(yVal);
+              }
+            });
+
+            return buildTraceFromPoints(
+              x,
+              y,
+              {
+                name: traceNode.getAttribute("Name") || `Trace ${index + 1}`,
+                mode: traceNode.getAttribute("Mode") || "lines+markers",
+              },
+              index
+            );
           });
+        }
 
-          return buildTraceFromPoints(
-            x,
-            y,
-            {
-              name: traceNode.getAttribute("Name") || `Trace ${index + 1}`,
-              mode: traceNode.getAttribute("Mode") || "lines+markers",
-            },
-            index
-          );
-        });
-      }
-
-function parsePolygonTrace(doc) {
-  const polygon = doc.querySelector("Polygon");
+        function parsePolygonTrace(doc) {
+          const polygon = doc.querySelector("Polygon");
           if (!polygon) {
             return [];
           }
@@ -4103,76 +3999,6 @@ function parsePolygonTrace(doc) {
           renderScanPlanes();
         }
 
-        function collectTriOrbShapeDetails(shapeNode) {
-          const type = shapeNode.getAttribute("Type") || "Polygon";
-          const result = { id: shapeNode.getAttribute("ID") || createShapeId(), name: shapeNode.getAttribute("Name") || "", type };
-          if (type === "Polygon") {
-            const polygon = shapeNode.querySelector("Polygon");
-            if (polygon) {
-              result.polygon = {
-                Type: polygon.getAttribute("Type") || "CutOut",
-                points: Array.from(polygon.getElementsByTagName("Point")).map((pt) => ({
-                  X: pt.getAttribute("X") || "0",
-                  Y: pt.getAttribute("Y") || "0",
-                })),
-              };
-            }
-          } else if (type === "Rectangle") {
-            const rectangle = shapeNode.querySelector("Rectangle");
-            if (rectangle) {
-              result.rectangle = Array.from(rectangle.attributes).reduce((acc, attr) => {
-                acc[attr.name] = attr.value;
-                return acc;
-              }, {});
-            }
-          } else if (type === "Circle") {
-            const circle = shapeNode.querySelector("Circle");
-            if (circle) {
-              result.circle = Array.from(circle.attributes).reduce((acc, attr) => {
-                acc[attr.name] = attr.value;
-                return acc;
-              }, {});
-            }
-          }
-          return result;
-        }
-
-        function populateTriOrbShapesFromDoc(doc) {
-          const triOrbNode = doc.querySelector("TriOrb_SICK_SLS_Editor");
-          console.log("populateTriOrbShapesFromDoc triOrbNode", triOrbNode);
-          if (!triOrbNode) {
-            return;
-          }
-          const shapesParent = triOrbNode.querySelector("Shapes");
-          if (!shapesParent) {
-            return;
-          }
-          const nodes = Array.from(shapesParent.querySelectorAll("Shape"));
-          console.log(
-            "populateTriOrbShapesFromDoc TriOrb node",
-            shapesParent.parentElement?.tagName,
-            "shapes count",
-            nodes.length
-          );
-          if (!nodes.length) {
-            return;
-          }
-          triorbShapes = nodes.map((shapeNode, index) => {
-            const detail = collectTriOrbShapeDetails(shapeNode);
-            return {
-              id: detail.id,
-              name: detail.name || `Shape ${index + 1}`,
-              type: detail.type || "Polygon",
-              polygon: detail.polygon || createDefaultPolygonDetails(),
-              rectangle: detail.rectangle || createDefaultRectangleDetails(),
-              circle: detail.circle || createDefaultCircleDetails(),
-              visible: true,
-            };
-          });
-          renderTriOrbShapes();
-          renderTriOrbShapeCheckboxes();
-        }
-
         function populateFieldsetsFromDoc(doc) {
           const scanPlaneNode = doc.querySelector(
             "Export_FieldsetsAndFields > ScanPlane"
@@ -4196,10 +4022,7 @@ function parsePolygonTrace(doc) {
               Array.from(deviceNode.attributes).forEach((attr) => {
                 attrs[attr.name] = attr.value;
               });
-              const scanDevice = findScanPlaneDeviceByTypekey(attrs.Typekey);
-              if (scanDevice?.attributes?.DeviceName) {
-                attrs.DeviceName = scanDevice.attributes.DeviceName;
-              } else if (!("DeviceName" in attrs)) {
+              if (!("DeviceName" in attrs)) {
                 attrs.DeviceName = `Device ${deviceIndex + 1}`;
               }
               return { attributes: attrs };
@@ -4490,14 +4313,14 @@ function parsePolygonTrace(doc) {
             }
           });
 
-          const handleDeviceFieldInput = (event) => {
+          fieldsetDevicesContainer.addEventListener("input", (event) => {
             const target = event.target;
-            if (target.classList.contains("fieldset-device-name")) {
+            if (target.classList.contains("fieldset-device-typekey")) {
               const deviceIndex = Number(target.dataset.deviceIndex);
-              const selectedName = target.value;
+              const selectedTypekey = target.value;
               const device = fieldsetDevices[deviceIndex];
               if (device) {
-                applyScanPlaneDeviceAttributes(device, { deviceName: selectedName });
+                applyScanPlaneDeviceAttributes(device, selectedTypekey);
                 renderFieldsetDevices();
                 renderFigure();
               }
@@ -4506,10 +4329,7 @@ function parsePolygonTrace(doc) {
               const field = target.dataset.field;
               updateFieldsetDeviceAttribute(deviceIndex, field, target.value);
             }
-          };
-
-          fieldsetDevicesContainer.addEventListener("input", handleDeviceFieldInput);
-          fieldsetDevicesContainer.addEventListener("change", handleDeviceFieldInput);
+          });
         }
 
         if (fieldsetGlobalContainer) {
@@ -4688,7 +4508,7 @@ function parsePolygonTrace(doc) {
             const field = target.dataset.field;
             updateCircleAttribute(fieldsetIndex, fieldIndex, circleIndex, field, target.value);
           }
-          };
+        };
 
         if (fieldsetsContainer) {
           fieldsetsContainer.addEventListener("click", (event) => {
@@ -4817,12 +4637,6 @@ function parsePolygonTrace(doc) {
             renderFieldsets();
           });
         }
-        const addShapeRightBtn = document.getElementById("btn-add-shape-right");
-        if (addShapeRightBtn) {
-          addShapeRightBtn.addEventListener("click", () => {
-            console.debug("Add shape button (right) clicked; awaiting next instructions.");
-          });
-        }
 
         function toggleAllFieldsetCheckboxes(checked) {
           if (!fieldsetCheckboxes) return;
@@ -4903,51 +4717,11 @@ function parsePolygonTrace(doc) {
             setStatus("TriOrb XML downloaded.");
           });
         }
-        if (saveSickBtn) {
-          saveSickBtn.addEventListener("click", () => {
-            if (!fieldsetDevices.length) {
-              const xml = buildLegacyXml();
-              downloadXml(xml, `sick_${Date.now()}.sgexml`);
-              setStatus("SICK XML downloaded (no devices).");
-              return;
-            }
-            fieldsetDevices.forEach((device, index) => {
-              const scanDevice =
-                findScanPlaneDeviceByName(device.attributes?.DeviceName) ||
-                findScanPlaneDeviceByTypekey(device.attributes?.Typekey);
-              const scanAttrs = {
-                ...(scanDevice?.attributes || device.attributes || {}),
-              };
-              if (!scanAttrs.DeviceName && device.attributes?.DeviceName) {
-                scanAttrs.DeviceName = device.attributes.DeviceName;
-              }
-              const xmlLines = buildBaseSdImportExportLines({
-                scanDeviceAttrs: scanAttrs,
-                fieldsetDeviceAttrs: device.attributes,
-              });
-              const xml = xmlLines.join("\n");
-              const prefix = formatDeviceFilePrefix(device.attributes, index);
-              downloadXml(xml, `${prefix}_${Date.now()}.sgexml`);
-            });
-            setStatus(`SICK XML downloaded for ${fieldsetDevices.length} device(s).`);
-          });
-        }
-        if (newPlotBtn) {
-          newPlotBtn.addEventListener("click", () => {
-            fieldsets = [];
-            triorbShapes = [];
-            renderFieldsets();
-            renderTriOrbShapes();
-            renderTriOrbShapeCheckboxes();
-            renderFieldsetCheckboxes();
-            renderFigure();
-            setStatus("New canvas ready.");
-          });
-        }
-        const overlayShapeBtn = document.getElementById("btn-add-shape-overlay");
-        if (overlayShapeBtn) {
-          overlayShapeBtn.addEventListener("click", () => {
-            console.debug("Overlay shape button clicked; awaiting follow-up.");
+        if (saveLegacyBtn) {
+          saveLegacyBtn.addEventListener("click", () => {
+            const xml = buildLegacyXml();
+            downloadXml(xml);
+            setStatus("Legacy XML downloaded.");
           });
         }
 
@@ -4969,16 +4743,14 @@ function parsePolygonTrace(doc) {
           const reader = new FileReader();
           reader.onload = () => {
             try {
-              const { traces, warning, triOrbPresent } = parseXmlToFigure(reader.result);
+              const { traces, warning } = parseXmlToFigure(reader.result);
               const layout = cloneFigure(defaultFigure).layout;
               currentFigure = { data: traces, layout };
               renderFigure();
               if (warning) {
                 setStatus(`${file.name} loaded with warnings: ${warning}`, "warning");
               } else {
-                setStatus(
-                  `${file.name} loaded${triOrbPresent ? " (TriOrb)" : ""}.`
-                );
+                setStatus(`${file.name} loaded.`);
               }
             } catch (error) {
               console.error(error);

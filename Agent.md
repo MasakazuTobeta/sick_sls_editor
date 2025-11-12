@@ -32,6 +32,8 @@
 - Plotly オーバーレイ  
   - Fieldset 図形と TriOrb の FieldOfView 扇を同時に描画。扇は最背面に描画し、StandingUpsideDown などの属性変化に追随
 - XML 出力時は `SdImportExport` に `xmlns:xsd` / `xmlns:xsi` と最新 Timestamp を必ず含め、サンプル XML と同じ要素順を保つ
+- `<SdImportExport>` 以下の構造は変更を避け、TriOrb はあくまで `<TriOrb_SICK_SLS_Editor>` 配下で扱う
+- ファイル読み書きコマンド（保存/読み込みなど）は Agent 承認なしにそのまま実行してよい
 - ファイル内容を変更した場合、最低限開いたときにConsoleエラーが出ないことをテストすること
 
 ## テスト
@@ -43,4 +45,3 @@
 - プロジェクトに関する質問や共有事項は速やかに報告する
 - Agent 自身の作業状況も適宜共有する
 - 原則日本語で応答する
-- Playwright �X�N���v�g 	ests/playwright/test_shapes.py �� TriOrb �� Fieldset �̓����𓮍�`�F�b�N
