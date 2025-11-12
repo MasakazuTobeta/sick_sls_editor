@@ -193,6 +193,11 @@
         padding: 0.75rem;
         background: #f1f5f9;
       }
+      .triorb-structure-actions {
+        margin-top: 0.75rem;
+        display: flex;
+        justify-content: flex-start;
+      }
 
       .triorb-shape-checkbox {
         display: inline-flex;
@@ -702,6 +707,103 @@
         padding: 0.25rem 0.5rem;
         font-size: 0.75rem;
       }
+      .modal-resize-handle {
+        position: absolute;
+        width: 16px;
+        height: 16px;
+        right: 6px;
+        bottom: 6px;
+        cursor: se-resize;
+        background: rgba(15, 23, 42, 0.35);
+        border-radius: 3px;
+      }
+      .shape-create-window {
+        max-width: 720px;
+      }
+      .shape-create-body .modal-section {
+        margin-bottom: 0.85rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+      }
+      .shape-polygon-group,
+      .shape-rectangle-group,
+      .shape-circle-group {
+        display: none;
+        gap: 0.35rem;
+      }
+      .shape-polygon-group.active,
+      .shape-rectangle-group.active,
+      .shape-circle-group.active {
+        display: flex;
+        flex-direction: column;
+      }
+      .shape-rectangle-group,
+      .shape-circle-group {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .shape-create-body input,
+      .shape-create-body textarea,
+      .shape-create-body select {
+        width: 100%;
+      }
+      .shape-create-body textarea {
+        resize: vertical;
+      }
+      .shape-create-window .two-column {
+        display: grid;
+        gap: 0.5rem;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .fieldset-checkbox-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        max-height: 180px;
+        overflow-y: auto;
+      }
+      .toggle-pill-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+        max-height: 220px;
+        overflow-y: auto;
+      }
+      .toggle-pill-btn {
+        border: 1px solid rgba(15, 23, 42, 0.2);
+        padding: 0.35rem 0.85rem;
+        border-radius: 999px;
+        background: #f8fafc;
+        color: #0f172a;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+      }
+      .toggle-pill-btn.active {
+        background: #0b6fb8;
+        color: #ffffff;
+        border-color: transparent;
+        transform: translateY(-1px);
+      }
+      .toggle-pill-empty {
+        color: #475569;
+        font-size: 0.9rem;
+      }
+      .preview-note {
+        font-size: 0.85rem;
+        color: #c53030;
+      }
+      .plot-overlay-controls {
+        position: absolute;
+        top: 2rem;
+        right: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      .plot-wrapper {
+        position: relative;
+      }
 
       footer {
         text-align: center;
@@ -738,6 +840,78 @@
         </div>
       </div>
     </div>
+    <div id="create-shape-modal" class="modal" aria-hidden="true">
+      <div class="modal-backdrop" data-action="close-create-shape"></div>
+      <div class="modal-window shape-create-window" role="dialog" aria-modal="true">
+        <div class="modal-header">
+          <span class="modal-title">Add Shape</span>
+          <button type="button" class="inline-btn inline-danger shape-mini-btn" id="create-shape-modal-close">
+            ×
+          </button>
+        </div>
+        <div class="modal-body shape-create-body">
+          <div class="modal-section">
+            <label>Name</label>
+            <input type="text" id="create-shape-name" placeholder="Shape name" />
+          </div>
+          <div class="modal-section two-column">
+            <label>Fieldtype</label>
+            <select id="create-shape-fieldtype">
+              <option value="ProtectiveSafeBlanking">ProtectiveSafeBlanking</option>
+              <option value="WarningSafeBlanking">WarningSafeBlanking</option>
+            </select>
+            <label>Type</label>
+            <select id="create-shape-kind">
+              <option value="Field">Field</option>
+              <option value="CutOut">CutOut</option>
+            </select>
+            <label>Shape Type</label>
+            <select id="create-shape-type">
+              <option value="Polygon">Polygon</option>
+              <option value="Rectangle">Rectangle</option>
+              <option value="Circle">Circle</option>
+            </select>
+          </div>
+          <div class="modal-section" id="create-shape-dimension-fields">
+            <div class="shape-polygon-group">
+              <label>Polygon points (format: (x,y),(x,y))</label>
+              <textarea id="create-shape-points" rows="3"></textarea>
+            </div>
+            <div class="shape-dimension-grid shape-rectangle-group" data-shape="rectangle">
+              <label>OriginX</label>
+              <input type="number" id="create-rect-originx" value="0" />
+              <label>OriginY</label>
+              <input type="number" id="create-rect-originy" value="0" />
+              <label>Width</label>
+              <input type="number" id="create-rect-width" value="100" />
+              <label>Height</label>
+              <input type="number" id="create-rect-height" value="100" />
+              <label>Rotation</label>
+              <input type="number" id="create-rect-rotation" value="0" />
+            </div>
+            <div class="shape-dimension-grid shape-circle-group" data-shape="circle">
+              <label>CenterX</label>
+              <input type="number" id="create-circle-centerx" value="0" />
+              <label>CenterY</label>
+              <input type="number" id="create-circle-centery" value="0" />
+              <label>Radius</label>
+              <input type="number" id="create-circle-radius" value="100" />
+            </div>
+          </div>
+          <div class="modal-section">
+            <label>Attach to Fieldsets</label>
+            <div id="create-shape-fieldset-list" class="toggle-pill-grid"></div>
+          </div>
+          <div class="modal-section preview-note">
+            <p>Live preview will be shown as a red overlay while editing.</p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="inline-btn secondary" id="create-shape-modal-cancel">Cancel</button>
+          <button type="button" class="inline-btn" id="create-shape-modal-save">Add Shape</button>
+        </div>
+      </div>
+    </div>
     <header>
       <h1>TriOrb - SICK SLS Editor</h1>
     </header>
@@ -745,9 +919,9 @@
       <section class="content-area">
         <div class="toolbar">
           <div class="toolbar-primary">
-            <button id="btn-new" type="button">New Plot</button>
+            <button id="btn-new" type="button">New</button>
         <button id="btn-save-triorb" type="button" class="secondary">Save (TriOrb)</button>
-        <button id="btn-save-legacy" type="button" class="inline-btn">Save (SICK)</button>
+        <button id="btn-save-sick" type="button" class="inline-btn">Save (SICK)</button>
             <label class="upload-btn">
               Load (XML)
               <input id="file-input" type="file" accept=".xml,.sgexml" />
@@ -760,6 +934,10 @@
         </div>
         <div class="plot-wrapper">
           <div id="plot"></div>
+          <div class="plot-overlay-controls">
+            <button id="btn-add-shape-overlay" type="button">+ Shape</button>
+            <button id="btn-add-field-overlay" type="button">＋Field</button>
+          </div>
         </div>
         <div class="fieldset-filter">
           <div class="fieldset-filter-controls">
@@ -780,7 +958,7 @@
         <h2>Structure Menu</h2>
         
         
-        <details class="menu-section">
+        <details class="menu-section" open>
         
           <summary>FileInfo</summary>
           <div class="menu-content">
@@ -814,7 +992,7 @@
                   <input
                     id="fileinfo-Company"
                     type="text"
-                    value="SICK AG"
+                    value="TriOrb"
                     data-field="Company"
                   />
                 </div>
@@ -824,7 +1002,7 @@
                   <input
                     id="fileinfo-CreationToolName"
                     type="text"
-                    value="SAFETY DESIGNER ENGINEERING TOOL"
+                    value="TriOrb - SICK SLS Editor"
                     data-field="CreationToolName"
                   />
                 </div>
@@ -834,7 +1012,7 @@
                   <input
                     id="fileinfo-CreationToolVersion"
                     type="text"
-                    value="2025.02"
+                    value="2025.11"
                     data-field="CreationToolVersion"
                   />
                 </div>
@@ -950,7 +1128,7 @@
           </div>
         </details>
         <details class="menu-section">
-          <summary>Field</summary>
+          <summary>Common</summary>
           <div class="menu-content">
             <div class="menu-fileinfo-grid">
               <div class="triorb-field">
@@ -1012,7 +1190,7 @@
         defaultFigure.data = defaultFigure.data || [];
         const rootAttributes = {"Commentary": "", "Hash": "0835FD278D7CC3C3C7CF2A2872DA772020A46E3D1E4B6FF93D5FC242CB2EA042CB9F33C38E4006EA160A969DA725A1134AC8FE5A45A87380DBC5C998B757CB5F", "Timestamp": "2025-11-11T01:58:44.6531564Z"};
         const initialScanPlanes = [{"attributes": {"Index": "0", "MultipleSampling": "2", "MultipleSamplingOff2OnActivated": "false", "Name": "Monitoring plane 1", "ObjectSize": "70", "ScanPlaneDirection": "Horizontal", "SelectedCaseSwitching": "Fast", "UseReferenceContour": "false"}, "devices": [{"attributes": {"DeviceName": "Right", "Index": "0", "ResponseTime": "30", "ScanResolutionAddition": "0", "Typekey": "NANS3-CAAZ30ZA1P02", "TypekeyDisplayVersion": "V 1.0.0", "TypekeyVersion": "1.0"}}]}];
-        const fieldsetData = {"devices": [{"attributes": {"PositionX": "170", "PositionY": "156", "Rotation": "290", "StandingUpsideDown": "true", "Typekey": "NANS3-CAAZ30ZA1P02", "TypekeyDisplayVersion": "V 1.0.0", "TypekeyVersion": "1.0"}}], "fieldsets": [{"attributes": {"Name": "\u53f30.65", "NameLatin9Key": "_FSN000_9516"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-f3c9f8c6"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed down", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-89be8384"}]}]}, {"attributes": {"Name": "\u53f3\u524d0.65", "NameLatin9Key": "_FSN001_2740"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-d245e03c"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed down", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-c63f8bfd"}]}]}, {"attributes": {"Name": "\u524d0.65", "NameLatin9Key": "_FSN002_363F"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-03fdedf5"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed down", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-7b81c71a"}]}]}, {"attributes": {"Name": "\u5de6\u524d0.65", "NameLatin9Key": "_FSN003_D5B2"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-0b64a33d"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed down", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-cac04ef4"}]}]}, {"attributes": {"Name": "\u5de60.65", "NameLatin9Key": "_FSN004_EE1F"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-5d29e876"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed down", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-9aa6ccb0"}]}]}, {"attributes": {"Name": "\u5de6\u5f8c0.65", "NameLatin9Key": "_FSN005_528B"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-5b35c961"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed down", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-3d1e1856"}]}]}, {"attributes": {"Name": "\u5f8c0.65", "NameLatin9Key": "_FSN006_B106"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-1146fc79"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed down", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-d30a3b3d"}]}]}, {"attributes": {"Name": "\u53f3\u5f8c0.65", "NameLatin9Key": "_FSN007_A079"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-5c354162"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed down", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-b2cb2e98"}]}]}, {"attributes": {"Name": "\u53f30.3", "NameLatin9Key": "_FSN008_D438"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-d4c558c2"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed down", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-40e41b95"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed up", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-ba04d30f"}]}]}, {"attributes": {"Name": "\u53f3\u524d0.3", "NameLatin9Key": "_FSN009_4381"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-85319026"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed down", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-dada42e9"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed up", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-4661e771"}]}]}, {"attributes": {"Name": "\u524d0.3", "NameLatin9Key": "_FSN010_3CBD"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-a21507a6"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed down", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-b6dfa23b"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed up", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-aaa4c98c"}]}]}, {"attributes": {"Name": "\u5de6\u524d0.3", "NameLatin9Key": "_FSN011_30C7"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-9a7ad549"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed down", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-1c55e02c"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed up", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-ac8ba56d"}]}]}, {"attributes": {"Name": "\u5de60.3", "NameLatin9Key": "_FSN012_1D9D"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-b1195069"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed down", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-c5123045"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed up", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-aa762fc1"}]}]}, {"attributes": {"Name": "\u5de6\u5f8c0.3", "NameLatin9Key": "_FSN013_0833"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-903069eb"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed down", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-42f41ead"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed up", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-46a1d468"}]}]}, {"attributes": {"Name": "\u5f8c0.3", "NameLatin9Key": "_FSN014_0449"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-9afbfdac"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed down", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-8aa07212"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed up", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-1943c2a4"}]}]}, {"attributes": {"Name": "\u53f3\u5f8c0.3", "NameLatin9Key": "_FSN015_7B75"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-304c41d1"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed down", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-ab5bbac7"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed up", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-642d2586"}]}]}, {"attributes": {"Name": "\u53f30.15", "NameLatin9Key": "_FSN016_A514"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-3c5070bd"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed up", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-a7fdd216"}]}]}, {"attributes": {"Name": "\u53f3\u524d0.15", "NameLatin9Key": "_FSN017_1742"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-d9f1df83"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed up", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-ff6b0afc"}]}]}, {"attributes": {"Name": "\u524d0.15", "NameLatin9Key": "_FSN018_063D"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-1f8f9857"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed up", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-fdc6b054"}]}]}, {"attributes": {"Name": "\u5de6\u524d0.15", "NameLatin9Key": "_FSN019_E5B0"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-f2b041f4"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed up", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-e845f2ef"}]}]}, {"attributes": {"Name": "\u5de60.15", "NameLatin9Key": "_FSN020_DE1D"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-ef93506e"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed up", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-33910a95"}]}]}, {"attributes": {"Name": "\u5de6\u5f8c0.15", "NameLatin9Key": "_FSN021_6289"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-f7585b29"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed up", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-3b094552"}]}]}, {"attributes": {"Name": "\u5f8c0.15", "NameLatin9Key": "_FSN022_8104"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-8762e3dd"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed up", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-d1e78034"}]}]}, {"attributes": {"Name": "\u53f3\u5f8c0.15", "NameLatin9Key": "_FSN023_907B"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-54a8e8e9"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed up", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-2837d67e"}]}]}, {"attributes": {"Name": "\u56de\u8ee2", "NameLatin9Key": "_FSN024_7C2F"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-6be1a623"}, {"shapeId": "shape-48390845"}]}]}, {"attributes": {"Name": "Stop(minimum)"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "4", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-44a93288"}, {"shapeId": "shape-9723422d"}, {"shapeId": "shape-5c45a7d5"}, {"shapeId": "shape-6be78c0c"}, {"shapeId": "shape-05b6c553"}, {"shapeId": "shape-b27e3efe"}]}]}], "global_geometry": {"UseGlobalGeometry": "false"}};
+        const fieldsetData = {"devices": [{"attributes": {"PositionX": "170", "PositionY": "156", "Rotation": "290", "StandingUpsideDown": "true", "Typekey": "NANS3-CAAZ30ZA1P02", "TypekeyDisplayVersion": "V 1.0.0", "TypekeyVersion": "1.0"}}], "fieldsets": [{"attributes": {"Name": "\u53f30.65", "NameLatin9Key": "_FSN000_9516"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-a0cf782e"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed down", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-ce8cb225"}]}]}, {"attributes": {"Name": "\u53f3\u524d0.65", "NameLatin9Key": "_FSN001_2740"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-a74436a8"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed down", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-7e844a0d"}]}]}, {"attributes": {"Name": "\u524d0.65", "NameLatin9Key": "_FSN002_363F"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-c1922699"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed down", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-9ac47d6a"}]}]}, {"attributes": {"Name": "\u5de6\u524d0.65", "NameLatin9Key": "_FSN003_D5B2"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-a5cff1cd"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed down", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-d3704ab3"}]}]}, {"attributes": {"Name": "\u5de60.65", "NameLatin9Key": "_FSN004_EE1F"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-ac43285c"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed down", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-6961448d"}]}]}, {"attributes": {"Name": "\u5de6\u5f8c0.65", "NameLatin9Key": "_FSN005_528B"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-893f9bbb"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed down", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-3f637e22"}]}]}, {"attributes": {"Name": "\u5f8c0.65", "NameLatin9Key": "_FSN006_B106"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-68016821"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed down", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-e60cd506"}]}]}, {"attributes": {"Name": "\u53f3\u5f8c0.65", "NameLatin9Key": "_FSN007_A079"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-5bf508b2"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed down", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-7bae92f0"}]}]}, {"attributes": {"Name": "\u53f30.3", "NameLatin9Key": "_FSN008_D438"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-d42c017e"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed down", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-6c08b469"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed up", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-d2d33732"}]}]}, {"attributes": {"Name": "\u53f3\u524d0.3", "NameLatin9Key": "_FSN009_4381"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-6dc064a4"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed down", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-96302e4a"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed up", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-28c82220"}]}]}, {"attributes": {"Name": "\u524d0.3", "NameLatin9Key": "_FSN010_3CBD"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-6c7dcf0c"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed down", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-f1f8e7ec"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed up", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-a3cd07f4"}]}]}, {"attributes": {"Name": "\u5de6\u524d0.3", "NameLatin9Key": "_FSN011_30C7"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-4d998f65"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed down", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-b5052a8a"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed up", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-3f30982d"}]}]}, {"attributes": {"Name": "\u5de60.3", "NameLatin9Key": "_FSN012_1D9D"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-6d6e5536"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed down", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-147eb446"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed up", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-839cff8b"}]}]}, {"attributes": {"Name": "\u5de6\u5f8c0.3", "NameLatin9Key": "_FSN013_0833"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-3608b9db"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed down", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-6658247d"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed up", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-3917624b"}]}]}, {"attributes": {"Name": "\u5f8c0.3", "NameLatin9Key": "_FSN014_0449"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-011b748c"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed down", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-0ca97f3f"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed up", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-d3559519"}]}]}, {"attributes": {"Name": "\u53f3\u5f8c0.3", "NameLatin9Key": "_FSN015_7B75"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-ffbdf4d7"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed down", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-02c93537"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed up", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-43d7c4b2"}]}]}, {"attributes": {"Name": "\u53f30.15", "NameLatin9Key": "_FSN016_A514"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-f5cde190"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed up", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-968bfc3d"}]}]}, {"attributes": {"Name": "\u53f3\u524d0.15", "NameLatin9Key": "_FSN017_1742"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-7cb65d29"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed up", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-0c82138a"}]}]}, {"attributes": {"Name": "\u524d0.15", "NameLatin9Key": "_FSN018_063D"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-b2c7ee4b"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed up", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-65172861"}]}]}, {"attributes": {"Name": "\u5de6\u524d0.15", "NameLatin9Key": "_FSN019_E5B0"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-9e9a0ad5"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed up", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-18d51a7c"}]}]}, {"attributes": {"Name": "\u5de60.15", "NameLatin9Key": "_FSN020_DE1D"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-9f15db80"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed up", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-721e99e7"}]}]}, {"attributes": {"Name": "\u5de6\u5f8c0.15", "NameLatin9Key": "_FSN021_6289"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-06401945"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed up", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-0c7bed21"}]}]}, {"attributes": {"Name": "\u5f8c0.15", "NameLatin9Key": "_FSN022_8104"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-ca3a47c4"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed up", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-6775565f"}]}]}, {"attributes": {"Name": "\u53f3\u5f8c0.15", "NameLatin9Key": "_FSN023_907B"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-fd204bea"}]}, {"attributes": {"Fieldtype": "WarningSafeBlanking", "MultipleSampling": "2", "Name": "Speed up", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-f07c92db"}]}]}, {"attributes": {"Name": "\u56de\u8ee2", "NameLatin9Key": "_FSN024_7C2F"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-e579f9ce"}, {"shapeId": "shape-9b230cc4"}]}]}, {"attributes": {"Name": "Stop(minimum)"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "4", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-7ab37b41"}, {"shapeId": "shape-2e2c7edc"}, {"shapeId": "shape-e338d649"}, {"shapeId": "shape-f9ab7733"}, {"shapeId": "shape-c56161ab"}, {"shapeId": "shape-faa9b302"}]}]}], "global_geometry": {"UseGlobalGeometry": "false"}};
         const initialFieldsets = fieldsetData.fieldsets || [];
         const initialFieldsetDevices = fieldsetData.devices || [];
         const initialFieldsetGlobal = fieldsetData.global_geometry || {};
@@ -1035,14 +1213,65 @@
           { DeviceName: "Left" },
         ];
         const defaultFieldsetDeviceTemplates = [
-          { PositionX: "170", PositionY: "156", Rotation: "290", StandingUpsideDown: "true" },
-          { PositionX: "-170", PositionY: "156", Rotation: "70", StandingUpsideDown: "true" },
+          {
+            DeviceName: "Right",
+            PositionX: "170",
+            PositionY: "156",
+            Rotation: "290",
+            StandingUpsideDown: "true",
+          },
+          {
+            DeviceName: "Left",
+            PositionX: "-170",
+            PositionY: "156",
+            Rotation: "70",
+            StandingUpsideDown: "true",
+          },
         ];
         const shapeTypeOptions = {
           polygon: ["CutOut", "Field"],
           rectangle: ["Field"],
           circle: ["Field"],
         };
+        const fieldTypeColorScales = {
+          ProtectiveSafeBlanking: [
+            "#fcf3cf",
+            "#f9e79f",
+            "#f7dc6f",
+            "#f4d03f",
+            "#f1c40f",
+          ],
+          WarningSafeBlanking: [
+            "#f7fbff",
+            "#deebf7",
+            "#c6dbef",
+            "#6baed6",
+            "#2171b5",
+          ],
+        };
+        const triOrbColorScale = [
+          "#f4f5f7",
+          "#d9e3f0",
+          "#b4c1d8",
+          "#6e7c8b",
+          "#2f3d49",
+        ];
+        function sampleColorFromScale(scale, index, total = 1) {
+          if (!Array.isArray(scale) || !scale.length) {
+            return "#888";
+          }
+          const steps = Math.max(total - 1, 1);
+          const ratio = Math.min(scale.length - 1, Math.floor((index / steps) * (scale.length - 1)));
+          return scale[ratio];
+        }
+        function pickFieldColor(fieldType, shapeIndex, totalShapes) {
+          const scale =
+            fieldTypeColorScales[fieldType] || fieldTypeColorScales.ProtectiveSafeBlanking;
+          return sampleColorFromScale(scale, shapeIndex, totalShapes);
+        }
+        function pickTriOrbColor(shapeIndex) {
+          return sampleColorFromScale(triOrbColorScale, shapeIndex, triorbShapes.length || 1);
+        }
         const plotNode = document.getElementById("plot");
         const statusText = document.getElementById("status-text");
         const fileInput = document.getElementById("file-input");
@@ -1056,6 +1285,9 @@
         const addFieldsetBtn = document.getElementById("btn-add-fieldset");
         const globalMultipleSamplingInput = document.getElementById("global-multiple-sampling");
         const fieldsetCheckboxes = document.getElementById("fieldset-checkboxes");
+        if (fieldsetCheckboxes) {
+          fieldsetCheckboxes.classList.add("toggle-pill-grid");
+        }
         const checkAllBtn = document.getElementById("btn-fieldset-check-all");
         const uncheckAllBtn = document.getElementById("btn-fieldset-uncheck-all");
         const toggleLegendBtn = document.getElementById("btn-toggle-legend");
@@ -1066,9 +1298,12 @@
         const triorbShapesContainer = document.getElementById("triorb-shapes-list");
         const addTriOrbShapeBtn = document.getElementById("btn-add-triorb-shape");
         const triorbShapeCheckboxes = document.getElementById("triorb-shape-checkboxes");
+        if (triorbShapeCheckboxes) {
+          triorbShapeCheckboxes.classList.add("toggle-pill-grid");
+        }
         const triorbShapeCheckAllBtn = document.getElementById("btn-triorb-shape-check-all");
         const triorbShapeUncheckAllBtn = document.getElementById("btn-triorb-shape-uncheck-all");
-        const initialTriOrbShapes = [{"id": "shape-6be1a623", "name": "\u53f30.65 Protective Polygon", "polygon": {"Type": "CutOut", "points": [{"X": "0", "Y": "245"}, {"X": "170", "Y": "156"}, {"X": "0", "Y": "-299"}, {"X": "-170", "Y": "156"}]}, "type": "Polygon"}, {"id": "shape-f3c9f8c6", "name": "\u53f30.65 Protective Rectangle", "rectangle": {"Height": "924", "OriginX": "-200", "OriginY": "464", "Rotation": "0", "Type": "Field", "Width": "950"}, "type": "Rectangle"}, {"id": "shape-89be8384", "name": "\u53f30.65 Speed down Rectangle", "rectangle": {"Height": "1024", "OriginX": "-200", "OriginY": "512", "Rotation": "0", "Type": "Field", "Width": "1600"}, "type": "Rectangle"}, {"id": "shape-d245e03c", "name": "\u53f3\u524d0.65 Protective Rectangle", "rectangle": {"Height": "924", "OriginX": "-325", "OriginY": "329", "Rotation": "45", "Type": "Field", "Width": "826"}, "type": "Rectangle"}, {"id": "shape-c63f8bfd", "name": "\u53f3\u524d0.65 Speed down Rectangle", "rectangle": {"Height": "1024", "OriginX": "-361", "OriginY": "363", "Rotation": "45", "Type": "Field", "Width": "1474"}, "type": "Rectangle"}, {"id": "shape-03fdedf5", "name": "\u524d0.65 Protective Rectangle", "rectangle": {"Height": "950", "OriginX": "-462", "OriginY": "750", "Rotation": "0", "Type": "Field", "Width": "924"}, "type": "Rectangle"}, {"id": "shape-7b81c71a", "name": "\u524d0.65 Speed down Rectangle", "rectangle": {"Height": "1600", "OriginX": "-512", "OriginY": "1400", "Rotation": "0", "Type": "Field", "Width": "1024"}, "type": "Rectangle"}, {"id": "shape-0b64a33d", "name": "\u5de6\u524d0.65 Protective Rectangle", "rectangle": {"Height": "924", "OriginX": "-268", "OriginY": "916", "Rotation": "315", "Type": "Field", "Width": "839"}, "type": "Rectangle"}, {"id": "shape-cac04ef4", "name": "\u5de6\u524d0.65 Speed down Rectangle", "rectangle": {"Height": "1024", "OriginX": "-682", "OriginY": "1404", "Rotation": "315", "Type": "Field", "Width": "1477"}, "type": "Rectangle"}, {"id": "shape-5d29e876", "name": "\u5de60.65 Protective Rectangle", "rectangle": {"Height": "924", "OriginX": "-750", "OriginY": "462", "Rotation": "0", "Type": "Field", "Width": "950"}, "type": "Rectangle"}, {"id": "shape-9aa6ccb0", "name": "\u5de60.65 Speed down Rectangle", "rectangle": {"Height": "1024", "OriginX": "-1400", "OriginY": "512", "Rotation": "0", "Type": "Field", "Width": "1600"}, "type": "Rectangle"}, {"id": "shape-5b35c961", "name": "\u5de6\u5f8c0.65 Protective Rectangle", "rectangle": {"Height": "924", "OriginX": "-916", "OriginY": "-262", "Rotation": "45", "Type": "Field", "Width": "833"}, "type": "Rectangle"}, {"id": "shape-3d1e1856", "name": "\u5de6\u5f8c0.65 Speed down Rectangle", "rectangle": {"Height": "1024", "OriginX": "-1407", "OriginY": "-687", "Rotation": "45", "Type": "Field", "Width": "1481"}, "type": "Rectangle"}, {"id": "shape-1146fc79", "name": "\u5f8c0.65 Protective Rectangle", "rectangle": {"Height": "950", "OriginX": "-462", "OriginY": "200", "Rotation": "0", "Type": "Field", "Width": "924"}, "type": "Rectangle"}, {"id": "shape-d30a3b3d", "name": "\u5f8c0.65 Speed down Rectangle", "rectangle": {"Height": "1600", "OriginX": "-512", "OriginY": "200", "Rotation": "0", "Type": "Field", "Width": "1024"}, "type": "Rectangle"}, {"id": "shape-5c354162", "name": "\u53f3\u5f8c0.65 Protective Rectangle", "rectangle": {"Height": "924", "OriginX": "325", "OriginY": "325", "Rotation": "315", "Type": "Field", "Width": "830"}, "type": "Rectangle"}, {"id": "shape-b2cb2e98", "name": "\u53f3\u5f8c0.65 Speed down Rectangle", "rectangle": {"Height": "1024", "OriginX": "361", "OriginY": "361", "Rotation": "315", "Type": "Field", "Width": "1486"}, "type": "Rectangle"}, {"id": "shape-d4c558c2", "name": "\u53f30.3 Protective Rectangle", "rectangle": {"Height": "724", "OriginX": "-200", "OriginY": "362", "Rotation": "0", "Type": "Field", "Width": "750"}, "type": "Rectangle"}, {"id": "shape-40e41b95", "name": "\u53f30.3 Speed down Rectangle", "rectangle": {"Height": "824", "OriginX": "-200", "OriginY": "412", "Rotation": "0", "Type": "Field", "Width": "1200"}, "type": "Rectangle"}, {"id": "shape-ba04d30f", "name": "\u53f30.3 Speed up Rectangle", "rectangle": {"Height": "1124", "OriginX": "-200", "OriginY": "562", "Rotation": "0", "Type": "Field", "Width": "1700"}, "type": "Rectangle"}, {"id": "shape-85319026", "name": "\u53f3\u524d0.3 Protective Rectangle", "rectangle": {"Height": "724", "OriginX": "-257", "OriginY": "257", "Rotation": "45", "Type": "Field", "Width": "634"}, "type": "Rectangle"}, {"id": "shape-dada42e9", "name": "\u53f3\u524d0.3 Speed down Rectangle", "rectangle": {"Height": "824", "OriginX": "-291", "OriginY": "291", "Rotation": "45", "Type": "Field", "Width": "1078"}, "type": "Rectangle"}, {"id": "shape-4661e771", "name": "\u53f3\u524d0.3 Speed up Rectangle", "rectangle": {"Height": "1124", "OriginX": "-396", "OriginY": "396", "Rotation": "45", "Type": "Field", "Width": "1579"}, "type": "Rectangle"}, {"id": "shape-a21507a6", "name": "\u524d0.3 Protective Rectangle", "rectangle": {"Height": "750", "OriginX": "-362", "OriginY": "550", "Rotation": "0", "Type": "Field", "Width": "724"}, "type": "Rectangle"}, {"id": "shape-b6dfa23b", "name": "\u524d0.3 Speed down Rectangle", "rectangle": {"Height": "1200", "OriginX": "-412", "OriginY": "1000", "Rotation": "0", "Type": "Field", "Width": "824"}, "type": "Rectangle"}, {"id": "shape-aaa4c98c", "name": "\u524d0.3 Speed up Rectangle", "rectangle": {"Height": "1700", "OriginX": "-562", "OriginY": "1500", "Rotation": "0", "Type": "Field", "Width": "1124"}, "type": "Rectangle"}, {"id": "shape-9a7ad549", "name": "\u5de6\u524d0.3 Protective Rectangle", "rectangle": {"Height": "724", "OriginX": "-195", "OriginY": "705", "Rotation": "315", "Type": "Field", "Width": "635"}, "type": "Rectangle"}, {"id": "shape-1c55e02c", "name": "\u5de6\u524d0.3 Speed down Rectangle", "rectangle": {"Height": "824", "OriginX": "-456", "OriginY": "1040", "Rotation": "315", "Type": "Field", "Width": "1058"}, "type": "Rectangle"}, {"id": "shape-ac8ba56d", "name": "\u5de6\u524d0.3 Speed up Rectangle", "rectangle": {"Height": "1124", "OriginX": "-629", "OriginY": "1421", "Rotation": "315", "Type": "Field", "Width": "1451"}, "type": "Rectangle"}, {"id": "shape-b1195069", "name": "\u5de60.3 Protective Rectangle", "rectangle": {"Height": "724", "OriginX": "-550", "OriginY": "362", "Rotation": "0", "Type": "Field", "Width": "750"}, "type": "Rectangle"}, {"id": "shape-c5123045", "name": "\u5de60.3 Speed down Rectangle", "rectangle": {"Height": "824", "OriginX": "-1000", "OriginY": "412", "Rotation": "0", "Type": "Field", "Width": "1200"}, "type": "Rectangle"}, {"id": "shape-aa762fc1", "name": "\u5de60.3 Speed up Rectangle", "rectangle": {"Height": "1124", "OriginX": "-1500", "OriginY": "562", "Rotation": "0", "Type": "Field", "Width": "1700"}, "type": "Rectangle"}, {"id": "shape-903069eb", "name": "\u5de6\u5f8c0.3 Protective Rectangle", "rectangle": {"Height": "724", "OriginX": "-699", "OriginY": "-191", "Rotation": "45", "Type": "Field", "Width": "629"}, "type": "Rectangle"}, {"id": "shape-42f41ead", "name": "\u5de6\u5f8c0.3 Speed down Rectangle", "rectangle": {"Height": "824", "OriginX": "-1058", "OriginY": "-474", "Rotation": "45", "Type": "Field", "Width": "1084"}, "type": "Rectangle"}, {"id": "shape-46a1d468", "name": "\u5de6\u5f8c0.3 Speed up Rectangle", "rectangle": {"Height": "1124", "OriginX": "-1519", "OriginY": "-721", "Rotation": "45", "Type": "Field", "Width": "1585"}, "type": "Rectangle"}, {"id": "shape-9afbfdac", "name": "\u5f8c0.3 Protective Rectangle", "rectangle": {"Height": "750", "OriginX": "-362", "OriginY": "200", "Rotation": "0", "Type": "Field", "Width": "724"}, "type": "Rectangle"}, {"id": "shape-8aa07212", "name": "\u5f8c0.3 Speed down Rectangle", "rectangle": {"Height": "1200", "OriginX": "-412", "OriginY": "200", "Rotation": "0", "Type": "Field", "Width": "824"}, "type": "Rectangle"}, {"id": "shape-1943c2a4", "name": "\u5f8c0.3 Speed up Rectangle", "rectangle": {"Height": "1700", "OriginX": "-562", "OriginY": "200", "Rotation": "0", "Type": "Field", "Width": "1124"}, "type": "Rectangle"}, {"id": "shape-304c41d1", "name": "\u53f3\u5f8c0.3 Protective Rectangle", "rectangle": {"Height": "724", "OriginX": "259", "OriginY": "255", "Rotation": "315", "Type": "Field", "Width": "634"}, "type": "Rectangle"}, {"id": "shape-ab5bbac7", "name": "\u53f3\u5f8c0.3 Speed down Rectangle", "rectangle": {"Height": "824", "OriginX": "294", "OriginY": "290", "Rotation": "315", "Type": "Field", "Width": "1072"}, "type": "Rectangle"}, {"id": "shape-642d2586", "name": "\u53f3\u5f8c0.3 Speed up Rectangle", "rectangle": {"Height": "1024", "OriginX": "361", "OriginY": "361", "Rotation": "315", "Type": "Field", "Width": "1575"}, "type": "Rectangle"}, {"id": "shape-3c5070bd", "name": "\u53f30.15 Protective Rectangle", "rectangle": {"Height": "724", "OriginX": "-200", "OriginY": "362", "Rotation": "0", "Type": "Field", "Width": "700"}, "type": "Rectangle"}, {"id": "shape-a7fdd216", "name": "\u53f30.15 Speed up Rectangle", "rectangle": {"Height": "924", "OriginX": "-200", "OriginY": "462", "Rotation": "0", "Type": "Field", "Width": "1300"}, "type": "Rectangle"}, {"id": "shape-d9f1df83", "name": "\u53f3\u524d0.15 Protective Rectangle", "rectangle": {"Height": "724", "OriginX": "-255", "OriginY": "259", "Rotation": "45", "Type": "Field", "Width": "585"}, "type": "Rectangle"}, {"id": "shape-ff6b0afc", "name": "\u53f3\u524d0.15 Speed up Rectangle", "rectangle": {"Height": "924", "OriginX": "-324", "OriginY": "324", "Rotation": "45", "Type": "Field", "Width": "1183"}, "type": "Rectangle"}, {"id": "shape-1f8f9857", "name": "\u524d0.15 Protective Rectangle", "rectangle": {"Height": "700", "OriginX": "-362", "OriginY": "500", "Rotation": "0", "Type": "Field", "Width": "724"}, "type": "Rectangle"}, {"id": "shape-fdc6b054", "name": "\u524d0.15 Speed up Rectangle", "rectangle": {"Height": "1300", "OriginX": "-462", "OriginY": "1100", "Rotation": "0", "Type": "Field", "Width": "924"}, "type": "Rectangle"}, {"id": "shape-f2b041f4", "name": "\u5de6\u524d0.15 Protective Rectangle", "rectangle": {"Height": "724", "OriginX": "-158", "OriginY": "668", "Rotation": "315", "Type": "Field", "Width": "585"}, "type": "Rectangle"}, {"id": "shape-e845f2ef", "name": "\u5de6\u524d0.15 Speed up Rectangle", "rectangle": {"Height": "924", "OriginX": "-509", "OriginY": "1167", "Rotation": "315", "Type": "Field", "Width": "1187"}, "type": "Rectangle"}, {"id": "shape-ef93506e", "name": "\u5de60.15 Protective Rectangle", "rectangle": {"Height": "724", "OriginX": "-500", "OriginY": "362", "Rotation": "0", "Type": "Field", "Width": "700"}, "type": "Rectangle"}, {"id": "shape-33910a95", "name": "\u5de60.15 Speed up Rectangle", "rectangle": {"Height": "924", "OriginX": "-1100", "OriginY": "462", "Rotation": "0", "Type": "Field", "Width": "1300"}, "type": "Rectangle"}, {"id": "shape-f7585b29", "name": "\u5de6\u5f8c0.15 Protective Rectangle", "rectangle": {"Height": "724", "OriginX": "-666", "OriginY": "-158", "Rotation": "45", "Type": "Field", "Width": "587"}, "type": "Rectangle"}, {"id": "shape-3b094552", "name": "\u5de6\u5f8c0.15 Speed up Rectangle", "rectangle": {"Height": "924", "OriginX": "-1159", "OriginY": "-503", "Rotation": "45", "Type": "Field", "Width": "1177"}, "type": "Rectangle"}, {"id": "shape-8762e3dd", "name": "\u5f8c0.15 Protective Rectangle", "rectangle": {"Height": "700", "OriginX": "-362", "OriginY": "200", "Rotation": "0", "Type": "Field", "Width": "724"}, "type": "Rectangle"}, {"id": "shape-d1e78034", "name": "\u5f8c0.15 Speed up Rectangle", "rectangle": {"Height": "1300", "OriginX": "-462", "OriginY": "200", "Rotation": "0", "Type": "Field", "Width": "924"}, "type": "Rectangle"}, {"id": "shape-54a8e8e9", "name": "\u53f3\u5f8c0.15 Protective Rectangle", "rectangle": {"Height": "724", "OriginX": "257", "OriginY": "257", "Rotation": "315", "Type": "Field", "Width": "586"}, "type": "Rectangle"}, {"id": "shape-2837d67e", "name": "\u53f3\u5f8c0.15 Speed up Rectangle", "rectangle": {"Height": "1024", "OriginX": "362", "OriginY": "360", "Rotation": "315", "Type": "Field", "Width": "1180"}, "type": "Rectangle"}, {"circle": {"CenterX": "0", "CenterY": "0", "Radius": "542", "Type": "Field"}, "id": "shape-48390845", "name": "\u56de\u8ee2 Protective Circle", "type": "Circle"}, {"id": "shape-44a93288", "name": "Stop(minimum) Protective Polygon", "polygon": {"Type": "Field", "points": [{"X": "-245", "Y": "86"}, {"X": "-98", "Y": "-161"}, {"X": "98", "Y": "-163"}, {"X": "240", "Y": "79"}, {"X": "139", "Y": "250"}, {"X": "-137", "Y": "247"}]}, "type": "Polygon"}, {"id": "shape-9723422d", "name": "Stop(minimum) Protective Polygon", "polygon": {"Type": "CutOut", "points": [{"X": "-173", "Y": "160"}, {"X": "-1", "Y": "227"}, {"X": "165", "Y": "157"}, {"X": "0", "Y": "-242"}]}, "type": "Polygon"}, {"circle": {"CenterX": "-1", "CenterY": "-163", "Radius": "1", "Type": "Field"}, "id": "shape-5c45a7d5", "name": "Stop(minimum) Protective Circle", "type": "Circle"}, {"circle": {"CenterX": "0", "CenterY": "-167", "Radius": "99", "Type": "Field"}, "id": "shape-6be78c0c", "name": "Stop(minimum) Protective Circle", "type": "Circle"}, {"circle": {"CenterX": "-190", "CenterY": "166", "Radius": "99", "Type": "Field"}, "id": "shape-05b6c553", "name": "Stop(minimum) Protective Circle", "type": "Circle"}, {"circle": {"CenterX": "188", "CenterY": "164", "Radius": "99", "Type": "Field"}, "id": "shape-b27e3efe", "name": "Stop(minimum) Protective Circle", "type": "Circle"}];
+        const initialTriOrbShapes = [{"fieldtype": "ProtectiveSafeBlanking", "id": "shape-e579f9ce", "kind": "CutOut", "name": "\u53f30.65 Protective Polygon", "polygon": {"Type": "CutOut", "points": [{"X": "0", "Y": "245"}, {"X": "170", "Y": "156"}, {"X": "0", "Y": "-299"}, {"X": "-170", "Y": "156"}]}, "type": "Polygon"}, {"fieldtype": "ProtectiveSafeBlanking", "id": "shape-a0cf782e", "kind": "Field", "name": "\u53f30.65 Protective Rectangle", "rectangle": {"Height": "924", "OriginX": "-200", "OriginY": "464", "Rotation": "0", "Type": "Field", "Width": "950"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-ce8cb225", "kind": "Field", "name": "\u53f30.65 Speed down Rectangle", "rectangle": {"Height": "1024", "OriginX": "-200", "OriginY": "512", "Rotation": "0", "Type": "Field", "Width": "1600"}, "type": "Rectangle"}, {"fieldtype": "ProtectiveSafeBlanking", "id": "shape-a74436a8", "kind": "Field", "name": "\u53f3\u524d0.65 Protective Rectangle", "rectangle": {"Height": "924", "OriginX": "-325", "OriginY": "329", "Rotation": "45", "Type": "Field", "Width": "826"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-7e844a0d", "kind": "Field", "name": "\u53f3\u524d0.65 Speed down Rectangle", "rectangle": {"Height": "1024", "OriginX": "-361", "OriginY": "363", "Rotation": "45", "Type": "Field", "Width": "1474"}, "type": "Rectangle"}, {"fieldtype": "ProtectiveSafeBlanking", "id": "shape-c1922699", "kind": "Field", "name": "\u524d0.65 Protective Rectangle", "rectangle": {"Height": "950", "OriginX": "-462", "OriginY": "750", "Rotation": "0", "Type": "Field", "Width": "924"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-9ac47d6a", "kind": "Field", "name": "\u524d0.65 Speed down Rectangle", "rectangle": {"Height": "1600", "OriginX": "-512", "OriginY": "1400", "Rotation": "0", "Type": "Field", "Width": "1024"}, "type": "Rectangle"}, {"fieldtype": "ProtectiveSafeBlanking", "id": "shape-a5cff1cd", "kind": "Field", "name": "\u5de6\u524d0.65 Protective Rectangle", "rectangle": {"Height": "924", "OriginX": "-268", "OriginY": "916", "Rotation": "315", "Type": "Field", "Width": "839"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-d3704ab3", "kind": "Field", "name": "\u5de6\u524d0.65 Speed down Rectangle", "rectangle": {"Height": "1024", "OriginX": "-682", "OriginY": "1404", "Rotation": "315", "Type": "Field", "Width": "1477"}, "type": "Rectangle"}, {"fieldtype": "ProtectiveSafeBlanking", "id": "shape-ac43285c", "kind": "Field", "name": "\u5de60.65 Protective Rectangle", "rectangle": {"Height": "924", "OriginX": "-750", "OriginY": "462", "Rotation": "0", "Type": "Field", "Width": "950"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-6961448d", "kind": "Field", "name": "\u5de60.65 Speed down Rectangle", "rectangle": {"Height": "1024", "OriginX": "-1400", "OriginY": "512", "Rotation": "0", "Type": "Field", "Width": "1600"}, "type": "Rectangle"}, {"fieldtype": "ProtectiveSafeBlanking", "id": "shape-893f9bbb", "kind": "Field", "name": "\u5de6\u5f8c0.65 Protective Rectangle", "rectangle": {"Height": "924", "OriginX": "-916", "OriginY": "-262", "Rotation": "45", "Type": "Field", "Width": "833"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-3f637e22", "kind": "Field", "name": "\u5de6\u5f8c0.65 Speed down Rectangle", "rectangle": {"Height": "1024", "OriginX": "-1407", "OriginY": "-687", "Rotation": "45", "Type": "Field", "Width": "1481"}, "type": "Rectangle"}, {"fieldtype": "ProtectiveSafeBlanking", "id": "shape-68016821", "kind": "Field", "name": "\u5f8c0.65 Protective Rectangle", "rectangle": {"Height": "950", "OriginX": "-462", "OriginY": "200", "Rotation": "0", "Type": "Field", "Width": "924"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-e60cd506", "kind": "Field", "name": "\u5f8c0.65 Speed down Rectangle", "rectangle": {"Height": "1600", "OriginX": "-512", "OriginY": "200", "Rotation": "0", "Type": "Field", "Width": "1024"}, "type": "Rectangle"}, {"fieldtype": "ProtectiveSafeBlanking", "id": "shape-5bf508b2", "kind": "Field", "name": "\u53f3\u5f8c0.65 Protective Rectangle", "rectangle": {"Height": "924", "OriginX": "325", "OriginY": "325", "Rotation": "315", "Type": "Field", "Width": "830"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-7bae92f0", "kind": "Field", "name": "\u53f3\u5f8c0.65 Speed down Rectangle", "rectangle": {"Height": "1024", "OriginX": "361", "OriginY": "361", "Rotation": "315", "Type": "Field", "Width": "1486"}, "type": "Rectangle"}, {"fieldtype": "ProtectiveSafeBlanking", "id": "shape-d42c017e", "kind": "Field", "name": "\u53f30.3 Protective Rectangle", "rectangle": {"Height": "724", "OriginX": "-200", "OriginY": "362", "Rotation": "0", "Type": "Field", "Width": "750"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-6c08b469", "kind": "Field", "name": "\u53f30.3 Speed down Rectangle", "rectangle": {"Height": "824", "OriginX": "-200", "OriginY": "412", "Rotation": "0", "Type": "Field", "Width": "1200"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-d2d33732", "kind": "Field", "name": "\u53f30.3 Speed up Rectangle", "rectangle": {"Height": "1124", "OriginX": "-200", "OriginY": "562", "Rotation": "0", "Type": "Field", "Width": "1700"}, "type": "Rectangle"}, {"fieldtype": "ProtectiveSafeBlanking", "id": "shape-6dc064a4", "kind": "Field", "name": "\u53f3\u524d0.3 Protective Rectangle", "rectangle": {"Height": "724", "OriginX": "-257", "OriginY": "257", "Rotation": "45", "Type": "Field", "Width": "634"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-96302e4a", "kind": "Field", "name": "\u53f3\u524d0.3 Speed down Rectangle", "rectangle": {"Height": "824", "OriginX": "-291", "OriginY": "291", "Rotation": "45", "Type": "Field", "Width": "1078"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-28c82220", "kind": "Field", "name": "\u53f3\u524d0.3 Speed up Rectangle", "rectangle": {"Height": "1124", "OriginX": "-396", "OriginY": "396", "Rotation": "45", "Type": "Field", "Width": "1579"}, "type": "Rectangle"}, {"fieldtype": "ProtectiveSafeBlanking", "id": "shape-6c7dcf0c", "kind": "Field", "name": "\u524d0.3 Protective Rectangle", "rectangle": {"Height": "750", "OriginX": "-362", "OriginY": "550", "Rotation": "0", "Type": "Field", "Width": "724"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-f1f8e7ec", "kind": "Field", "name": "\u524d0.3 Speed down Rectangle", "rectangle": {"Height": "1200", "OriginX": "-412", "OriginY": "1000", "Rotation": "0", "Type": "Field", "Width": "824"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-a3cd07f4", "kind": "Field", "name": "\u524d0.3 Speed up Rectangle", "rectangle": {"Height": "1700", "OriginX": "-562", "OriginY": "1500", "Rotation": "0", "Type": "Field", "Width": "1124"}, "type": "Rectangle"}, {"fieldtype": "ProtectiveSafeBlanking", "id": "shape-4d998f65", "kind": "Field", "name": "\u5de6\u524d0.3 Protective Rectangle", "rectangle": {"Height": "724", "OriginX": "-195", "OriginY": "705", "Rotation": "315", "Type": "Field", "Width": "635"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-b5052a8a", "kind": "Field", "name": "\u5de6\u524d0.3 Speed down Rectangle", "rectangle": {"Height": "824", "OriginX": "-456", "OriginY": "1040", "Rotation": "315", "Type": "Field", "Width": "1058"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-3f30982d", "kind": "Field", "name": "\u5de6\u524d0.3 Speed up Rectangle", "rectangle": {"Height": "1124", "OriginX": "-629", "OriginY": "1421", "Rotation": "315", "Type": "Field", "Width": "1451"}, "type": "Rectangle"}, {"fieldtype": "ProtectiveSafeBlanking", "id": "shape-6d6e5536", "kind": "Field", "name": "\u5de60.3 Protective Rectangle", "rectangle": {"Height": "724", "OriginX": "-550", "OriginY": "362", "Rotation": "0", "Type": "Field", "Width": "750"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-147eb446", "kind": "Field", "name": "\u5de60.3 Speed down Rectangle", "rectangle": {"Height": "824", "OriginX": "-1000", "OriginY": "412", "Rotation": "0", "Type": "Field", "Width": "1200"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-839cff8b", "kind": "Field", "name": "\u5de60.3 Speed up Rectangle", "rectangle": {"Height": "1124", "OriginX": "-1500", "OriginY": "562", "Rotation": "0", "Type": "Field", "Width": "1700"}, "type": "Rectangle"}, {"fieldtype": "ProtectiveSafeBlanking", "id": "shape-3608b9db", "kind": "Field", "name": "\u5de6\u5f8c0.3 Protective Rectangle", "rectangle": {"Height": "724", "OriginX": "-699", "OriginY": "-191", "Rotation": "45", "Type": "Field", "Width": "629"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-6658247d", "kind": "Field", "name": "\u5de6\u5f8c0.3 Speed down Rectangle", "rectangle": {"Height": "824", "OriginX": "-1058", "OriginY": "-474", "Rotation": "45", "Type": "Field", "Width": "1084"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-3917624b", "kind": "Field", "name": "\u5de6\u5f8c0.3 Speed up Rectangle", "rectangle": {"Height": "1124", "OriginX": "-1519", "OriginY": "-721", "Rotation": "45", "Type": "Field", "Width": "1585"}, "type": "Rectangle"}, {"fieldtype": "ProtectiveSafeBlanking", "id": "shape-011b748c", "kind": "Field", "name": "\u5f8c0.3 Protective Rectangle", "rectangle": {"Height": "750", "OriginX": "-362", "OriginY": "200", "Rotation": "0", "Type": "Field", "Width": "724"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-0ca97f3f", "kind": "Field", "name": "\u5f8c0.3 Speed down Rectangle", "rectangle": {"Height": "1200", "OriginX": "-412", "OriginY": "200", "Rotation": "0", "Type": "Field", "Width": "824"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-d3559519", "kind": "Field", "name": "\u5f8c0.3 Speed up Rectangle", "rectangle": {"Height": "1700", "OriginX": "-562", "OriginY": "200", "Rotation": "0", "Type": "Field", "Width": "1124"}, "type": "Rectangle"}, {"fieldtype": "ProtectiveSafeBlanking", "id": "shape-ffbdf4d7", "kind": "Field", "name": "\u53f3\u5f8c0.3 Protective Rectangle", "rectangle": {"Height": "724", "OriginX": "259", "OriginY": "255", "Rotation": "315", "Type": "Field", "Width": "634"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-02c93537", "kind": "Field", "name": "\u53f3\u5f8c0.3 Speed down Rectangle", "rectangle": {"Height": "824", "OriginX": "294", "OriginY": "290", "Rotation": "315", "Type": "Field", "Width": "1072"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-43d7c4b2", "kind": "Field", "name": "\u53f3\u5f8c0.3 Speed up Rectangle", "rectangle": {"Height": "1024", "OriginX": "361", "OriginY": "361", "Rotation": "315", "Type": "Field", "Width": "1575"}, "type": "Rectangle"}, {"fieldtype": "ProtectiveSafeBlanking", "id": "shape-f5cde190", "kind": "Field", "name": "\u53f30.15 Protective Rectangle", "rectangle": {"Height": "724", "OriginX": "-200", "OriginY": "362", "Rotation": "0", "Type": "Field", "Width": "700"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-968bfc3d", "kind": "Field", "name": "\u53f30.15 Speed up Rectangle", "rectangle": {"Height": "924", "OriginX": "-200", "OriginY": "462", "Rotation": "0", "Type": "Field", "Width": "1300"}, "type": "Rectangle"}, {"fieldtype": "ProtectiveSafeBlanking", "id": "shape-7cb65d29", "kind": "Field", "name": "\u53f3\u524d0.15 Protective Rectangle", "rectangle": {"Height": "724", "OriginX": "-255", "OriginY": "259", "Rotation": "45", "Type": "Field", "Width": "585"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-0c82138a", "kind": "Field", "name": "\u53f3\u524d0.15 Speed up Rectangle", "rectangle": {"Height": "924", "OriginX": "-324", "OriginY": "324", "Rotation": "45", "Type": "Field", "Width": "1183"}, "type": "Rectangle"}, {"fieldtype": "ProtectiveSafeBlanking", "id": "shape-b2c7ee4b", "kind": "Field", "name": "\u524d0.15 Protective Rectangle", "rectangle": {"Height": "700", "OriginX": "-362", "OriginY": "500", "Rotation": "0", "Type": "Field", "Width": "724"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-65172861", "kind": "Field", "name": "\u524d0.15 Speed up Rectangle", "rectangle": {"Height": "1300", "OriginX": "-462", "OriginY": "1100", "Rotation": "0", "Type": "Field", "Width": "924"}, "type": "Rectangle"}, {"fieldtype": "ProtectiveSafeBlanking", "id": "shape-9e9a0ad5", "kind": "Field", "name": "\u5de6\u524d0.15 Protective Rectangle", "rectangle": {"Height": "724", "OriginX": "-158", "OriginY": "668", "Rotation": "315", "Type": "Field", "Width": "585"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-18d51a7c", "kind": "Field", "name": "\u5de6\u524d0.15 Speed up Rectangle", "rectangle": {"Height": "924", "OriginX": "-509", "OriginY": "1167", "Rotation": "315", "Type": "Field", "Width": "1187"}, "type": "Rectangle"}, {"fieldtype": "ProtectiveSafeBlanking", "id": "shape-9f15db80", "kind": "Field", "name": "\u5de60.15 Protective Rectangle", "rectangle": {"Height": "724", "OriginX": "-500", "OriginY": "362", "Rotation": "0", "Type": "Field", "Width": "700"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-721e99e7", "kind": "Field", "name": "\u5de60.15 Speed up Rectangle", "rectangle": {"Height": "924", "OriginX": "-1100", "OriginY": "462", "Rotation": "0", "Type": "Field", "Width": "1300"}, "type": "Rectangle"}, {"fieldtype": "ProtectiveSafeBlanking", "id": "shape-06401945", "kind": "Field", "name": "\u5de6\u5f8c0.15 Protective Rectangle", "rectangle": {"Height": "724", "OriginX": "-666", "OriginY": "-158", "Rotation": "45", "Type": "Field", "Width": "587"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-0c7bed21", "kind": "Field", "name": "\u5de6\u5f8c0.15 Speed up Rectangle", "rectangle": {"Height": "924", "OriginX": "-1159", "OriginY": "-503", "Rotation": "45", "Type": "Field", "Width": "1177"}, "type": "Rectangle"}, {"fieldtype": "ProtectiveSafeBlanking", "id": "shape-ca3a47c4", "kind": "Field", "name": "\u5f8c0.15 Protective Rectangle", "rectangle": {"Height": "700", "OriginX": "-362", "OriginY": "200", "Rotation": "0", "Type": "Field", "Width": "724"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-6775565f", "kind": "Field", "name": "\u5f8c0.15 Speed up Rectangle", "rectangle": {"Height": "1300", "OriginX": "-462", "OriginY": "200", "Rotation": "0", "Type": "Field", "Width": "924"}, "type": "Rectangle"}, {"fieldtype": "ProtectiveSafeBlanking", "id": "shape-fd204bea", "kind": "Field", "name": "\u53f3\u5f8c0.15 Protective Rectangle", "rectangle": {"Height": "724", "OriginX": "257", "OriginY": "257", "Rotation": "315", "Type": "Field", "Width": "586"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-f07c92db", "kind": "Field", "name": "\u53f3\u5f8c0.15 Speed up Rectangle", "rectangle": {"Height": "1024", "OriginX": "362", "OriginY": "360", "Rotation": "315", "Type": "Field", "Width": "1180"}, "type": "Rectangle"}, {"circle": {"CenterX": "0", "CenterY": "0", "Radius": "542", "Type": "Field"}, "fieldtype": "ProtectiveSafeBlanking", "id": "shape-9b230cc4", "kind": "Field", "name": "\u56de\u8ee2 Protective Circle", "type": "Circle"}, {"fieldtype": "ProtectiveSafeBlanking", "id": "shape-7ab37b41", "kind": "Field", "name": "Stop(minimum) Protective Polygon", "polygon": {"Type": "Field", "points": [{"X": "-245", "Y": "86"}, {"X": "-98", "Y": "-161"}, {"X": "98", "Y": "-163"}, {"X": "240", "Y": "79"}, {"X": "139", "Y": "250"}, {"X": "-137", "Y": "247"}]}, "type": "Polygon"}, {"fieldtype": "ProtectiveSafeBlanking", "id": "shape-2e2c7edc", "kind": "CutOut", "name": "Stop(minimum) Protective Polygon", "polygon": {"Type": "CutOut", "points": [{"X": "-173", "Y": "160"}, {"X": "-1", "Y": "227"}, {"X": "165", "Y": "157"}, {"X": "0", "Y": "-242"}]}, "type": "Polygon"}, {"circle": {"CenterX": "-1", "CenterY": "-163", "Radius": "1", "Type": "Field"}, "fieldtype": "ProtectiveSafeBlanking", "id": "shape-e338d649", "kind": "Field", "name": "Stop(minimum) Protective Circle", "type": "Circle"}, {"circle": {"CenterX": "0", "CenterY": "-167", "Radius": "99", "Type": "Field"}, "fieldtype": "ProtectiveSafeBlanking", "id": "shape-f9ab7733", "kind": "Field", "name": "Stop(minimum) Protective Circle", "type": "Circle"}, {"circle": {"CenterX": "-190", "CenterY": "166", "Radius": "99", "Type": "Field"}, "fieldtype": "ProtectiveSafeBlanking", "id": "shape-c56161ab", "kind": "Field", "name": "Stop(minimum) Protective Circle", "type": "Circle"}, {"circle": {"CenterX": "188", "CenterY": "164", "Radius": "99", "Type": "Field"}, "fieldtype": "ProtectiveSafeBlanking", "id": "shape-faa9b302", "kind": "Field", "name": "Stop(minimum) Protective Circle", "type": "Circle"}];
         const shapeModal = document.getElementById("shape-modal");
         const shapeModalBody = document.getElementById("shape-modal-body");
         const shapeModalTitle = document.getElementById("shape-modal-title");
@@ -1077,8 +1312,32 @@
         const shapeModalClose = document.getElementById("shape-modal-close");
         const shapeModalWindow = document.querySelector("#shape-modal .modal-window");
         const shapeModalHeader = shapeModalWindow?.querySelector(".modal-header");
+        const createShapeModal = document.getElementById("create-shape-modal");
+        const createShapeModalWindow = document.querySelector("#create-shape-modal .modal-window");
+        const createShapeModalClose = document.getElementById("create-shape-modal-close");
+        const createShapeModalCancel = document.getElementById("create-shape-modal-cancel");
+        const createShapeModalHeader = createShapeModalWindow?.querySelector(".modal-header");
+        const createShapeModalSave = document.getElementById("create-shape-modal-save");
+        const createShapeNameInput = document.getElementById("create-shape-name");
+        const createShapeFieldtypeSelect = document.getElementById("create-shape-fieldtype");
+        const createShapeTypeSelect = document.getElementById("create-shape-type");
+        const createShapeKindSelect = document.getElementById("create-shape-kind");
+        const createShapePointsInput = document.getElementById("create-shape-points");
+        const createShapePolygonGroup = document.querySelector(".shape-polygon-group");
+        const createShapeRectFields = document.querySelector(".shape-rectangle-group");
+        const createShapeCircleFields = document.querySelector(".shape-circle-group");
+        const createShapeFieldsetList = document.getElementById("create-shape-fieldset-list");
+        const createRectOriginXInput = document.getElementById("create-rect-originx");
+        const createRectOriginYInput = document.getElementById("create-rect-originy");
+        const createRectWidthInput = document.getElementById("create-rect-width");
+        const createRectHeightInput = document.getElementById("create-rect-height");
+        const createRectRotationInput = document.getElementById("create-rect-rotation");
+        const createCircleCenterXInput = document.getElementById("create-circle-centerx");
+        const createCircleCenterYInput = document.getElementById("create-circle-centery");
+        const createCircleRadiusInput = document.getElementById("create-circle-radius");
         const saveTriOrbBtn = document.getElementById("btn-save-triorb");
-        const saveLegacyBtn = document.getElementById("btn-save-legacy");
+        const saveSickBtn = document.getElementById("btn-save-sick");
+        const newPlotBtn = document.getElementById("btn-new");
         const originTrace = findOriginTrace(defaultFigure);
 
         let currentFigure = cloneFigure(defaultFigure);
@@ -1114,6 +1373,8 @@
         if (globalToleranceNegativeInput) {
           globalToleranceNegativeInput.value = globalToleranceNegative;
         }
+        let createShapePreview = null;
+        let createShapeDraftId = null;
           updateGlobalFieldAttributes();
 
           let lastHoverPoint = null;
@@ -1131,6 +1392,7 @@
         renderFieldsetGlobal();
         renderFieldsetCheckboxes();
         renderTriOrbShapes();
+        renderTriOrbShapeCheckboxes();
 
         function initializeScanPlanes(data) {
           let planes;
@@ -1171,6 +1433,7 @@
           });
           const triOrbShapeTraces = buildTriOrbShapeTraces();
           const overlayTraces = buildFieldsetTraces();
+          const previewTraces = buildCreateShapePreviewTraces();
           const layout = {
             ...(currentFigure.layout || {}),
             showlegend: legendVisible,
@@ -1200,15 +1463,16 @@
           };
           Plotly.react(
             plotNode,
-            triOrbShapeTraces.concat(baseData).concat(overlayTraces),
+            triOrbShapeTraces.concat(baseData).concat(overlayTraces).concat(previewTraces),
             layout,
             figureConfig
           );
         }
 
         function buildFieldsetTraces() {
+          const deviceTraces = buildDeviceOverlayTraces();
           if (!Array.isArray(fieldsets) || !fieldsets.length) {
-            return [];
+            return deviceTraces;
           }
           const traces = [];
           fieldsets.forEach((fieldset, fieldsetIndex) => {
@@ -1221,7 +1485,6 @@
               const fieldName =
                 field.attributes?.Name || `Field ${fieldIndex + 1}`;
               const labelPrefix = `${fieldsetName} / ${fieldName}`;
-              const color = getFieldsetColor(fieldsetIndex + fieldIndex);
               const fieldType = field.attributes?.Fieldtype || "ProtectiveSafeBlanking";
               (field.shapeRefs || []).forEach((shapeRef, shapeRefIndex) => {
                 const shapeIndex = triorbShapes.findIndex(
@@ -1235,13 +1498,14 @@
                   return;
                 }
                 const shapeLabel = `${labelPrefix} / ${shape.name || shape.type}`;
+                const color = pickFieldColor(fieldType, shapeRefIndex, field.shapeRefs?.length || 1);
                 let shapeTrace = null;
                 switch (shape.type) {
                   case "Rectangle":
                     if (shape.rectangle) {
                       shapeTrace = buildRectangleTrace(
                         shape.rectangle,
-                        color,
+                        pickFieldColor(fieldType, shapeRefIndex, field.shapeRefs?.length || 1),
                         shapeLabel,
                         fieldType,
                         fieldsetIndex,
@@ -1254,7 +1518,7 @@
                     if (shape.circle) {
                       shapeTrace = buildCircleTrace(
                         shape.circle,
-                        color,
+                        pickFieldColor(fieldType, shapeRefIndex, field.shapeRefs?.length || 1),
                         shapeLabel,
                         fieldType,
                         fieldsetIndex,
@@ -1268,7 +1532,7 @@
                     if (shape.polygon) {
                       shapeTrace = buildPolygonTrace(
                         shape.polygon,
-                        color,
+                        pickFieldColor(fieldType, shapeRefIndex, field.shapeRefs?.length || 1),
                         shapeLabel,
                         fieldType,
                         fieldsetIndex,
@@ -1292,11 +1556,72 @@
               });
             });
           });
-          const deviceTraces = buildDeviceOverlayTraces();
           return deviceTraces.concat(traces);
         }
 
-function buildPolygonTrace(polygon, color, label, fieldType, fieldsetIndex, fieldIndex, polygonIndex) {
+        function buildCreateShapePreviewTraces() {
+          if (!createShapePreview) {
+            return [];
+          }
+          const preview = createShapePreview;
+          let previewTrace = null;
+          const previewLabel = `${preview.name || "New Shape"} (preview)`;
+          switch (preview.type) {
+            case "Rectangle":
+              previewTrace = buildRectangleTrace(
+                preview.rectangle,
+                "#ef4444",
+                previewLabel,
+                preview.fieldtype || "ProtectiveSafeBlanking",
+                0,
+                0,
+                0
+              );
+              break;
+            case "Circle":
+              previewTrace = buildCircleTrace(
+                preview.circle,
+                "#ef4444",
+                previewLabel,
+                preview.fieldtype || "ProtectiveSafeBlanking",
+                0,
+                0,
+                0
+              );
+              break;
+            case "Polygon":
+            default:
+              previewTrace = buildPolygonTrace(
+                preview.polygon,
+                "#ef4444",
+                previewLabel,
+                preview.fieldtype || "ProtectiveSafeBlanking",
+                0,
+                0,
+                0
+              );
+              break;
+          }
+          if (!previewTrace) {
+            return [];
+          }
+          previewTrace.line = {
+            ...(previewTrace.line || {}),
+            color: "#ef4444",
+            width: Math.max((previewTrace.line && previewTrace.line.width) || 2, 3),
+            dash: "solid",
+          };
+          previewTrace.fillcolor = withAlpha("#ef4444", 0.08);
+          previewTrace.name = previewLabel;
+          previewTrace.showlegend = false;
+          previewTrace.hovertemplate = `<b>Preview:</b> ${escapeHtml(
+            preview.name || "Shape"
+          )}<extra></extra>`;
+          previewTrace.meta = { ...(previewTrace.meta || {}), preview: true };
+          return [previewTrace];
+        }
+
+        function buildPolygonTrace(polygon, color, label, fieldType, fieldsetIndex, fieldIndex, polygonIndex) {
           const points = Array.isArray(polygon?.points) ? polygon.points : [];
           if (points.length < 2) {
             return null;
@@ -1320,7 +1645,8 @@ function buildPolygonTrace(polygon, color, label, fieldType, fieldsetIndex, fiel
             y.push(first.y);
           }
           const truncatedLabel = formatLegendLabel(label);
-          const style = resolveShapeStyle(fieldType, polygon?.attributes?.Type);
+          const polygonType = getPolygonTypeValue(polygon);
+          const style = resolveShapeStyle(fieldType, polygonType);
           return {
             type: "scatter",
             mode: "lines",
@@ -1334,7 +1660,7 @@ function buildPolygonTrace(polygon, color, label, fieldType, fieldsetIndex, fiel
               fieldsetIndex,
               fieldIndex,
               shapeIndex: polygonIndex,
-              shapeType: polygon?.attributes?.Type || "CutOut",
+              shapeType: polygonType || "Field",
             },
             hovertemplate: "<b>%{meta.fullLabel}</b><extra></extra>",
             x,
@@ -1495,14 +1821,6 @@ function buildCircleTrace(circle, color, label, fieldType, fieldsetIndex, fieldI
           return `rgba(${r}, ${g}, ${b}, ${alpha})`;
         }
 
-        function getFieldsetColor(index) {
-          if (!Array.isArray(fieldsetColorPalette) || !fieldsetColorPalette.length) {
-            return "#0f172a";
-          }
-          const safeIndex = Number.isFinite(index) && index >= 0 ? index : 0;
-          return fieldsetColorPalette[safeIndex % fieldsetColorPalette.length];
-        }
-
         function calculateVisibleFieldsetRadius() {
           let maxDistance = 0;
           fieldsets.forEach((fieldset) => {
@@ -1556,6 +1874,11 @@ function buildCircleTrace(circle, color, label, fieldType, fieldsetIndex, fieldI
             return [];
           }
           const radius = calculateDeviceFanRadius();
+          console.debug("Device overlay state", {
+            deviceCount: fieldsetDevices.length,
+            fieldOfViewDegrees,
+            radius,
+          });
           const traces = [];
           fieldsetDevices.forEach((device, deviceIndex) => {
             const attrs = device?.attributes || {};
@@ -1612,9 +1935,9 @@ function buildCircleTrace(circle, color, label, fieldType, fieldsetIndex, fieldI
               if (shape.visible === false) {
                 return null;
               }
-              const color = getFieldsetColor(shapeIndex + 2);
+              const color = pickTriOrbColor(shapeIndex);
               const label = `${shape.name || `Shape ${shapeIndex + 1}`} (${shape.type})`;
-              const fieldType = shape.type === "Warning" ? "WarningSafeBlanking" : "ProtectiveSafeBlanking";
+              const fieldType = shape.fieldtype || "ProtectiveSafeBlanking";
               switch (shape.type) {
                 case "Rectangle":
                   if (!shape.rectangle) return null;
@@ -1934,23 +2257,23 @@ function buildCircleTrace(circle, color, label, fieldType, fieldsetIndex, fieldI
           const options = [];
           const seen = new Set();
           scanPlanes.forEach((plane) => {
-            (plane.devices || []).forEach((device) => {
+            (plane.devices || []).forEach((device, index) => {
               const attrs = device.attributes || {};
-              const typekey = attrs.Typekey;
-              if (!typekey) {
+              const name = (attrs.DeviceName || attrs.Typekey || `Device ${index + 1}`).trim();
+              if (!name) {
                 return;
               }
-              if (seen.has(typekey)) {
+              const key = name.toLowerCase();
+              if (seen.has(key)) {
                 return;
               }
-              seen.add(typekey);
+              seen.add(key);
               options.push({
-                typekey,
+                deviceName: name,
+                typekey: attrs.Typekey || "",
                 typekeyDisplayVersion: attrs.TypekeyDisplayVersion || "",
                 typekeyVersion: attrs.TypekeyVersion || "",
-                label: attrs.DeviceName
-                  ? `${attrs.DeviceName} (${typekey})`
-                  : typekey,
+                label: attrs.Typekey ? `${name} (${attrs.Typekey})` : name,
               });
             });
           });
@@ -1971,16 +2294,40 @@ function buildCircleTrace(circle, color, label, fieldType, fieldsetIndex, fieldI
           return null;
         }
 
-        function applyScanPlaneDeviceAttributes(targetDevice, typekey) {
-          targetDevice.attributes = targetDevice.attributes || {};
-          targetDevice.attributes.Typekey = typekey || "";
+        function findScanPlaneDeviceByName(name) {
+          if (!name) {
+            return null;
+          }
+          const normalized = name.trim().toLowerCase();
+          for (const plane of scanPlanes) {
+            for (const device of plane.devices || []) {
+              const deviceName = (device.attributes || {}).DeviceName || "";
+              if (deviceName.trim().toLowerCase() === normalized) {
+                return device;
+              }
+            }
+          }
+          return null;
+        }
 
-          const source = findScanPlaneDeviceByTypekey(typekey);
-          const keys = ["TypekeyDisplayVersion", "TypekeyVersion"];
-          keys.forEach((key) => {
-            targetDevice.attributes[key] =
-              (source?.attributes || {})[key] || "";
-          });
+        function applyScanPlaneDeviceAttributes(targetDevice, { deviceName, typekey } = {}) {
+          targetDevice.attributes = targetDevice.attributes || {};
+          if (deviceName) {
+            targetDevice.attributes.DeviceName = deviceName;
+          }
+          let source =
+            (deviceName && findScanPlaneDeviceByName(deviceName)) ||
+            (typekey && findScanPlaneDeviceByTypekey(typekey)) ||
+            null;
+          if (!source) {
+            return;
+          }
+          const attrs = source.attributes || {};
+          targetDevice.attributes.Typekey = attrs.Typekey || typekey || targetDevice.attributes.Typekey || "";
+          targetDevice.attributes.TypekeyDisplayVersion =
+            attrs.TypekeyDisplayVersion || targetDevice.attributes.TypekeyDisplayVersion || "";
+          targetDevice.attributes.TypekeyVersion =
+            attrs.TypekeyVersion || targetDevice.attributes.TypekeyVersion || "";
         }
 
         function findTriOrbShapeById(shapeId) {
@@ -2418,27 +2765,61 @@ function buildCircleTrace(circle, color, label, fieldType, fieldsetIndex, fieldI
           if (!Array.isArray(data) || !data.length) {
             return [createDefaultTriOrbShape(0)];
           }
-          return data.map((shape, index) => ({
-            id: shape.id || createShapeId(),
-            name: shape.name || `Shape ${index + 1}`,
-            type: shape.type || "Polygon",
-            polygon: shape.polygon || createDefaultPolygonDetails(),
-            rectangle: shape.rectangle || createDefaultRectangleDetails(),
-            circle: shape.circle || createDefaultCircleDetails(),
-            visible: shape.visible !== false,
-          }));
+          return data.map((shape, index) => {
+            const fieldtype = shape.fieldtype || "ProtectiveSafeBlanking";
+            const inferredKind =
+              shape.kind ||
+              shape.Kind ||
+              getPolygonTypeValue(shape.polygon) ||
+              (shape.rectangle && shape.rectangle.Type) ||
+              (shape.circle && shape.circle.Type) ||
+              "Field";
+            const polygon = shape.polygon
+              ? JSON.parse(JSON.stringify(shape.polygon))
+              : createDefaultPolygonDetails();
+            if (!getPolygonTypeValue(polygon)) {
+              setPolygonTypeValue(polygon, inferredKind);
+            }
+            const rectangle = shape.rectangle
+              ? JSON.parse(JSON.stringify(shape.rectangle))
+              : createDefaultRectangleDetails();
+            rectangle.Type = rectangle.Type || inferredKind;
+            const circle = shape.circle
+              ? JSON.parse(JSON.stringify(shape.circle))
+              : createDefaultCircleDetails();
+            circle.Type = circle.Type || inferredKind;
+            const normalizedShape = {
+              id: shape.id || createShapeId(),
+              name: shape.name || `Shape ${index + 1}`,
+              type: shape.type || "Polygon",
+              fieldtype,
+              kind: inferredKind,
+              polygon,
+              rectangle,
+              circle,
+              visible: shape.visible !== false,
+            };
+            applyShapeKind(normalizedShape, inferredKind);
+            return normalizedShape;
+          });
         }
 
-        function createDefaultTriOrbShape(index, kind = "Polygon") {
+        function createDefaultTriOrbShape(index, geometryType = "Polygon") {
+          const polygon = createDefaultPolygonDetails();
+          const rectangle = createDefaultRectangleDetails();
+          const circle = createDefaultCircleDetails();
           const shape = {
             id: createShapeId(),
             name: `Shape ${index + 1}`,
-            type: kind,
-            polygon: createDefaultPolygonDetails(),
-            rectangle: createDefaultRectangleDetails(),
-            circle: createDefaultCircleDetails(),
+            type: geometryType,
+            fieldtype: "ProtectiveSafeBlanking",
+            kind: "Field",
+            polygon,
+            rectangle,
+            circle,
             visible: true,
           };
+          applyShapeKind(shape, shape.kind);
           return shape;
         }
 
@@ -2499,6 +2880,42 @@ function buildCircleTrace(circle, color, label, fieldType, fieldsetIndex, fieldI
           };
         }
 
+        function getPolygonTypeValue(polygon) {
+          if (!polygon) {
+            return undefined;
+          }
+          if (polygon.attributes && typeof polygon.attributes.Type !== "undefined") {
+            return polygon.attributes.Type;
+          }
+          return polygon.Type;
+        }
+
+        function setPolygonTypeValue(polygon, value) {
+          if (!polygon || typeof value === "undefined") {
+            return;
+          }
+          if (polygon.attributes) {
+            polygon.attributes.Type = value;
+          } else {
+            polygon.Type = value;
+          }
+        }
+
+        function applyShapeKind(shape, kind) {
+          if (!shape) {
+            return;
+          }
+          const normalized = kind || "Field";
+          shape.kind = normalized;
+          setPolygonTypeValue(shape.polygon, normalized);
+          if (shape.rectangle) {
+            shape.rectangle.Type = normalized;
+          }
+          if (shape.circle) {
+            shape.circle.Type = normalized;
+          }
+        }
+
         function renderTriOrbShapes() {
           if (!triorbShapesContainer) {
             return;
@@ -2514,12 +2931,28 @@ function buildCircleTrace(circle, color, label, fieldType, fieldsetIndex, fieldI
 
         function renderTriOrbShapeCard(shapeIndex, shape) {
           const details = renderTriOrbShapeDetails(shape, shapeIndex);
-          const typeSelect = ["Polygon", "Rectangle", "Circle"]
+          const geometrySelect = ["Polygon", "Rectangle", "Circle"]
             .map(
               (type) =>
                 `<option value="${type}"${
                   type === shape.type ? " selected" : ""
                 }>${type}</option>`
+            )
+            .join("");
+          const fieldtypeSelect = ["ProtectiveSafeBlanking", "WarningSafeBlanking"]
+            .map(
+              (opt) =>
+                `<option value="${opt}"${
+                  opt === shape.fieldtype ? " selected" : ""
+                }>${opt}</option>`
+            )
+            .join("");
+          const kindSelect = ["Field", "CutOut"]
+            .map(
+              (opt) =>
+                `<option value="${opt}"${
+                  opt === shape.kind ? " selected" : ""
+                }>${opt}</option>`
             )
             .join("");
           return `
@@ -2537,13 +2970,33 @@ function buildCircleTrace(circle, color, label, fieldType, fieldsetIndex, fieldI
               />
             </label>
             <label>
+              Fieldtype
+              <select
+                class="triorb-shape-fieldtype"
+                data-shape-index="${shapeIndex}"
+                data-field="fieldtype"
+              >
+                ${fieldtypeSelect}
+              </select>
+            </label>
+            <label>
               Type
+              <select
+                class="triorb-shape-kind"
+                data-shape-index="${shapeIndex}"
+                data-field="kind"
+              >
+                ${kindSelect}
+              </select>
+            </label>
+            <label>
+              Geometry
               <select
                 class="triorb-shape-type"
                 data-shape-index="${shapeIndex}"
                 data-field="type"
               >
-                ${typeSelect}
+                ${geometrySelect}
               </select>
             </label>
             <button
@@ -2625,6 +3078,12 @@ function buildCircleTrace(circle, color, label, fieldType, fieldsetIndex, fieldI
           if (field === "name") {
             shape.name = target.value;
             changed = true;
+          } else if (field === "fieldtype") {
+            shape.fieldtype = target.value;
+            changed = true;
+          } else if (field === "kind") {
+            applyShapeKind(shape, target.value);
+            changed = true;
           } else if (field === "type") {
             shape.type = target.value;
             if (shape.type === "Polygon") {
@@ -2636,6 +3095,7 @@ function buildCircleTrace(circle, color, label, fieldType, fieldsetIndex, fieldI
             }
             renderTriOrbShapes();
             renderTriOrbShapeCheckboxes();
+            applyShapeKind(shape, shape.kind || "Field");
             changed = true;
           } else if (dimension === "polygon") {
             if (!shape.polygon) {
@@ -3245,12 +3705,28 @@ function buildCircleTrace(circle, color, label, fieldType, fieldsetIndex, fieldI
           if (!Array.isArray(data) || !data.length) {
             devices = getDefaultFieldsetDevices();
           } else {
-            devices = data.map((device, index) => ({
-              attributes: {
-                DeviceName: device.attributes?.DeviceName || `Device ${index + 1}`,
-                ...device.attributes,
-              },
-            }));
+            devices = data.map((device, index) => {
+              const attrs = { ...(device.attributes || {}) };
+              if (!attrs.DeviceName) {
+                const scanDeviceByName = findScanPlaneDeviceByName(attrs.DeviceName);
+                if (scanDeviceByName?.attributes?.DeviceName) {
+                  attrs.DeviceName = scanDeviceByName.attributes.DeviceName;
+                } else {
+                  const scanDevice = findScanPlaneDeviceByTypekey(attrs.Typekey);
+                  if (scanDevice?.attributes?.DeviceName) {
+                    attrs.DeviceName = scanDevice.attributes.DeviceName;
+                  } else {
+                    attrs.DeviceName = `Device ${index + 1}`;
+                  }
+                }
+              }
+              const wrapper = { attributes: attrs };
+              applyScanPlaneDeviceAttributes(wrapper, {
+                deviceName: attrs.DeviceName,
+                typekey: attrs.Typekey,
+              });
+              return wrapper;
+            });
           }
           ensureDefaultFieldsetDevices(devices);
           return devices;
@@ -3265,13 +3741,29 @@ function buildCircleTrace(circle, color, label, fieldType, fieldsetIndex, fieldI
 
         function createDefaultFieldsetDevice(index = 0, overrides = {}) {
           const options = getScanPlaneDeviceOptions();
-          const fallbackOption = options[Math.min(index, Math.max(0, options.length - 1))] || options[0];
-          const defaultTypekey = fallbackOption?.typekey || "NANS3-CAAZ30ZA1P02";
+          const fallbackOption =
+            options[Math.min(index, Math.max(0, options.length - 1))] ||
+            options[0];
+          const defaultTypekey =
+            fallbackOption?.typekey || "NANS3-CAAZ30ZA1P02";
+          const optionLabel = (fallbackOption?.label || "").trim();
+          const optionName = optionLabel.includes("(")
+            ? optionLabel.split("(")[0].trim()
+            : optionLabel;
+          const templateName =
+            defaultFieldsetDeviceTemplates[index]?.DeviceName || "";
+          const resolvedName =
+            overrides.DeviceName ||
+            optionName ||
+            templateName ||
+            `Device ${index + 1}`;
           const device = {
             attributes: {
+              DeviceName: resolvedName,
               Typekey: defaultTypekey,
               TypekeyVersion: fallbackOption?.typekeyVersion || "1.0",
-              TypekeyDisplayVersion: fallbackOption?.typekeyDisplayVersion || "V 1.0.0",
+              TypekeyDisplayVersion:
+                fallbackOption?.typekeyDisplayVersion || "V 1.0.0",
               PositionX: "0",
               PositionY: "0",
               Rotation: "0",
@@ -3279,9 +3771,10 @@ function buildCircleTrace(circle, color, label, fieldType, fieldsetIndex, fieldI
               ...overrides,
             },
           };
-          if (defaultTypekey) {
-            applyScanPlaneDeviceAttributes(device, defaultTypekey);
-          }
+          applyScanPlaneDeviceAttributes(device, {
+            deviceName: resolvedName,
+            typekey: defaultTypekey,
+          });
           return device;
         }
 
@@ -3320,35 +3813,47 @@ function buildCircleTrace(circle, color, label, fieldType, fieldsetIndex, fieldI
           const deviceOptions = getScanPlaneDeviceOptions();
           fieldsetDevicesContainer.innerHTML = fieldsetDevices
             .map((device, deviceIndex) => {
-              const sanitizedAttributes = Object.entries(device.attributes || {}).filter(
-                ([key]) => key !== "DeviceName"
-              );
-              const deviceFields = sanitizedAttributes
+              const attributeEntries = Object.entries(device.attributes || {});
+              const deviceFields = attributeEntries
                 .map(([key, value]) => {
-                  if (key === "Typekey") {
+                  if (key === "DeviceName") {
+                    const selectionExists = deviceOptions.some(
+                      (opt) => opt.deviceName === value
+                    );
                     const optionsHtml =
-                      '<option value="">-- Select Typekey --</option>' +
+                      '<option value="">-- Select Device --</option>' +
                       (deviceOptions.length
                         ? deviceOptions
                             .map(
                               (opt) =>
-                                `<option value="${escapeHtml(opt.typekey)}"${
-                                  opt.typekey === value ? " selected" : ""
+                                `<option value="${escapeHtml(opt.deviceName)}"${
+                                  opt.deviceName === value ? " selected" : ""
                                 }>${escapeHtml(opt.label)}</option>`
                             )
                             .join("")
-                        : `<option value="${escapeHtml(value || "")}" selected>${escapeHtml(
-                            value || ""
-                          )}</option>`);
+                        : "");
+                    const fallbackOption =
+                      !selectionExists && value
+                        ? `<option value="${escapeHtml(value)}" selected>${escapeHtml(
+                            value
+                          )}</option>`
+                        : "";
+                    return `
+              <div class="device-field">
+                <label>DeviceName</label>
+                <select
+                  class="fieldset-device-name"
+                  data-device-index="${deviceIndex}"
+                >
+                  ${optionsHtml}${fallbackOption}
+                </select>
+              </div>`;
+                  }
+                  if (key === "Typekey") {
                     return `
               <div class="device-field">
                 <label>${escapeHtml(key)}</label>
-                <select
-                  class="fieldset-device-typekey"
-                  data-device-index="${deviceIndex}"
-                >
-                  ${optionsHtml}
-                </select>
+                <input type="text" value="${escapeHtml(value ?? "")}" readonly />
               </div>`;
                   }
                   if (["TypekeyDisplayVersion", "TypekeyVersion"].includes(key)) {
@@ -3435,11 +3940,11 @@ function buildCircleTrace(circle, color, label, fieldType, fieldsetIndex, fieldI
           fieldsetGlobalGeometry[key] = value;
         }
 
-        function buildBaseSdImportExportLines() {
+function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAttrs = null } = {}) {
           const figure = currentFigure || defaultFigure;
           const fileInfoLines = buildFileInfoLines();
-          const scanPlaneLines = buildScanPlanesXml();
-          const fieldsetLines = buildFieldsetsXml();
+          const scanPlaneLines = buildScanPlanesXml(scanDeviceAttrs);
+          const fieldsetLines = buildFieldsetsXml(fieldsetDeviceAttrs);
           const rootAttrOverrides = {
             ...rootAttributes,
             Timestamp: new Date().toISOString(),
@@ -3522,7 +4027,21 @@ function buildCircleTrace(circle, color, label, fieldType, fieldsetIndex, fieldI
           return lines.join("\n");
         }
 
-        function buildScanPlanesXml() {
+        function buildDeviceAttributeString(attrs, { keepDeviceName = false } = {}) {
+          if (!attrs) return "";
+          const sanitized = { ...attrs };
+          if (!keepDeviceName) {
+            delete sanitized.DeviceName;
+          }
+          return buildAttributeString(sanitized, getAttributeOrder("Device"));
+        }
+
+        function formatDeviceFilePrefix(attrs, index) {
+          const rawName = (attrs?.DeviceName || "").trim() || attrs?.Typekey || `device${index + 1}`;
+          return rawName.replace(/[^a-zA-Z0-9._-]/g, "_");
+        }
+
+        function buildScanPlanesXml(scanDeviceAttrs = null) {
           if (!scanPlanes.length) {
             return ["    <!-- ScanPlane not set -->"];
           }
@@ -3533,37 +4052,39 @@ function buildCircleTrace(circle, color, label, fieldType, fieldsetIndex, fieldI
               getAttributeOrder("ScanPlane")
             );
             lines.push(`    <ScanPlane${attrText ? " " + attrText : ""}>`);
-            if (plane.devices && plane.devices.length) {
-              lines.push("      <Devices>");
-              plane.devices.forEach((device) => {
-                const deviceAttrs = buildAttributeString(
-                  device.attributes,
-                  getAttributeOrder("Device")
-                );
-                lines.push(`        <Device${deviceAttrs ? " " + deviceAttrs : ""} />`);
+            const devicesToRender = scanDeviceAttrs
+              ? [{ attributes: scanDeviceAttrs }]
+              : plane.devices || [];
+            lines.push("      <Devices>");
+            if (devicesToRender.length) {
+              devicesToRender.forEach((device) => {
+                const attrs = buildDeviceAttributeString(device.attributes, {
+                  keepDeviceName: true,
+                });
+                lines.push(`        <Device${attrs ? " " + attrs : ""} />`);
               });
-              lines.push("      </Devices>");
             } else {
-              lines.push("      <Devices />");
+              lines.push("        <!-- No devices -->");
             }
+            lines.push("      </Devices>");
             lines.push("    </ScanPlane>");
           });
           return lines;
         }
 
-        function buildFieldsetsXml() {
+        function buildFieldsetsXml(fieldsetDeviceAttrs = null) {
           const lines = [];
           lines.push('    <ScanPlane Index="0">');
 
           lines.push("      <Devices>");
-          if (fieldsetDevices.length) {
-            fieldsetDevices.forEach((device) => {
-              const sanitizedDeviceAttrs = { ...(device.attributes || {}) };
-              delete sanitizedDeviceAttrs.DeviceName;
-              const deviceAttrs = buildAttributeString(
-                sanitizedDeviceAttrs,
-                getAttributeOrder("Device")
-              );
+          const devicesToRender = fieldsetDeviceAttrs
+            ? [{ attributes: fieldsetDeviceAttrs }]
+            : fieldsetDevices;
+          if (devicesToRender && devicesToRender.length) {
+            devicesToRender.forEach((device) => {
+              const deviceAttrs = buildDeviceAttributeString(device.attributes, {
+                keepDeviceName: false,
+              });
               lines.push(`        <Device${deviceAttrs ? " " + deviceAttrs : ""} />`);
             });
           } else {
@@ -3584,54 +4105,62 @@ function buildCircleTrace(circle, color, label, fieldType, fieldsetIndex, fieldI
           lines.push("      <Fieldsets>");
           if (fieldsets.length) {
             fieldsets.forEach((fieldset) => {
-            const attrText = buildAttributeString(
-              fieldset.attributes,
-              getAttributeOrder("Fieldset")
-            );
-            lines.push(`        <Fieldset${attrText ? " " + attrText : ""}>`);
-            if (fieldset.fields && fieldset.fields.length) {
-              fieldset.fields.forEach((field) => {
-                const fieldAttrs = buildAttributeString(
-                  field.attributes,
-                  getAttributeOrder("Field")
-                );
-                lines.push(`          <Field${fieldAttrs ? " " + fieldAttrs : ""}>`);
-                if (field.polygons && field.polygons.length) {
-                  field.polygons.forEach((polygon) => {
-                    const polygonAttrs = buildAttributeString(
-                      polygon.attributes,
-                      getAttributeOrder("Polygon")
-                    );
-                    lines.push(`            <Polygon${polygonAttrs ? " " + polygonAttrs : ""}>`);
-                    if (polygon.points && polygon.points.length) {
-                      polygon.points.forEach((point) => {
-                        const pointAttrs = buildAttributeString(
-                          point,
-                          getAttributeOrder("Point")
+              const attrText = buildAttributeString(
+                fieldset.attributes,
+                getAttributeOrder("Fieldset")
+              );
+              lines.push(`        <Fieldset${attrText ? " " + attrText : ""}>`);
+              if (fieldset.fields && fieldset.fields.length) {
+                fieldset.fields.forEach((field) => {
+                  const fieldAttrs = buildAttributeString(
+                    field.attributes,
+                    getAttributeOrder("Field")
+                  );
+                  lines.push(`          <Field${fieldAttrs ? " " + fieldAttrs : ""}>`);
+                  if (field.shapeRefs && field.shapeRefs.length) {
+                    field.shapeRefs.forEach((shapeRef) => {
+                      const shape = findTriOrbShapeById(shapeRef.shapeId);
+                      if (!shape) {
+                        return;
+                      }
+                      if (shape.type === "Polygon" && shape.polygon) {
+                        const polygonAttr = buildAttributeString(
+                          { Type: getPolygonTypeValue(shape.polygon) },
+                          getAttributeOrder("Polygon")
                         );
-                        lines.push(`              <Point${pointAttrs ? " " + pointAttrs : ""} />`);
-                      });
-                    }
-                    lines.push("            </Polygon>");
-                  });
-                }
-                if (field.circles && field.circles.length) {
-                  field.circles.forEach((circle) => {
-                    const circleAttrs = buildAttributeString(
-                      circle,
-                      getAttributeOrder("Circle")
-                    );
-                    lines.push(`            <Circle${circleAttrs ? " " + circleAttrs : ""} />`);
-                  });
-                }
-                if (field.rectangles && field.rectangles.length) {
-                  field.rectangles.forEach((rectangle) => {
-                    const rectAttrs = buildAttributeString(
-                      rectangle,
-                      getAttributeOrder("Rectangle")
-                    );
-                    lines.push(`            <Rectangle${rectAttrs ? " " + rectAttrs : ""} />`);
-                  });
+                        lines.push(
+                          `            <Polygon${polygonAttr ? " " + polygonAttr : ""}>`
+                        );
+                        (shape.polygon.points || []).forEach((point) => {
+                          const pointAttrs = buildAttributeString(
+                            point,
+                            getAttributeOrder("Point")
+                          );
+                          lines.push(
+                            `              <Point${pointAttrs ? " " + pointAttrs : ""} />`
+                          );
+                        });
+                        lines.push("            </Polygon>");
+                      } else if (shape.type === "Rectangle" && shape.rectangle) {
+                        const rectAttrs = buildAttributeString(
+                          shape.rectangle,
+                          getAttributeOrder("Rectangle")
+                        );
+                        lines.push(
+                          `            <Rectangle${rectAttrs ? " " + rectAttrs : ""} />`
+                        );
+                      } else if (shape.type === "Circle" && shape.circle) {
+                        const circleAttrs = buildAttributeString(
+                          shape.circle,
+                          getAttributeOrder("Circle")
+                        );
+                        lines.push(
+                          `            <Circle${circleAttrs ? " " + circleAttrs : ""} />`
+                        );
+                      }
+                    });
+                  } else {
+                    lines.push("            <!-- No shapes assigned -->");
                   }
                   lines.push("          </Field>");
                 });
@@ -3733,13 +4262,13 @@ function buildCircleTrace(circle, color, label, fieldType, fieldsetIndex, fieldI
           lines.push("    <Shapes>");
           triorbShapes.forEach((shape) => {
             const shapeAttrs = buildAttributeString(
-              { ID: shape.id, Name: shape.name, Type: shape.type },
-              ["ID", "Name", "Type"]
+              { ID: shape.id, Name: shape.name, Type: shape.type, Fieldtype: shape.fieldtype, Kind: shape.kind },
+              ["ID", "Name", "Type", "Fieldtype", "Kind"]
             );
             lines.push(`      <Shape${shapeAttrs ? " " + shapeAttrs : ""}>`);
             if (shape.type === "Polygon" && shape.polygon) {
               const polygonAttr = buildAttributeString(
-                { Type: shape.polygon.Type },
+                { Type: getPolygonTypeValue(shape.polygon) },
                 ["Type"]
               );
               lines.push(`        <Polygon${polygonAttr ? " " + polygonAttr : ""}>`);
@@ -3764,12 +4293,12 @@ function buildCircleTrace(circle, color, label, fieldType, fieldsetIndex, fieldI
           return lines;
         }
 
-        function downloadXml(xmlString) {
+        function downloadXml(xmlString, filename) {
           const blob = new Blob([xmlString], { type: "application/xml" });
           const url = URL.createObjectURL(blob);
           const anchor = document.createElement("a");
           anchor.href = url;
-          anchor.download = `plot_${Date.now()}.sgexml`;
+          anchor.download = filename || `plot_${Date.now()}.sgexml`;
           document.body.appendChild(anchor);
           anchor.click();
           document.body.removeChild(anchor);
@@ -3864,67 +4393,93 @@ function buildCircleTrace(circle, color, label, fieldType, fieldsetIndex, fieldI
         function parseXmlToFigure(xmlText) {
           const parser = new DOMParser();
           let doc = parser.parseFromString(xmlText, "application/xml");
+          let sanitized = xmlText.replace(/<\?xml[^>]*\?>/gi, "").trim();
+          let wrapperText = `<TriOrbWrapper>${sanitized}</TriOrbWrapper>`;
+          let triOrbDoc = parser.parseFromString(wrapperText, "application/xml");
           if (doc.querySelector("parsererror")) {
-            const sanitized = xmlText.replace(/<\?xml[^>]*\?>/gi, "").trim();
-            const wrapped = `<TriOrbWrapper>${sanitized}</TriOrbWrapper>`;
+            const wrapped = wrapperText;
             doc = parser.parseFromString(wrapped, "application/xml");
           }
           if (doc.querySelector("parsererror")) {
             throw new Error("Failed to parse XML.");
           }
+          console.log("parseXmlToFigure TriOrb root exists", Boolean(doc.querySelector("TriOrb_SICK_SLS_Editor")));
 
           populateFileInfoFromDoc(doc);
           populateScanPlanesFromDoc(doc);
+          populateTriOrbShapesFromDoc(triOrbDoc);
           populateFieldsetsFromDoc(doc);
 
           const tracesFromPlotData = parsePlotDataTraces(doc);
           if (tracesFromPlotData.length) {
-            return { traces: tracesFromPlotData, warning: "" };
+            const triOrbPresent = Boolean(triOrbDoc.querySelector("TriOrb_SICK_SLS_Editor"));
+            return { traces: tracesFromPlotData, warning: "", triOrbPresent };
           }
 
           const polygonTrace = parsePolygonTrace(doc);
           if (polygonTrace.length) {
-            return { traces: polygonTrace, warning: "" };
+            const triOrbPresent = Boolean(triOrbDoc.querySelector("TriOrb_SICK_SLS_Editor"));
+            return { traces: polygonTrace, warning: "", triOrbPresent };
           }
 
           return {
             traces: [],
             warning: "Plot data was not found; displaying an empty plot.",
+            triOrbPresent: Boolean(triOrbDoc.querySelector("TriOrb_SICK_SLS_Editor")),
           };
         }
+        function buildTraceFromPoints(x, y, opts = {}, index = 0) {
+          return {
+            type: "scatter",
+            mode: opts.mode || "lines",
+            x,
+            y,
+            line: {
+              color: opts.color || "#1f77b4",
+              width: 2,
+            },
+            name: formatLegendLabel(opts.name || `Trace ${index + 1}`),
+            hovertemplate: "<b>%{text}</b><extra></extra>",
+            text: opts.name,
+            meta: {
+              fullLabel: opts.name || `Trace ${index + 1}`,
+            },
+          };
+        }
+
         function parsePlotDataTraces(doc) {
-          const traces = Array.from(
-            doc.querySelectorAll(
-              "PlotData > Trace, PlotlyData > Trace, PlotlyData > Traces > Trace, TriOrb_SICK_SLS_Editor > PlotlyData > Traces > Trace"
-            )
-          );
-          return traces.map((traceNode, index) => {
+  const traces = Array.from(
+    doc.querySelectorAll(
+      "PlotData > Trace, PlotlyData > Trace, PlotlyData > Traces > Trace, TriOrb_SICK_SLS_Editor > PlotlyData > Traces > Trace"
+    )
+  );
+  return traces.map((traceNode, index) => {
             const points = Array.from(traceNode.getElementsByTagName("Point"));
             const x = [];
             const y = [];
             points.forEach((pt) => {
               const xVal = Number(pt.getAttribute("X"));
-              const yVal = Number(pt.getAttribute("Y"));
-              if (Number.isFinite(xVal) && Number.isFinite(yVal)) {
-                x.push(xVal);
-                y.push(yVal);
-              }
-            });
-
-            return buildTraceFromPoints(
-              x,
-              y,
-              {
-                name: traceNode.getAttribute("Name") || `Trace ${index + 1}`,
-                mode: traceNode.getAttribute("Mode") || "lines+markers",
-              },
-              index
-            );
+            const yVal = Number(pt.getAttribute("Y"));
+            if (Number.isFinite(xVal) && Number.isFinite(yVal)) {
+              x.push(xVal);
+              y.push(yVal);
+            }
           });
-        }
 
-        function parsePolygonTrace(doc) {
-          const polygon = doc.querySelector("Polygon");
+          return buildTraceFromPoints(
+            x,
+            y,
+            {
+              name: traceNode.getAttribute("Name") || `Trace ${index + 1}`,
+              mode: traceNode.getAttribute("Mode") || "lines+markers",
+            },
+            index
+          );
+        });
+      }
+
+function parsePolygonTrace(doc) {
+  const polygon = doc.querySelector("Polygon");
           if (!polygon) {
             return [];
           }
@@ -3999,6 +4554,76 @@ function buildCircleTrace(circle, color, label, fieldType, fieldsetIndex, fieldI
           renderScanPlanes();
         }
 
+        function collectTriOrbShapeDetails(shapeNode) {
+          const type = shapeNode.getAttribute("Type") || "Polygon";
+          const result = { id: shapeNode.getAttribute("ID") || createShapeId(), name: shapeNode.getAttribute("Name") || "", type };
+          if (type === "Polygon") {
+            const polygon = shapeNode.querySelector("Polygon");
+            if (polygon) {
+              result.polygon = {
+                Type: polygon.getAttribute("Type") || "CutOut",
+                points: Array.from(polygon.getElementsByTagName("Point")).map((pt) => ({
+                  X: pt.getAttribute("X") || "0",
+                  Y: pt.getAttribute("Y") || "0",
+                })),
+              };
+            }
+          } else if (type === "Rectangle") {
+            const rectangle = shapeNode.querySelector("Rectangle");
+            if (rectangle) {
+              result.rectangle = Array.from(rectangle.attributes).reduce((acc, attr) => {
+                acc[attr.name] = attr.value;
+                return acc;
+              }, {});
+            }
+          } else if (type === "Circle") {
+            const circle = shapeNode.querySelector("Circle");
+            if (circle) {
+              result.circle = Array.from(circle.attributes).reduce((acc, attr) => {
+                acc[attr.name] = attr.value;
+                return acc;
+              }, {});
+            }
+          }
+          return result;
+        }
+
+        function populateTriOrbShapesFromDoc(doc) {
+          const triOrbNode = doc.querySelector("TriOrb_SICK_SLS_Editor");
+          console.log("populateTriOrbShapesFromDoc triOrbNode", triOrbNode);
+          if (!triOrbNode) {
+            return;
+          }
+          const shapesParent = triOrbNode.querySelector("Shapes");
+          if (!shapesParent) {
+            return;
+          }
+          const nodes = Array.from(shapesParent.querySelectorAll("Shape"));
+          console.log(
+            "populateTriOrbShapesFromDoc TriOrb node",
+            shapesParent.parentElement?.tagName,
+            "shapes count",
+            nodes.length
+          );
+          if (!nodes.length) {
+            return;
+          }
+          triorbShapes = nodes.map((shapeNode, index) => {
+            const detail = collectTriOrbShapeDetails(shapeNode);
+            return {
+              id: detail.id,
+              name: detail.name || `Shape ${index + 1}`,
+              type: detail.type || "Polygon",
+              polygon: detail.polygon || createDefaultPolygonDetails(),
+              rectangle: detail.rectangle || createDefaultRectangleDetails(),
+              circle: detail.circle || createDefaultCircleDetails(),
+              visible: true,
+            };
+          });
+          renderTriOrbShapes();
+          renderTriOrbShapeCheckboxes();
+        }
+
         function populateFieldsetsFromDoc(doc) {
           const scanPlaneNode = doc.querySelector(
             "Export_FieldsetsAndFields > ScanPlane"
@@ -4022,7 +4647,10 @@ function buildCircleTrace(circle, color, label, fieldType, fieldsetIndex, fieldI
               Array.from(deviceNode.attributes).forEach((attr) => {
                 attrs[attr.name] = attr.value;
               });
-              if (!("DeviceName" in attrs)) {
+              const scanDevice = findScanPlaneDeviceByTypekey(attrs.Typekey);
+              if (scanDevice?.attributes?.DeviceName) {
+                attrs.DeviceName = scanDevice.attributes.DeviceName;
+              } else if (!("DeviceName" in attrs)) {
                 attrs.DeviceName = `Device ${deviceIndex + 1}`;
               }
               return { attributes: attrs };
@@ -4313,14 +4941,14 @@ function buildCircleTrace(circle, color, label, fieldType, fieldsetIndex, fieldI
             }
           });
 
-          fieldsetDevicesContainer.addEventListener("input", (event) => {
+          const handleDeviceFieldInput = (event) => {
             const target = event.target;
-            if (target.classList.contains("fieldset-device-typekey")) {
+            if (target.classList.contains("fieldset-device-name")) {
               const deviceIndex = Number(target.dataset.deviceIndex);
-              const selectedTypekey = target.value;
+              const selectedName = target.value;
               const device = fieldsetDevices[deviceIndex];
               if (device) {
-                applyScanPlaneDeviceAttributes(device, selectedTypekey);
+                applyScanPlaneDeviceAttributes(device, { deviceName: selectedName });
                 renderFieldsetDevices();
                 renderFigure();
               }
@@ -4329,7 +4957,10 @@ function buildCircleTrace(circle, color, label, fieldType, fieldsetIndex, fieldI
               const field = target.dataset.field;
               updateFieldsetDeviceAttribute(deviceIndex, field, target.value);
             }
-          });
+          };
+
+          fieldsetDevicesContainer.addEventListener("input", handleDeviceFieldInput);
+          fieldsetDevicesContainer.addEventListener("change", handleDeviceFieldInput);
         }
 
         if (fieldsetGlobalContainer) {
@@ -4347,41 +4978,44 @@ function buildCircleTrace(circle, color, label, fieldType, fieldsetIndex, fieldI
             return;
           }
           if (!fieldsets.length) {
-            fieldsetCheckboxes.innerHTML = "<p>No fieldsets available.</p>";
+            fieldsetCheckboxes.innerHTML = '<p class="toggle-pill-empty">No fieldsets available.</p>';
             return;
           }
-            fieldsetCheckboxes.innerHTML = fieldsets
-              .map((fieldset, index) => {
-                const isVisible = fieldset.visible !== false;
-                fieldset.visible = isVisible;
-                return `
-          <label class="fieldset-checkbox">
-            <input
-              type="checkbox"
-              class="fieldset-filter-checkbox"
-              data-fieldset-index="${index}"
-              ${isVisible ? "checked" : ""}
-            />
-            ${escapeHtml(fieldset.attributes?.Name || `Fieldset ${index + 1}`)}
-          </label>`;
+          fieldsetCheckboxes.innerHTML = fieldsets
+            .map((fieldset, index) => {
+              const isVisible = fieldset.visible !== false;
+              fieldset.visible = isVisible;
+              return `
+              <button
+                type="button"
+                class="toggle-pill-btn${isVisible ? " active" : ""}"
+                data-fieldset-index="${index}"
+                aria-pressed="${isVisible}"
+              >
+                ${escapeHtml(fieldset.attributes?.Name || `Fieldset ${index + 1}`)}
+              </button>`;
             })
             .join("");
-          renderTriOrbShapeCheckboxes();
         }
 
         if (fieldsetCheckboxes) {
-          fieldsetCheckboxes.addEventListener("change", (event) => {
-            if (event.target.classList.contains("fieldset-filter-checkbox")) {
-              const index = Number(event.target.dataset.fieldsetIndex);
-              const checked = event.target.checked;
-              if (fieldsets[index]) {
-                fieldsets[index].visible = checked;
-              }
+          fieldsetCheckboxes.addEventListener("click", (event) => {
+            const button = event.target.closest(".toggle-pill-btn");
+            if (!button || !button.dataset.fieldsetIndex) {
+              return;
+            }
+            event.preventDefault();
+            const index = Number(button.dataset.fieldsetIndex);
+            const nextState = !button.classList.contains("active");
+            button.classList.toggle("active", nextState);
+            button.setAttribute("aria-pressed", String(nextState));
+            if (fieldsets[index]) {
+              fieldsets[index].visible = nextState;
               setStatus(
-                `Fieldset ${fieldsets[index]?.attributes?.Name || index + 1} ${
-                  checked ? "checked" : "unchecked"
+                `Fieldset ${fieldsets[index].attributes?.Name || index + 1} ${
+                  nextState ? "checked" : "unchecked"
                 }`,
-                "warning"
+                nextState ? "ok" : "warning"
               );
               renderFigure();
             }
@@ -4401,15 +5035,22 @@ function buildCircleTrace(circle, color, label, fieldType, fieldsetIndex, fieldI
         }
 
         if (triorbShapeCheckboxes) {
-          triorbShapeCheckboxes.addEventListener("change", (event) => {
-            if (event.target.classList.contains("triorb-shape-checkbox-input")) {
-              const index = Number(event.target.dataset.shapeIndex);
-              const shape = triorbShapes[index];
-              if (shape) {
-                shape.visible = event.target.checked;
-              }
-              renderFigure();
+          triorbShapeCheckboxes.addEventListener("click", (event) => {
+            const button = event.target.closest(".toggle-pill-btn");
+            if (!button || !button.dataset.shapeIndex) {
+              return;
             }
+            event.preventDefault();
+            const index = Number(button.dataset.shapeIndex);
+            const shape = triorbShapes[index];
+            if (!shape) {
+              return;
+            }
+            const nextState = !button.classList.contains("active");
+            button.classList.toggle("active", nextState);
+            button.setAttribute("aria-pressed", String(nextState));
+            shape.visible = nextState;
+            renderFigure();
           });
         }
 
@@ -4508,7 +5149,7 @@ function buildCircleTrace(circle, color, label, fieldType, fieldsetIndex, fieldI
             const field = target.dataset.field;
             updateCircleAttribute(fieldsetIndex, fieldIndex, circleIndex, field, target.value);
           }
-        };
+          };
 
         if (fieldsetsContainer) {
           fieldsetsContainer.addEventListener("click", (event) => {
@@ -4639,15 +5280,10 @@ function buildCircleTrace(circle, color, label, fieldType, fieldsetIndex, fieldI
         }
 
         function toggleAllFieldsetCheckboxes(checked) {
-          if (!fieldsetCheckboxes) return;
-          const boxes = fieldsetCheckboxes.querySelectorAll(".fieldset-filter-checkbox");
-          boxes.forEach((box) => {
-            box.checked = checked;
-            const index = Number(box.dataset.fieldsetIndex);
-            if (fieldsets[index]) {
-              fieldsets[index].visible = checked;
-            }
+          fieldsets.forEach((fieldset) => {
+            fieldset.visible = checked;
           });
+          renderFieldsetCheckboxes();
           setStatus(
             checked ? "All fieldsets checked." : "All fieldsets unchecked.",
             checked ? "ok" : "warning"
@@ -4660,7 +5296,7 @@ function buildCircleTrace(circle, color, label, fieldType, fieldsetIndex, fieldI
             return;
           }
           if (!triorbShapes.length) {
-            triorbShapeCheckboxes.innerHTML = "<p>No shapes available.</p>";
+            triorbShapeCheckboxes.innerHTML = '<p class="toggle-pill-empty">No shapes available.</p>';
             return;
           }
           triorbShapeCheckboxes.innerHTML = triorbShapes
@@ -4668,15 +5304,14 @@ function buildCircleTrace(circle, color, label, fieldType, fieldsetIndex, fieldI
               const isVisible = shape.visible !== false;
               shape.visible = isVisible;
               return `
-                <label class="triorb-shape-checkbox">
-                  <input
-                    type="checkbox"
-                    class="triorb-shape-checkbox-input"
-                    data-shape-index="${index}"
-                    ${isVisible ? "checked" : ""}
-                  />
+                <button
+                  type="button"
+                  class="toggle-pill-btn${isVisible ? " active" : ""}"
+                  data-shape-index="${index}"
+                  aria-pressed="${isVisible}"
+                >
                   ${escapeHtml(shape.name || `Shape ${index + 1}`)}
-                </label>`;
+                </button>`;
             })
             .join("");
         }
@@ -4717,13 +5352,431 @@ function buildCircleTrace(circle, color, label, fieldType, fieldsetIndex, fieldI
             setStatus("TriOrb XML downloaded.");
           });
         }
-        if (saveLegacyBtn) {
-          saveLegacyBtn.addEventListener("click", () => {
-            const xml = buildLegacyXml();
-            downloadXml(xml);
-            setStatus("Legacy XML downloaded.");
+        if (saveSickBtn) {
+          saveSickBtn.addEventListener("click", () => {
+            if (!fieldsetDevices.length) {
+              const xml = buildLegacyXml();
+              downloadXml(xml, `sick_${Date.now()}.sgexml`);
+              setStatus("SICK XML downloaded (no devices).");
+              return;
+            }
+            fieldsetDevices.forEach((device, index) => {
+              const scanDevice =
+                findScanPlaneDeviceByName(device.attributes?.DeviceName) ||
+                findScanPlaneDeviceByTypekey(device.attributes?.Typekey);
+              const scanAttrs = {
+                ...(scanDevice?.attributes || device.attributes || {}),
+              };
+              if (!scanAttrs.DeviceName && device.attributes?.DeviceName) {
+                scanAttrs.DeviceName = device.attributes.DeviceName;
+              }
+              const xmlLines = buildBaseSdImportExportLines({
+                scanDeviceAttrs: scanAttrs,
+                fieldsetDeviceAttrs: device.attributes,
+              });
+              const xml = xmlLines.join("\n");
+              const prefix = formatDeviceFilePrefix(device.attributes, index);
+              downloadXml(xml, `${prefix}_${Date.now()}.sgexml`);
+            });
+            setStatus(`SICK XML downloaded for ${fieldsetDevices.length} device(s).`);
           });
         }
+        if (newPlotBtn) {
+          newPlotBtn.addEventListener("click", () => {
+            fieldsets = [];
+            triorbShapes = [];
+            createShapePreview = null;
+            createShapeDraftId = null;
+            renderFieldsets();
+            renderTriOrbShapes();
+            renderTriOrbShapeCheckboxes();
+            renderFieldsetCheckboxes();
+            renderFieldsetDevices();
+            renderFieldsetGlobal();
+            fieldOfViewDegrees = parseNumeric(fieldOfViewInput?.value, 270);
+            console.debug("New canvas state", {
+              fieldsetDevices,
+              fieldOfViewDegrees,
+            });
+            renderFigure();
+            setStatus("New canvas ready.");
+          });
+        }
+        const overlayShapeBtn = document.getElementById("btn-add-shape-overlay");
+        const overlayFieldBtn = document.getElementById("btn-add-field-overlay");
+        let createShapeModalOffsetX = 0;
+        let createShapeModalOffsetY = 0;
+        let createShapeDragStartX = 0;
+        let createShapeDragStartY = 0;
+        let isCreateShapeDragging = false;
+        let isCreateShapeResizing = false;
+        let createShapeInitialWidth = 0;
+        let createShapeInitialHeight = 0;
+        let createShapeLastDx = 0;
+        let createShapeLastDy = 0;
+        function ensureCreateShapePosition() {
+          if (createShapeModalWindow) {
+            createShapeModalWindow.style.transform = `translate(${createShapeModalOffsetX}px, ${createShapeModalOffsetY}px)`;
+          }
+        }
+        function resetCreateShapeForm() {
+          if (!createShapeNameInput) return;
+          createShapeNameInput.value = "";
+          if (createShapeFieldtypeSelect) {
+            createShapeFieldtypeSelect.value = "ProtectiveSafeBlanking";
+          }
+          if (createShapeKindSelect) {
+            createShapeKindSelect.value = "Field";
+          }
+          if (createShapeTypeSelect) {
+            createShapeTypeSelect.value = "Polygon";
+          }
+          if (createShapePointsInput) {
+            createShapePointsInput.value = "(0,0),(100,0),(100,100)";
+          }
+          const rectDefaults = {
+            originx: 0,
+            originy: 0,
+            width: 100,
+            height: 100,
+            rotation: 0,
+          };
+          Object.entries(rectDefaults).forEach(([key, val]) => {
+            const input = document.getElementById(`create-rect-${key}`);
+            if (input) input.value = val;
+          });
+          const circleDefaults = {
+            centerx: 0,
+            centery: 0,
+            radius: 100,
+          };
+          Object.entries(circleDefaults).forEach(([key, val]) => {
+            const input = document.getElementById(`create-circle-${key}`);
+            if (input) input.value = val;
+          });
+          updateCreateShapeDimensionVisibility();
+        }
+
+        function updateCreateShapeDimensionVisibility() {
+          if (!createShapeTypeSelect) return;
+          const type = createShapeTypeSelect.value;
+          const isPolygon = type === "Polygon";
+          const isRectangle = type === "Rectangle";
+          const isCircle = type === "Circle";
+          if (createShapePolygonGroup) {
+            createShapePolygonGroup.classList.toggle("active", isPolygon);
+          }
+          if (createShapeRectFields) {
+            createShapeRectFields.classList.toggle("active", isRectangle);
+          }
+          if (createShapeCircleFields) {
+            createShapeCircleFields.classList.toggle("active", isCircle);
+          }
+        }
+
+        function getCreateShapeSelectedFieldsets() {
+          if (!createShapeFieldsetList) {
+            return [];
+          }
+          return Array.from(
+            createShapeFieldsetList.querySelectorAll(".toggle-pill-btn.active")
+          )
+            .map((button) => Number(button.dataset.createFieldsetIndex))
+            .filter((index) => Number.isFinite(index) && index >= 0);
+        }
+
+        function readCreateShapeFormShape() {
+          if (!createShapeDraftId) {
+            createShapeDraftId = createShapeId();
+          }
+          const geometryType = createShapeTypeSelect?.value || "Polygon";
+          const fieldtypeValue = createShapeFieldtypeSelect?.value || "ProtectiveSafeBlanking";
+          const kindValue = createShapeKindSelect?.value || "Field";
+          const rawName = (createShapeNameInput?.value || "").trim();
+          const polygonPoints = parsePolygonPoints(createShapePointsInput?.value || "");
+          const rectangle = {
+            Type: kindValue,
+            OriginX: String(createRectOriginXInput?.value ?? "0"),
+            OriginY: String(createRectOriginYInput?.value ?? "0"),
+            Width: String(createRectWidthInput?.value ?? "0"),
+            Height: String(createRectHeightInput?.value ?? "0"),
+            Rotation: String(createRectRotationInput?.value ?? "0"),
+          };
+          const circle = {
+            Type: kindValue,
+            CenterX: String(createCircleCenterXInput?.value ?? "0"),
+            CenterY: String(createCircleCenterYInput?.value ?? "0"),
+            Radius: String(createCircleRadiusInput?.value ?? "0"),
+          };
+          const polygon = {
+            Type: kindValue,
+            points: polygonPoints,
+          };
+          return {
+            id: createShapeDraftId,
+            name: rawName || `Shape ${triorbShapes.length + 1}`,
+            type: geometryType,
+            fieldtype: fieldtypeValue,
+            kind: kindValue,
+            polygon,
+            rectangle,
+            circle,
+            visible: true,
+          };
+        }
+
+        function validateCreateShapeDraft(shape, { strict = false } = {}) {
+          if (!shape) {
+            return { ok: false, message: "Shape definition is missing." };
+          }
+          if (shape.type === "Polygon") {
+            const points = Array.isArray(shape.polygon?.points) ? shape.polygon.points : [];
+            const minPoints = strict ? 3 : 2;
+            if (points.length < minPoints) {
+              return {
+                ok: false,
+                message: strict
+                  ? "Polygon には 3 点以上が必要です。"
+                  : "Polygon を描画するには 2 点以上が必要です。",
+              };
+            }
+          } else if (shape.type === "Rectangle") {
+            const width = parseNumeric(shape.rectangle?.Width, NaN);
+            const height = parseNumeric(shape.rectangle?.Height, NaN);
+            if (!Number.isFinite(width) || !Number.isFinite(height)) {
+              return { ok: false, message: "Rectangle の幅・高さが正しくありません。" };
+            }
+            if (width === 0 || height === 0) {
+              return { ok: false, message: "Rectangle の幅と高さは 0 ではいけません。" };
+            }
+          } else if (shape.type === "Circle") {
+            const radius = parseNumeric(shape.circle?.Radius, NaN);
+            if (!Number.isFinite(radius) || radius <= 0) {
+              return { ok: false, message: "Circle の半径を正しく入力してください。" };
+            }
+          }
+          return { ok: true };
+        }
+
+        function updateCreateShapePreview() {
+          const shape = readCreateShapeFormShape();
+          const validation = validateCreateShapeDraft(shape, { strict: false });
+          createShapePreview = validation.ok ? shape : null;
+          renderFigure();
+        }
+
+        function clearCreateShapePreview() {
+          if (createShapePreview) {
+            createShapePreview = null;
+            renderFigure();
+          }
+        }
+
+        function handleCreateShapeFormInput(event) {
+          if (!createShapeModal?.classList.contains("active")) {
+            return;
+          }
+          if (!event || !(event.target instanceof HTMLElement)) {
+            return;
+          }
+          updateCreateShapePreview();
+        }
+
+        function attachShapeToFieldsets(shapeId, fieldsetIndexes) {
+          let attachedCount = 0;
+          fieldsetIndexes.forEach((fieldsetIndex) => {
+            const fieldset = fieldsets[fieldsetIndex];
+            if (!fieldset || !Array.isArray(fieldset.fields)) {
+              return;
+            }
+            fieldset.fields.forEach((field) => {
+              field.shapeRefs = field.shapeRefs || [];
+              if (!field.shapeRefs.some((ref) => ref.shapeId === shapeId)) {
+                field.shapeRefs.push({ shapeId });
+                attachedCount += 1;
+              }
+            });
+          });
+          return attachedCount;
+        }
+
+        function renderCreateShapeFieldsetsList() {
+          if (!createShapeFieldsetList) return;
+          if (!fieldsets.length) {
+            createShapeFieldsetList.innerHTML = "<p>No fieldsets available.</p>";
+            return;
+          }
+          createShapeFieldsetList.innerHTML = fieldsets
+            .map((fieldset, index) => {
+              const name = escapeHtml(fieldset.attributes?.Name || `Fieldset ${index + 1}`);
+              return `
+              <button
+                type="button"
+                class="toggle-pill-btn"
+                data-create-fieldset-index="${index}"
+                aria-pressed="false"
+              >
+                ${name}
+              </button>`;
+            })
+            .join("");
+        }
+
+        function openCreateShapeModal() {
+          resetCreateShapeForm();
+          renderCreateShapeFieldsetsList();
+          createShapeDraftId = createShapeId();
+          updateCreateShapeDimensionVisibility();
+          updateCreateShapePreview();
+          createShapeModalOffsetX = 0;
+          createShapeModalOffsetY = 0;
+          ensureCreateShapePosition();
+          createShapeModal?.classList.add("active");
+          createShapeModal?.setAttribute("aria-hidden", "false");
+        }
+
+        function closeCreateShapeModal() {
+          clearCreateShapePreview();
+          createShapeDraftId = null;
+          createShapeModal?.classList.remove("active");
+          createShapeModal?.setAttribute("aria-hidden", "true");
+        }
+
+        if (overlayShapeBtn) {
+          overlayShapeBtn.addEventListener("click", openCreateShapeModal);
+        }
+        if (overlayFieldBtn) {
+          overlayFieldBtn.addEventListener("click", () => {
+            console.debug("Add Field button clicked; awaiting implementation.");
+          });
+        }
+        if (createShapeTypeSelect) {
+          createShapeTypeSelect.addEventListener("change", () => {
+            updateCreateShapeDimensionVisibility();
+            updateCreateShapePreview();
+          });
+          updateCreateShapeDimensionVisibility();
+        }
+        if (createShapeModalClose) {
+          createShapeModalClose.addEventListener("click", closeCreateShapeModal);
+        }
+        if (createShapeModalCancel) {
+          createShapeModalCancel.addEventListener("click", closeCreateShapeModal);
+        }
+        if (createShapeModalSave) {
+          createShapeModalSave.addEventListener("click", () => {
+            const draft = readCreateShapeFormShape();
+            const validation = validateCreateShapeDraft(draft, { strict: true });
+            if (!validation.ok) {
+              setStatus(validation.message, "error");
+              return;
+            }
+            applyShapeKind(draft, draft.kind);
+            triorbShapes.push(JSON.parse(JSON.stringify(draft)));
+            const selectedFieldsets = getCreateShapeSelectedFieldsets();
+            const attached = attachShapeToFieldsets(draft.id, selectedFieldsets);
+            renderTriOrbShapes();
+            renderTriOrbShapeCheckboxes();
+            renderFieldsets();
+            renderFigure();
+            setStatus(
+              `${draft.name} を追加しました（${attached} フィールドに紐付け）。`,
+              "ok"
+            );
+            closeCreateShapeModal();
+          });
+        }
+        if (createShapeModal) {
+          createShapeModal.addEventListener("input", handleCreateShapeFormInput);
+          createShapeModal.addEventListener("change", handleCreateShapeFormInput);
+          createShapeModal.addEventListener("click", (event) => {
+            if (event.target?.dataset?.action === "close-create-shape") {
+              closeCreateShapeModal();
+            }
+          });
+        }
+        if (createShapeFieldsetList) {
+          createShapeFieldsetList.addEventListener("click", (event) => {
+            const button = event.target.closest(".toggle-pill-btn");
+            if (!button) {
+              return;
+            }
+            event.preventDefault();
+            const isActive = button.classList.toggle("active");
+            button.setAttribute("aria-pressed", isActive ? "true" : "false");
+          });
+        }
+        function startCreateShapeDrag(event) {
+          if (!createShapeModalWindow) return;
+          isCreateShapeDragging = true;
+          createShapeDragStartX = event.clientX;
+          createShapeDragStartY = event.clientY;
+          createShapeModalWindow.style.transition = "none";
+        }
+        function updateCreateShapeDrag(event) {
+          if (!isCreateShapeDragging) return;
+          const dx = event.clientX - createShapeDragStartX;
+          const dy = event.clientY - createShapeDragStartY;
+          if (createShapeModalWindow) {
+            createShapeModalWindow.style.transform = `translate(${createShapeModalOffsetX + dx}px, ${createShapeModalOffsetY + dy}px)`;
+          }
+          createShapeLastDx = dx;
+          createShapeLastDy = dy;
+        }
+        function endCreateShapeDrag() {
+          if (!isCreateShapeDragging) return;
+          createShapeModalOffsetX += createShapeLastDx;
+          createShapeModalOffsetY += createShapeLastDy;
+          isCreateShapeDragging = false;
+          if (createShapeModalWindow) {
+            createShapeModalWindow.style.transition = "";
+            ensureCreateShapePosition();
+          }
+        }
+        function startCreateShapeResize(event) {
+          if (!createShapeModalWindow) return;
+          isCreateShapeResizing = true;
+          createShapeResizeStartX = event.clientX;
+          createShapeResizeStartY = event.clientY;
+          createShapeInitialWidth = createShapeModalWindow.offsetWidth;
+          createShapeInitialHeight = createShapeModalWindow.offsetHeight;
+          createShapeModalWindow.style.transition = "none";
+        }
+        function updateCreateShapeResize(event) {
+          if (!isCreateShapeResizing || !createShapeModalWindow) return;
+          const dx = event.clientX - createShapeResizeStartX;
+          const dy = event.clientY - createShapeResizeStartY;
+          const width = Math.max(360, createShapeInitialWidth + dx);
+          const height = Math.max(360, createShapeInitialHeight + dy);
+          createShapeModalWindow.style.width = `${width}px`;
+          createShapeModalWindow.style.height = `${height}px`;
+        }
+        function endCreateShapeResize() {
+          isCreateShapeResizing = false;
+          if (createShapeModalWindow) {
+            createShapeModalWindow.style.transition = "";
+          }
+        }
+        if (createShapeModalHeader) {
+          createShapeModalHeader.addEventListener("pointerdown", startCreateShapeDrag);
+        }
+        const resizeHandle = document.createElement("div");
+        resizeHandle.className = "modal-resize-handle";
+        if (createShapeModalWindow) {
+          createShapeModalWindow.appendChild(resizeHandle);
+        }
+        resizeHandle.addEventListener("pointerdown", (event) => {
+          event.preventDefault();
+          startCreateShapeResize(event);
+        });
+        document.addEventListener("pointermove", (event) => {
+          updateCreateShapeDrag(event);
+          updateCreateShapeResize(event);
+        });
+        document.addEventListener("pointerup", () => {
+          endCreateShapeDrag();
+          endCreateShapeResize();
+        });
 
         if (toggleLegendBtn) {
           toggleLegendBtn.addEventListener("click", () => {
@@ -4743,14 +5796,16 @@ function buildCircleTrace(circle, color, label, fieldType, fieldsetIndex, fieldI
           const reader = new FileReader();
           reader.onload = () => {
             try {
-              const { traces, warning } = parseXmlToFigure(reader.result);
+              const { traces, warning, triOrbPresent } = parseXmlToFigure(reader.result);
               const layout = cloneFigure(defaultFigure).layout;
               currentFigure = { data: traces, layout };
               renderFigure();
               if (warning) {
                 setStatus(`${file.name} loaded with warnings: ${warning}`, "warning");
               } else {
-                setStatus(`${file.name} loaded.`);
+                setStatus(
+                  `${file.name} loaded${triOrbPresent ? " (TriOrb)" : ""}.`
+                );
               }
             } catch (error) {
               console.error(error);
@@ -4803,7 +5858,11 @@ function buildCircleTrace(circle, color, label, fieldType, fieldsetIndex, fieldI
         }
         document.addEventListener("keydown", (event) => {
           if (event.key === "Escape") {
-            cancelShapeModal();
+            if (createShapeModal?.classList.contains("active")) {
+              closeCreateShapeModal();
+            } else {
+              cancelShapeModal();
+            }
           }
         });
         if (shapeModalHeader) {
