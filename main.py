@@ -171,6 +171,53 @@ def load_fieldsets() -> Dict[str, Any]:
     }
 
 
+def load_triorb_shapes() -> List[Dict[str, Any]]:
+    if not SAMPLE_XML.exists():
+        return []
+
+    try:
+        tree = ET.parse(SAMPLE_XML)
+    except ET.ParseError:
+        return []
+
+    root = tree.getroot()
+    tri_node = root.find("TriOrb_SICK_SLS_Editor")
+    if tri_node is None:
+        return []
+
+    shapes_parent = tri_node.find("Shapes")
+    if shapes_parent is None:
+        return []
+
+    shapes: List[Dict[str, Any]] = []
+    for shape_node in shapes_parent.findall("Shape"):
+        shape_data: Dict[str, Any] = {
+            "id": shape_node.attrib.get("ID", ""),
+            "name": shape_node.attrib.get("Name", ""),
+            "type": shape_node.attrib.get("Type", "Polygon"),
+        }
+        if shape_data["type"] == "Polygon":
+            polygon = shape_node.find("Polygon")
+            if polygon is not None:
+                shape_data["polygon"] = {
+                    "Type": polygon.attrib.get("Type", "CutOut"),
+                    "points": [
+                        dict(point.attrib) for point in polygon.findall("Point")
+                    ],
+                }
+        if shape_data["type"] == "Rectangle":
+            rectangle = shape_node.find("Rectangle")
+            if rectangle is not None:
+                shape_data["rectangle"] = dict(rectangle.attrib)
+        if shape_data["type"] == "Circle":
+            circle = shape_node.find("Circle")
+            if circle is not None:
+                shape_data["circle"] = dict(circle.attrib)
+        shapes.append(shape_data)
+
+    return shapes
+
+
 def load_root_attributes() -> Dict[str, str]:
     """Capture attributes defined on the SdImportExport root."""
 
@@ -201,6 +248,7 @@ def create_app() -> Flask:
             root_attrs=load_root_attributes(),
             scan_planes=load_scan_planes(),
             fieldsets=load_fieldsets(),
+            triorb_shapes=load_triorb_shapes(),
         )
 
     return app

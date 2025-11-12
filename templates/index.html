@@ -186,6 +186,21 @@
         font-size: 0.9rem;
       }
 
+      .triorb-shape-filter {
+        margin-top: 1rem;
+        border: 1px solid rgba(15, 23, 42, 0.12);
+        border-radius: 8px;
+        padding: 0.75rem;
+        background: #f1f5f9;
+      }
+
+      .triorb-shape-checkbox {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.9rem;
+      }
+
       .side-menu {
         flex: 0 0 auto;
         min-width: 220px;
@@ -491,6 +506,46 @@
         gap: 0.4rem;
       }
 
+      .triorb-shapes-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        margin-top: 0.5rem;
+      }
+
+      .triorb-shape-card {
+        border: 1px solid rgba(15, 23, 42, 0.15);
+        border-radius: 10px;
+        padding: 0.6rem;
+        background: #f1f5f9;
+      }
+
+      .triorb-shape-card .shape-row {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+
+      .triorb-shape-card .shape-row label {
+        margin: 0;
+        font-weight: 600;
+      }
+
+      .triorb-shape-card .shape-details {
+        margin-top: 0.6rem;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 0.4rem;
+      }
+
+      .triorb-shape-card input,
+      .triorb-shape-card select {
+        border-radius: 6px;
+        border: 1px solid rgba(15, 23, 42, 0.2);
+        padding: 0.3rem 0.4rem;
+      }
+
       .shape-entry {
         border: 1px dashed rgba(15, 23, 42, 0.2);
         border-radius: 6px;
@@ -506,6 +561,72 @@
         justify-content: space-between;
         align-items: center;
         gap: 0.5rem;
+      }
+
+      .modal {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 999;
+      }
+
+      .modal.active {
+        display: flex;
+      }
+
+      .modal-backdrop {
+        position: absolute;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.45);
+      }
+
+      .modal-window {
+        position: relative;
+        background: #fff;
+        border-radius: 12px;
+        width: min(480px, 90vw);
+        max-height: 85vh;
+        overflow-y: auto;
+        padding: 1rem;
+        box-shadow: 0 10px 40px rgba(15, 23, 42, 0.35);
+      }
+
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.75rem;
+      }
+
+      .modal-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #0f172a;
+      }
+
+      .modal-body {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+      }
+
+      .modal-footer {
+        margin-top: 1rem;
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
+      }
+
+      .modal-field {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+      }
+
+      .modal-field input {
+        width: 100%;
       }
 
       .shape-badges {
@@ -601,6 +722,22 @@
     </style>
   </head>
   <body>
+    <div id="shape-modal" class="modal" aria-hidden="true">
+      <div class="modal-backdrop" data-action="close-modal"></div>
+      <div class="modal-window" role="dialog" aria-modal="true">
+        <div class="modal-header">
+          <span class="modal-title" id="shape-modal-title"></span>
+          <button type="button" class="inline-btn inline-danger shape-mini-btn" id="shape-modal-close">
+            ×
+          </button>
+        </div>
+        <div class="modal-body" id="shape-modal-body"></div>
+        <div class="modal-footer">
+          <button type="button" class="inline-btn secondary" id="shape-modal-cancel">Cancel</button>
+          <button type="button" class="inline-btn" id="shape-modal-save">Save</button>
+        </div>
+      </div>
+    </div>
     <header>
       <h1>TriOrb - SICK SLS Editor</h1>
     </header>
@@ -629,6 +766,13 @@
             <button type="button" class="inline-btn" id="btn-fieldset-uncheck-all">All uncheck</button>
           </div>
           <div id="fieldset-checkboxes"></div>
+        </div>
+        <div class="triorb-shape-filter">
+          <div class="fieldset-filter-controls">
+            <button type="button" class="inline-btn" id="btn-triorb-shape-check-all">Show All Shapes</button>
+            <button type="button" class="inline-btn" id="btn-triorb-shape-uncheck-all">Hide All Shapes</button>
+          </div>
+          <div id="triorb-shape-checkboxes"></div>
         </div>
       </section>
       <aside class="side-menu">
@@ -708,6 +852,17 @@
                 />
               </div>
             </div>
+          </div>
+        </details>
+        <details class="menu-section">
+          <summary>Shapes</summary>
+          <div class="menu-content">
+            <div class="fieldset-actions">
+              <button type="button" class="inline-btn" id="btn-add-triorb-shape">
+                Add Shape
+              </button>
+            </div>
+            <div class="triorb-shapes-list" id="triorb-shapes-list"></div>
           </div>
         </details>
         <details class="menu-section">
@@ -824,6 +979,20 @@
         const globalResolutionInput = document.getElementById("global-resolution");
         const globalTolerancePositiveInput = document.getElementById("global-tolerance-positive");
         const globalToleranceNegativeInput = document.getElementById("global-tolerance-negative");
+        const triorbShapesContainer = document.getElementById("triorb-shapes-list");
+        const addTriOrbShapeBtn = document.getElementById("btn-add-triorb-shape");
+        const triorbShapeCheckboxes = document.getElementById("triorb-shape-checkboxes");
+        const triorbShapeCheckAllBtn = document.getElementById("btn-triorb-shape-check-all");
+        const triorbShapeUncheckAllBtn = document.getElementById("btn-triorb-shape-uncheck-all");
+        const initialTriOrbShapes = {{ triorb_shapes|tojson }};
+        const shapeModal = document.getElementById("shape-modal");
+        const shapeModalBody = document.getElementById("shape-modal-body");
+        const shapeModalTitle = document.getElementById("shape-modal-title");
+        const shapeModalSave = document.getElementById("shape-modal-save");
+        const shapeModalCancel = document.getElementById("shape-modal-cancel");
+        const shapeModalClose = document.getElementById("shape-modal-close");
+        const shapeModalWindow = document.querySelector("#shape-modal .modal-window");
+        const shapeModalHeader = shapeModalWindow?.querySelector(".modal-header");
         const originTrace = findOriginTrace(defaultFigure);
 
         let currentFigure = cloneFigure(defaultFigure);
@@ -858,12 +1027,23 @@
           globalToleranceNegativeInput.value = globalToleranceNegative;
         }
         updateGlobalFieldAttributes();
+        let triorbShapes = initializeTriOrbShapes(initialTriOrbShapes);
+
+        let lastHoverPoint = null;
+        let modalShapeMeta = null;
+        let modalOriginalShape = null;
+        let modalOffsetX = 0;
+        let modalOffsetY = 0;
+        let modalDragStartX = 0;
+        let modalDragStartY = 0;
+        let isModalDragging = false;
 
         renderScanPlanes();
         renderFieldsets();
         renderFieldsetDevices();
         renderFieldsetGlobal();
         renderFieldsetCheckboxes();
+        renderTriOrbShapes();
 
         function initializeScanPlanes(data) {
           let planes;
@@ -902,6 +1082,7 @@
             copy.name = formatLegendLabel(originalName);
             return copy;
           });
+          const triOrbShapeTraces = buildTriOrbShapeTraces();
           const overlayTraces = buildFieldsetTraces();
           const layout = {
             ...(currentFigure.layout || {}),
@@ -921,8 +1102,21 @@
                 color: "#0f172a",
               },
             },
+            xaxis: {
+              ...(currentFigure.layout?.xaxis || {}),
+              title: "",
+            },
+            yaxis: {
+              ...(currentFigure.layout?.yaxis || {}),
+              title: "",
+            },
           };
-          Plotly.react(plotNode, baseData.concat(overlayTraces), layout, figureConfig);
+          Plotly.react(
+            plotNode,
+            triOrbShapeTraces.concat(baseData).concat(overlayTraces),
+            layout,
+            figureConfig
+          );
         }
 
         function buildFieldsetTraces() {
@@ -945,7 +1139,10 @@
                   polygon,
                   color,
                   `${labelPrefix} Polygon #${polygonIndex + 1}`,
-                  field.attributes?.Fieldtype
+                  field.attributes?.Fieldtype,
+                  fieldsetIndex,
+                  fieldIndex,
+                  polygonIndex
                 );
                 if (polygonTrace) {
                   traces.push(polygonTrace);
@@ -957,7 +1154,10 @@
                   rectangle,
                   color,
                   `${labelPrefix} Rectangle #${rectangleIndex + 1}`,
-                  field.attributes?.Fieldtype
+                  field.attributes?.Fieldtype,
+                  fieldsetIndex,
+                  fieldIndex,
+                  rectangleIndex
                 );
                 if (rectangleTrace) {
                   traces.push(rectangleTrace);
@@ -969,7 +1169,10 @@
                   circle,
                   color,
                   `${labelPrefix} Circle #${circleIndex + 1}`,
-                  field.attributes?.Fieldtype
+                  field.attributes?.Fieldtype,
+                  fieldsetIndex,
+                  fieldIndex,
+                  circleIndex
                 );
                 if (circleTrace) {
                   traces.push(circleTrace);
@@ -981,7 +1184,7 @@
           return deviceTraces.concat(traces);
         }
 
-        function buildPolygonTrace(polygon, color, label, fieldType) {
+function buildPolygonTrace(polygon, color, label, fieldType, fieldsetIndex, fieldIndex, polygonIndex) {
           const points = Array.isArray(polygon?.points) ? polygon.points : [];
           if (points.length < 2) {
             return null;
@@ -1013,14 +1216,21 @@
             fill: "toself",
             fillcolor: withAlpha(color, 0.12),
             name: truncatedLabel,
-            meta: { fullLabel: label },
+            meta: {
+              fullLabel: label,
+              kind: "polygon",
+              fieldsetIndex,
+              fieldIndex,
+              shapeIndex: polygonIndex,
+              shapeType: polygon?.attributes?.Type || "CutOut",
+            },
             hovertemplate: "<b>%{meta.fullLabel}</b><extra></extra>",
             x,
             y,
           };
         }
 
-        function buildRectangleTrace(rectangle, color, label, fieldType) {
+function buildRectangleTrace(rectangle, color, label, fieldType, fieldsetIndex, fieldIndex, rectangleIndex) {
           const corners = getRectangleCornerPoints(rectangle);
           if (!corners || !corners.length) {
             return null;
@@ -1035,14 +1245,21 @@
             fill: "toself",
             fillcolor: withAlpha(color, 0.08),
             name: truncatedLabel,
-            meta: { fullLabel: label },
+            meta: {
+              fullLabel: label,
+              kind: "rectangle",
+              fieldsetIndex,
+              fieldIndex,
+              shapeIndex: rectangleIndex,
+              shapeType: rectangle?.Type || "Field",
+            },
             hovertemplate: "<b>%{meta.fullLabel}</b><extra></extra>",
             x: rotated.map((point) => point.x),
             y: rotated.map((point) => point.y),
           };
         }
 
-        function buildCircleTrace(circle, color, label, fieldType) {
+function buildCircleTrace(circle, color, label, fieldType, fieldsetIndex, fieldIndex, circleIndex) {
           if (!circle) {
             return null;
           }
@@ -1068,7 +1285,14 @@
             fill: "toself",
             fillcolor: withAlpha(color, 0.08),
             name: truncatedLabel,
-            meta: { fullLabel: label },
+            meta: {
+              fullLabel: label,
+              kind: "circle",
+              fieldsetIndex,
+              fieldIndex,
+              shapeIndex: circleIndex,
+              shapeType: circle?.Type || "Field",
+            },
             hovertemplate: "<b>%{meta.fullLabel}</b><extra></extra>",
             x,
             y,
@@ -1265,6 +1489,58 @@
             }
           });
           return traces;
+        }
+
+        function buildTriOrbShapeTraces() {
+          if (!Array.isArray(triorbShapes) || !triorbShapes.length) {
+            return [];
+          }
+          return triorbShapes
+            .map((shape, shapeIndex) => {
+              if (shape.visible === false) {
+                return null;
+              }
+              const color = getFieldsetColor(shapeIndex + 2);
+              const label = `${shape.name || `Shape ${shapeIndex + 1}`} (${shape.type})`;
+              const fieldType = shape.type === "Warning" ? "WarningSafeBlanking" : "ProtectiveSafeBlanking";
+              switch (shape.type) {
+                case "Rectangle":
+                  if (!shape.rectangle) return null;
+                  return buildRectangleTrace(
+                    shape.rectangle,
+                    color,
+                    label,
+                    fieldType,
+                    0,
+                    0,
+                    shapeIndex
+                  );
+                case "Circle":
+                  if (!shape.circle) return null;
+                  return buildCircleTrace(
+                    shape.circle,
+                    color,
+                    label,
+                    fieldType,
+                    0,
+                    0,
+                    shapeIndex
+                  );
+                case "Polygon":
+                default:
+                  if (!shape.polygon) return null;
+                  return buildPolygonTrace(
+                    shape.polygon,
+                    color,
+                    label,
+                    fieldType,
+                    0,
+                    0,
+                    shapeIndex
+                  );
+              }
+            })
+            .filter(Boolean);
         }
 
         function buildDeviceFanTrace(originX, originY, rotationDeg, radius, fovDeg, label) {
@@ -1729,6 +2005,83 @@
           };
         }
 
+        function formatFieldsetAttribute(fieldsetIndex, key, value) {
+          return `
+              <div class="fieldset-field">
+                <label>${escapeHtml(key)}</label>
+                <input
+                  type="text"
+                  class="fieldset-attr"
+                  data-fieldset-index="${fieldsetIndex}"
+                  data-field="${escapeHtml(key)}"
+                  value="${escapeHtml(value ?? "")}"
+                />
+              </div>`;
+        }
+
+        function formatFieldAttribute(fieldsetIndex, fieldIndex, key, value) {
+          const hidden =
+            ["MultipleSampling", "Resolution", "TolerancePositive", "ToleranceNegative"].includes(
+              key
+            ) && !debugMode;
+          if (hidden) return "";
+          const hiddenClass = hidden ? "field-attribute debug-hidden" : "field-attribute";
+          if (key === "Fieldtype") {
+            const options = ["ProtectiveSafeBlanking", "WarningSafeBlanking"]
+              .map(
+                (opt) =>
+                  `<option value="${opt}"${opt === value ? " selected" : ""}>${opt}</option>`
+              )
+              .join("");
+            return `
+              <div class="${hiddenClass}">
+                <label>${escapeHtml(key)}</label>
+                <select
+                  class="field-attr"
+                  data-fieldset-index="${fieldsetIndex}"
+                  data-field-index="${fieldIndex}"
+                  data-field="${escapeHtml(key)}"
+                >
+                  ${options}
+                </select>
+              </div>`;
+          }
+          if (key === "MultipleSampling") {
+            return `
+              <div class="${hiddenClass}">
+                <label>${escapeHtml(key)}</label>
+                <input type="number" value="${escapeHtml(globalMultipleSampling)}" min="2" max="16" readonly />
+              </div>`;
+          }
+          if (key === "Resolution") {
+            return `
+              <div class="${hiddenClass}">
+                <label>${escapeHtml(key)}</label>
+                <input type="number" value="${escapeHtml(String(globalResolution))}" readonly />
+              </div>`;
+          }
+          if (key === "TolerancePositive" || key === "ToleranceNegative") {
+            const bound = key === "TolerancePositive" ? globalTolerancePositive : globalToleranceNegative;
+            return `
+              <div class="${hiddenClass}">
+                <label>${escapeHtml(key)}</label>
+                <input type="number" value="${escapeHtml(String(bound))}" readonly />
+              </div>`;
+          }
+          return `
+              <div class="field-attribute">
+                <label>${escapeHtml(key)}</label>
+                <input
+                  type="text"
+                  class="field-attr"
+                  data-fieldset-index="${fieldsetIndex}"
+                  data-field-index="${fieldIndex}"
+                  data-field="${escapeHtml(key)}"
+                  value="${escapeHtml(value ?? "")}"
+                />
+              </div>`;
+        }
+
         function renderFieldsets() {
           if (!fieldsetsContainer) {
             return;
@@ -1920,170 +2273,247 @@
           restoreFieldsetDetailState(detailState);
         }
 
-        function formatFieldsetAttribute(fieldsetIndex, key, value) {
-          return `
-              <div class="fieldset-field">
-                <label>${escapeHtml(key)}</label>
-                <input
-                  type="text"
-                  class="fieldset-attr"
-                  data-fieldset-index="${fieldsetIndex}"
-                  data-field="${escapeHtml(key)}"
-                  value="${escapeHtml(value ?? "")}"
-                />
-              </div>`;
+        function initializeTriOrbShapes(data) {
+          if (!Array.isArray(data) || !data.length) {
+            return [createDefaultTriOrbShape(0)];
+          }
+          return data.map((shape, index) => ({
+            id: shape.id || createShapeId(),
+            name: shape.name || `Shape ${index + 1}`,
+            type: shape.type || "Polygon",
+            polygon: shape.polygon || createDefaultPolygonDetails(),
+            rectangle: shape.rectangle || createDefaultRectangleDetails(),
+            circle: shape.circle || createDefaultCircleDetails(),
+            visible: shape.visible !== false,
+          }));
         }
 
-        function formatFieldAttribute(fieldsetIndex, fieldIndex, key, value) {
-          const debugOnly =
-            key === "MultipleSampling" ||
-            key === "Resolution" ||
-            key === "TolerancePositive" ||
-            key === "ToleranceNegative";
-          if (debugOnly && !debugMode) {
-            return "";
-          }
-          const hiddenClass = debugOnly ? "field-attribute debug-hidden" : "field-attribute";
-          if (key === "Fieldtype") {
-            const options = [
-              "ProtectiveSafeBlanking",
-              "WarningSafeBlanking",
-            ]
-              .map(
-                (opt) =>
-                  `<option value="${opt}"${
-                    opt === value ? " selected" : ""
-                  }>${opt}</option>`
-              )
-              .join("");
-            return `
-              <div class="${hiddenClass}">
-                <label>${escapeHtml(key)}</label>
-                <select
-                  class="field-attr"
-                  data-fieldset-index="${fieldsetIndex}"
-                  data-field-index="${fieldIndex}"
-                  data-field="${escapeHtml(key)}"
-                >
-                  ${options}
-                </select>
-              </div>`;
-          }
-          if (key === "MultipleSampling") {
-            return `
-              <div class="${hiddenClass}">
-                <label>${escapeHtml(key)}</label>
-                <input
-                  type="number"
-                  value="${escapeHtml(globalMultipleSampling)}"
-                  min="2"
-                  max="16"
-                  readonly
-                />
-              </div>`;
-          }
-          if (key === "Resolution") {
-            return `
-              <div class="${hiddenClass}">
-                <label>${escapeHtml(key)}</label>
-                <input
-                  type="number"
-                  value="${escapeHtml(String(globalResolution))}"
-                  readonly
-                />
-              </div>`;
-          }
-          if (key === "TolerancePositive" || key === "ToleranceNegative") {
-            const boundValue =
-              key === "TolerancePositive"
-                ? globalTolerancePositive
-                : globalToleranceNegative;
-            return `
-              <div class="${hiddenClass}">
-                <label>${escapeHtml(key)}</label>
-                <input
-                  type="number"
-                  value="${escapeHtml(String(boundValue))}"
-                  readonly
-                />
-              </div>`;
-          }
-          return `
-              <div class="field-attribute">
-                <label>${escapeHtml(key)}</label>
-                <input
-                  type="text"
-                  class="field-attr"
-                  data-fieldset-index="${fieldsetIndex}"
-                  data-field-index="${fieldIndex}"
-                  data-field="${escapeHtml(key)}"
-                  value="${escapeHtml(value ?? "")}"
-                />
-              </div>`;
+        function createDefaultTriOrbShape(index, kind = "Polygon") {
+          const shape = {
+            id: createShapeId(),
+            name: `Shape ${index + 1}`,
+            type: kind,
+            polygon: createDefaultPolygonDetails(),
+            rectangle: createDefaultRectangleDetails(),
+            circle: createDefaultCircleDetails(),
+            visible: true,
+          };
+          return shape;
         }
 
-        function captureFieldsetDetailState() {
-          if (!fieldsetsContainer) {
-            return { fieldsets: new Set(), fields: new Set() };
+        function createShapeId() {
+          return `shape-${Math.random().toString(36).slice(2, 10)}`;
+        }
+
+        function createDefaultPolygonDetails() {
+          return {
+            Type: "CutOut",
+            points: [
+              { X: "0", Y: "0" },
+              { X: "100", Y: "0" },
+              { X: "100", Y: "100" },
+              { X: "0", Y: "100" },
+            ],
+          };
+        }
+
+        function formatPolygonPoints(points) {
+          return (points || [])
+            .map((point) => `(${point.X},${point.Y})`)
+            .join(",");
+        }
+
+        function parsePolygonPoints(value) {
+          const sanitized = (value || "").trim();
+          if (!sanitized) {
+            return [];
           }
-          const fieldsetDetails = new Set();
-          const fieldDetails = new Set();
-          fieldsetsContainer.querySelectorAll(".fieldset-card").forEach((card) => {
-            const index = card.dataset.fieldsetIndex;
-            const details = card.querySelector("details");
-            if (details?.open && typeof index !== "undefined") {
-              fieldsetDetails.add(index);
-            }
-            card.querySelectorAll(".field-card").forEach((fieldCard) => {
-              const fieldIndex = fieldCard.dataset.fieldIndex;
-              const fieldDetailsEl = fieldCard.querySelector("details");
-              if (fieldDetailsEl?.open && typeof index !== "undefined" && typeof fieldIndex !== "undefined") {
-                fieldDetails.add(`${index}:${fieldIndex}`);
-              }
+          return sanitized
+            .split("),")
+            .map((segment) => segment.replace(/[()]/g, "").trim())
+            .filter(Boolean)
+            .map((pair) => {
+              const [x, y] = pair.split(",").map((v) => v.trim());
+              return { X: x || "0", Y: y || "0" };
             });
-          });
-          return { fieldsets: fieldsetDetails, fields: fieldDetails };
         }
 
-        function restoreFieldsetDetailState(state) {
-          if (!state || !fieldsetsContainer) {
+        function createDefaultRectangleDetails() {
+          return {
+            Type: "Field",
+            OriginX: "0",
+            OriginY: "0",
+            Width: "100",
+            Height: "100",
+            Rotation: "0",
+          };
+        }
+
+        function createDefaultCircleDetails() {
+          return {
+            Type: "Field",
+            CenterX: "0",
+            CenterY: "0",
+            Radius: "100",
+          };
+        }
+
+        function renderTriOrbShapes() {
+          if (!triorbShapesContainer) {
             return;
           }
-          fieldsetsContainer.querySelectorAll(".fieldset-card").forEach((card) => {
-            const index = card.dataset.fieldsetIndex;
-            if (state.fieldsets.has(index)) {
-              const details = card.querySelector("details");
-              if (details) {
-                details.open = true;
-              }
-            }
-            card.querySelectorAll(".field-card").forEach((fieldCard) => {
-              const fieldIndex = fieldCard.dataset.fieldIndex;
-              const key = `${index}:${fieldIndex}`;
-              if (state.fields.has(key)) {
-                const details = fieldCard.querySelector("details");
-                if (details) {
-                  details.open = true;
-                }
-              }
-            });
-          });
+          if (!triorbShapes.length) {
+            triorbShapesContainer.innerHTML = "<p>No shapes defined.</p>";
+            return;
+          }
+          triorbShapesContainer.innerHTML = triorbShapes
+            .map((shape, shapeIndex) => renderTriOrbShapeCard(shapeIndex, shape))
+            .join("");
         }
 
-        function updateFieldsetAttribute(fieldsetIndex, key, value) {
-          const fieldset = fieldsets[fieldsetIndex];
-          if (!fieldset) return;
-          fieldset.attributes[key] = value;
-          if (key === "Name") {
-            const summary = document.querySelector(
-              `.fieldset-card[data-fieldset-index="${fieldsetIndex}"] .fieldset-summary`
-            );
-            if (summary) {
-              summary.textContent = value;
-            }
+        function renderTriOrbShapeCard(shapeIndex, shape) {
+          const details = renderTriOrbShapeDetails(shape, shapeIndex);
+          const typeSelect = ["Polygon", "Rectangle", "Circle"]
+            .map(
+              (type) =>
+                `<option value="${type}"${
+                  type === shape.type ? " selected" : ""
+                }>${type}</option>`
+            )
+            .join("");
+          return `
+            <div class="triorb-shape-card" data-shape-index="${shapeIndex}">
+          <div class="shape-row">
+            <span>ID: ${escapeHtml(shape.id)}</span>
+            <label>
+              Name
+              <input
+                type="text"
+                class="triorb-shape-name"
+                data-shape-index="${shapeIndex}"
+                data-field="name"
+                value="${escapeHtml(shape.name)}"
+              />
+            </label>
+            <label>
+              Type
+              <select
+                class="triorb-shape-type"
+                data-shape-index="${shapeIndex}"
+                data-field="type"
+              >
+                ${typeSelect}
+              </select>
+            </label>
+            <button
+              type="button"
+              class="inline-btn inline-danger shape-mini-btn"
+              data-action="remove-triorb-shape"
+              data-shape-index="${shapeIndex}"
+            >
+              Remove
+            </button>
+          </div>
+              <div class="shape-details">${details}</div>
+            </div>`;
+        }
+
+        function renderTriOrbShapeDetails(shape, shapeIndex) {
+          switch (shape.type) {
+            case "Rectangle":
+              return ["OriginX", "OriginY", "Width", "Height", "Rotation"]
+                .map((key) => {
+                  const value = shape.rectangle?.[key] ?? "0";
+                  return `
+                    <label>
+                      ${key}
+                      <input
+                        type="number"
+                        data-shape-index="${shapeIndex}"
+                        data-field="${key}"
+                        data-shape-dimension="rectangle"
+                        value="${escapeHtml(value)}"
+                      />
+                    </label>`;
+                })
+                .join("");
+            case "Circle":
+              return ["CenterX", "CenterY", "Radius"]
+                .map((key) => {
+                  const value = shape.circle?.[key] ?? "0";
+                  return `
+                    <label>
+                      ${key}
+                      <input
+                        type="number"
+                        data-shape-index="${shapeIndex}"
+                        data-field="${key}"
+                        data-shape-dimension="circle"
+                        value="${escapeHtml(value)}"
+                      />
+                    </label>`;
+                })
+                .join("");
+            case "Polygon":
+            default:
+              return `
+                <label>
+                  Points (format: (x1,y1),(x2,y2),...)
+                  <input
+                    type="text"
+                    data-shape-index="${shapeIndex}"
+                    data-shape-dimension="polygon"
+                    value="${escapeHtml(formatPolygonPoints(shape.polygon?.points || []))}"
+                  />
+                </label>`;
           }
-          renderFieldsetCheckboxes();
-          renderFigure();
+        }
+
+        function handleTriOrbShapeInput(event) {
+          const target = event.target;
+          if (!target) return;
+          const shapeIndex = Number(target.dataset.shapeIndex);
+          if (!Number.isFinite(shapeIndex)) {
+            return;
+          }
+          const shape = triorbShapes[shapeIndex];
+          if (!shape) return;
+          const field = target.dataset.field;
+          const dimension = target.dataset["shapeDimension"];
+          let changed = false;
+          if (field === "name") {
+            shape.name = target.value;
+            changed = true;
+          } else if (field === "type") {
+            shape.type = target.value;
+            if (shape.type === "Polygon") {
+              shape.polygon = shape.polygon || createDefaultPolygonDetails();
+            } else if (shape.type === "Rectangle") {
+              shape.rectangle = shape.rectangle || createDefaultRectangleDetails();
+            } else if (shape.type === "Circle") {
+              shape.circle = shape.circle || createDefaultCircleDetails();
+            }
+            renderTriOrbShapes();
+            renderTriOrbShapeCheckboxes();
+            changed = true;
+          } else if (dimension === "polygon") {
+            if (!shape.polygon) {
+              shape.polygon = createDefaultPolygonDetails();
+            }
+            shape.polygon.points = parsePolygonPoints(target.value);
+            changed = true;
+          } else if (dimension === "rectangle") {
+            shape.rectangle = shape.rectangle || createDefaultRectangleDetails();
+            shape.rectangle[field] = target.value;
+            changed = true;
+          } else if (dimension === "circle") {
+            shape.circle = shape.circle || createDefaultCircleDetails();
+            shape.circle[field] = target.value;
+            changed = true;
+          }
+          if (changed) {
+            renderFigure();
+          }
         }
 
         function renderPolygonEditor(fieldsetIndex, fieldIndex, polygon, polygonIndex) {
@@ -2168,7 +2598,7 @@
                   data-field-index="${fieldIndex}"
                   data-polygon-index="${polygonIndex}"
                 >
-                  + Point
+                  Add Point
                 </button>
               </div>
             </div>`;
@@ -2356,6 +2786,57 @@
           renderFigure();
         }
 
+        function captureFieldsetDetailState() {
+          if (!fieldsetsContainer) {
+            return { fieldsets: new Set(), fields: new Set() };
+          }
+          const state = { fieldsets: new Set(), fields: new Set() };
+          fieldsetsContainer.querySelectorAll(".fieldset-card").forEach((card) => {
+            const fieldsetIndex = card.dataset.fieldsetIndex;
+            const details = card.querySelector("details");
+            if (details?.open && fieldsetIndex !== undefined) {
+              state.fieldsets.add(fieldsetIndex);
+            }
+            card.querySelectorAll(".field-card").forEach((fieldCard) => {
+              const fieldIndex = fieldCard.dataset.fieldIndex;
+              const fieldDetails = fieldCard.querySelector("details");
+              if (
+                fieldDetails?.open &&
+                fieldsetIndex !== undefined &&
+                fieldIndex !== undefined
+              ) {
+                state.fields.add(`${fieldsetIndex}:${fieldIndex}`);
+              }
+            });
+          });
+          return state;
+        }
+
+        function restoreFieldsetDetailState(state) {
+          if (!state || !fieldsetsContainer) {
+            return;
+          }
+          fieldsetsContainer.querySelectorAll(".fieldset-card").forEach((card) => {
+            const fieldsetIndex = card.dataset.fieldsetIndex;
+            if (state.fieldsets.has(fieldsetIndex)) {
+              const details = card.querySelector("details");
+              if (details) {
+                details.open = true;
+              }
+            }
+            card.querySelectorAll(".field-card").forEach((fieldCard) => {
+              const fieldIndex = fieldCard.dataset.fieldIndex;
+              const key = `${fieldsetIndex}:${fieldIndex}`;
+              if (state.fields.has(key)) {
+                const details = fieldCard.querySelector("details");
+                if (details) {
+                  details.open = true;
+                }
+              }
+            });
+          });
+        }
+
         function getFieldEntry(fieldsetIndex, fieldIndex) {
           const fieldset = fieldsets[fieldsetIndex];
           if (!fieldset || !fieldset.fields) {
@@ -2424,6 +2905,182 @@
           if (!field || !field.rectangles) return;
           field.rectangles.splice(rectangleIndex, 1);
           renderFieldsets();
+        }
+
+        function resolveShape(meta) {
+          if (!meta) return null;
+          const field = getFieldEntry(meta.fieldsetIndex, meta.fieldIndex);
+          if (!field) {
+            return null;
+          }
+          switch (meta.kind) {
+            case "polygon":
+              return field.polygons?.[meta.shapeIndex] || null;
+            case "rectangle":
+              return field.rectangles?.[meta.shapeIndex] || null;
+            case "circle":
+              return field.circles?.[meta.shapeIndex] || null;
+            default:
+              return null;
+          }
+        }
+
+        function cloneShape(shape) {
+          if (!shape) return null;
+          return JSON.parse(JSON.stringify(shape));
+        }
+
+        function restoreShapeValues(target, source) {
+          if (!target || !source) return;
+          Object.keys(target).forEach((key) => {
+            delete target[key];
+          });
+          Object.keys(source).forEach((key) => {
+            target[key] = source[key];
+          });
+        }
+
+        function renderShapeModal(meta) {
+          const shape = resolveShape(meta);
+          if (!shape) return;
+          modalShapeMeta = meta;
+          modalOriginalShape = cloneShape(shape);
+          shapeModalTitle.textContent = `${meta.shapeType || meta.kind} Edit`;
+          let html = "";
+          if (meta.kind === "polygon") {
+            const points = shape.points || [];
+            html += points
+              .map(
+                (point, idx) => `
+              <div class="modal-field">
+                <label>Point ${idx + 1} X(mm)</label>
+                <input type="number" data-point-index="${idx}" data-axis="X" value="${escapeHtml(
+                  point.X ?? "0"
+                )}" />
+                <label>Point ${idx + 1} Y(mm)</label>
+                <input type="number" data-point-index="${idx}" data-axis="Y" value="${escapeHtml(
+                  point.Y ?? "0"
+                )}" />
+              </div>`
+              )
+              .join("");
+          } else if (meta.kind === "rectangle") {
+            ["OriginX", "OriginY", "Width", "Height", "Rotation"].forEach((key) => {
+              html += `
+              <div class="modal-field">
+                <label>${key}(mm)</label>
+                <input type="number" data-field="${key}" value="${escapeHtml(shape[key] ?? "0")}" />
+              </div>`;
+            });
+          } else if (meta.kind === "circle") {
+            ["CenterX", "CenterY", "Radius"].forEach((key) => {
+              html += `
+              <div class="modal-field">
+                <label>${key}(mm)</label>
+                <input type="number" data-field="${key}" value="${escapeHtml(shape[key] ?? "0")}" />
+              </div>`;
+            });
+          }
+          shapeModalBody.innerHTML = html;
+          shapeModal.classList.add("active");
+          shapeModal.setAttribute("aria-hidden", "false");
+          ensureModalPosition();
+        }
+
+        function handleShapeModalInput(event) {
+          if (!modalShapeMeta) {
+            return;
+          }
+          const shape = resolveShape(modalShapeMeta);
+          if (!shape) {
+            return;
+          }
+          const input = event.target;
+          if (!input) {
+            return;
+          }
+          if (modalShapeMeta.kind === "polygon") {
+            const pointIndex = Number(input.dataset.pointIndex);
+            const axis = input.dataset.axis;
+            if (Number.isFinite(pointIndex) && axis) {
+              shape.points = shape.points || [];
+              if (!shape.points[pointIndex]) {
+                shape.points[pointIndex] = { X: "0", Y: "0" };
+              }
+              shape.points[pointIndex][axis] = input.value;
+            }
+          } else {
+            const field = input.dataset.field;
+            if (field) {
+              shape[field] = input.value;
+            }
+          }
+          renderFieldsets();
+          renderFigure();
+        }
+
+        function closeShapeModal() {
+          modalShapeMeta = null;
+          modalOriginalShape = null;
+          shapeModal.classList.remove("active");
+          shapeModal.setAttribute("aria-hidden", "true");
+        }
+
+        function saveShapeModal() {
+          if (!modalShapeMeta) {
+            return;
+          }
+          const shape = resolveShape(modalShapeMeta);
+          modalOriginalShape = cloneShape(shape);
+          closeShapeModal();
+        }
+
+        function cancelShapeModal() {
+          if (modalShapeMeta && modalOriginalShape) {
+            const shape = resolveShape(modalShapeMeta);
+            if (shape) {
+              restoreShapeValues(shape, modalOriginalShape);
+            }
+          }
+          renderFieldsets();
+          renderFigure();
+          closeShapeModal();
+        }
+
+        function ensureModalPosition() {
+          if (shapeModalWindow) {
+            shapeModalWindow.style.transform = `translate(${modalOffsetX}px, ${modalOffsetY}px)`;
+          }
+        }
+
+        function startModalDrag(event) {
+          if (!shapeModalWindow) return;
+          isModalDragging = true;
+          modalDragStartX = event.clientX;
+          modalDragStartY = event.clientY;
+          shapeModalWindow.style.transition = "none";
+        }
+
+        function updateModalDrag(event) {
+          if (!isModalDragging) return;
+          const dx = event.clientX - modalDragStartX;
+          const dy = event.clientY - modalDragStartY;
+          if (shapeModalWindow) {
+            shapeModalWindow.style.transform = `translate(${modalOffsetX + dx}px, ${modalOffsetY + dy}px)`;
+          }
+        }
+
+        function endModalDrag(event) {
+          if (!isModalDragging) return;
+          const dx = event.clientX - modalDragStartX;
+          const dy = event.clientY - modalDragStartY;
+          modalOffsetX += dx;
+          modalOffsetY += dy;
+          isModalDragging = false;
+          if (shapeModalWindow) {
+            shapeModalWindow.style.transition = "";
+            ensureModalPosition();
+          }
         }
 
         function formatAttributeBadges(attrs) {
@@ -2696,6 +3353,8 @@
           lines.push("        <Rectangle Name=\"Rectangle #1\" />");
           lines.push("      </CommonCutOut>");
           lines.push("    </Field>");
+          const shapeLines = buildTriOrbShapesXml();
+          shapeLines.forEach((line) => lines.push(line));
           lines.push("  </TriOrbMenu>");
           lines.push("</TriOrb_SICK_SLS_Editor>");
           return lines.join("\n");
@@ -2902,6 +3561,45 @@
             default:
               return [];
           }
+        }
+
+        function buildTriOrbShapesXml() {
+          if (!Array.isArray(triorbShapes) || !triorbShapes.length) {
+            return ["    <!-- No TriOrb shapes -->"];
+          }
+          const lines = [];
+          lines.push("    <Shapes>");
+          triorbShapes.forEach((shape) => {
+            const shapeAttrs = buildAttributeString(
+              { ID: shape.id, Name: shape.name, Type: shape.type },
+              ["ID", "Name", "Type"]
+            );
+            lines.push(`      <Shape${shapeAttrs ? " " + shapeAttrs : ""}>`);
+            if (shape.type === "Polygon" && shape.polygon) {
+              const polygonAttr = buildAttributeString(
+                { Type: shape.polygon.Type },
+                ["Type"]
+              );
+              lines.push(`        <Polygon${polygonAttr ? " " + polygonAttr : ""}>`);
+              (shape.polygon.points || []).forEach((point) => {
+                const pointAttrs = buildAttributeString(point, getAttributeOrder("Point"));
+                lines.push(`          <Point${pointAttrs ? " " + pointAttrs : ""} />`);
+              });
+              lines.push("        </Polygon>");
+            } else if (shape.type === "Rectangle" && shape.rectangle) {
+              const rectAttrs = buildAttributeString(
+                shape.rectangle,
+                getAttributeOrder("Rectangle")
+              );
+              lines.push(`        <Rectangle${rectAttrs ? " " + rectAttrs : ""} />`);
+            } else if (shape.type === "Circle" && shape.circle) {
+              const circleAttrs = buildAttributeString(shape.circle, getAttributeOrder("Circle"));
+              lines.push(`        <Circle${circleAttrs ? " " + circleAttrs : ""} />`);
+            }
+            lines.push("      </Shape>");
+          });
+          lines.push("    </Shapes>");
+          return lines;
         }
 
         function downloadXml(xmlString) {
@@ -3490,11 +4188,11 @@
             fieldsetCheckboxes.innerHTML = "<p>No fieldsets available.</p>";
             return;
           }
-          fieldsetCheckboxes.innerHTML = fieldsets
-            .map((fieldset, index) => {
-              const isVisible = fieldset.visible !== false;
-              fieldset.visible = isVisible;
-              return `
+            fieldsetCheckboxes.innerHTML = fieldsets
+              .map((fieldset, index) => {
+                const isVisible = fieldset.visible !== false;
+                fieldset.visible = isVisible;
+                return `
           <label class="fieldset-checkbox">
             <input
               type="checkbox"
@@ -3506,6 +4204,7 @@
           </label>`;
             })
             .join("");
+          renderTriOrbShapeCheckboxes();
         }
 
         if (fieldsetCheckboxes) {
@@ -3536,6 +4235,31 @@
         if (uncheckAllBtn) {
           uncheckAllBtn.addEventListener("click", () => {
             toggleAllFieldsetCheckboxes(false);
+          });
+        }
+
+        if (triorbShapeCheckboxes) {
+          triorbShapeCheckboxes.addEventListener("change", (event) => {
+            if (event.target.classList.contains("triorb-shape-checkbox-input")) {
+              const index = Number(event.target.dataset.shapeIndex);
+              const shape = triorbShapes[index];
+              if (shape) {
+                shape.visible = event.target.checked;
+              }
+              renderFigure();
+            }
+          });
+        }
+
+        if (triorbShapeCheckAllBtn) {
+          triorbShapeCheckAllBtn.addEventListener("click", () => {
+            setTriOrbShapeVisibility(true);
+          });
+        }
+
+        if (triorbShapeUncheckAllBtn) {
+          triorbShapeUncheckAllBtn.addEventListener("click", () => {
+            setTriOrbShapeVisibility(false);
           });
         }
 
@@ -3691,6 +4415,63 @@
           });
         }
 
+        let triOrbSpinnerTimer = null;
+        let triOrbSpinnerStep = null;
+
+        if (triorbShapesContainer) {
+          triorbShapesContainer.addEventListener("pointerdown", (event) => {
+            const target = event.target;
+            if (
+              target instanceof HTMLInputElement &&
+              target.type === "number" &&
+              target.closest(".triorb-shape-card")
+            ) {
+              const rect = target.getBoundingClientRect();
+              const isUp = event.clientY < rect.top + rect.height / 2;
+              const stepFn = () => {
+                if (isUp) {
+                  target.stepUp();
+                } else {
+                  target.stepDown();
+                }
+                handleTriOrbShapeInput({ target });
+              };
+              stepFn();
+              triOrbSpinnerStep = stepFn;
+              triOrbSpinnerTimer = setInterval(stepFn, 140);
+            }
+          });
+          document.addEventListener("pointerup", () => {
+            if (triOrbSpinnerTimer) {
+              clearInterval(triOrbSpinnerTimer);
+              triOrbSpinnerTimer = null;
+              triOrbSpinnerStep = null;
+            }
+          });
+          triorbShapesContainer.addEventListener("input", (event) => {
+            handleTriOrbShapeInput(event);
+          });
+          triorbShapesContainer.addEventListener("change", (event) => {
+            handleTriOrbShapeInput(event);
+          });
+          triorbShapesContainer.addEventListener("click", (event) => {
+            if (!event.target) return;
+            const action = event.target.dataset.action;
+            if (action === "remove-triorb-shape") {
+              const index = Number(event.target.dataset.shapeIndex);
+              removeTriOrbShape(index);
+            }
+          });
+        }
+
+        if (addTriOrbShapeBtn) {
+          addTriOrbShapeBtn.addEventListener("click", () => {
+            triorbShapes.push(createDefaultTriOrbShape(triorbShapes.length));
+            renderTriOrbShapes();
+            renderTriOrbShapeCheckboxes();
+          });
+        }
+
         function toggleAllFieldsetCheckboxes(checked) {
           if (!fieldsetCheckboxes) return;
           const boxes = fieldsetCheckboxes.querySelectorAll(".fieldset-filter-checkbox");
@@ -3705,6 +4486,40 @@
             checked ? "All fieldsets checked." : "All fieldsets unchecked.",
             checked ? "ok" : "warning"
           );
+          renderFigure();
+        }
+
+        function renderTriOrbShapeCheckboxes() {
+          if (!triorbShapeCheckboxes) {
+            return;
+          }
+          if (!triorbShapes.length) {
+            triorbShapeCheckboxes.innerHTML = "<p>No shapes available.</p>";
+            return;
+          }
+          triorbShapeCheckboxes.innerHTML = triorbShapes
+            .map((shape, index) => {
+              const isVisible = shape.visible !== false;
+              shape.visible = isVisible;
+              return `
+                <label class="triorb-shape-checkbox">
+                  <input
+                    type="checkbox"
+                    class="triorb-shape-checkbox-input"
+                    data-shape-index="${index}"
+                    ${isVisible ? "checked" : ""}
+                  />
+                  ${escapeHtml(shape.name || `Shape ${index + 1}`)}
+                </label>`;
+            })
+            .join("");
+        }
+
+        function setTriOrbShapeVisibility(visible) {
+          triorbShapes.forEach((shape) => {
+            shape.visible = visible;
+          });
+          renderTriOrbShapeCheckboxes();
           renderFigure();
         }
 
@@ -3757,6 +4572,51 @@
           syncPlotSize();
           Plotly.Plots.resize(plotNode);
         });
+
+        plotNode.on("plotly_hover", (event) => {
+          if (event?.points?.length) {
+            lastHoverPoint = event.points[0];
+          }
+        });
+
+        plotNode.on("plotly_click", (event) => {
+          const point = event?.points?.[0] || lastHoverPoint;
+          console.debug("plotly_click", { point, lastHoverPoint });
+          const meta = point?.meta || point?.data?.meta;
+          if (meta?.kind) {
+            console.debug("trigger modal", meta);
+            renderShapeModal(meta);
+          }
+        });
+        if (shapeModal) {
+          shapeModal.addEventListener("click", (event) => {
+            if (event.target?.dataset?.action === "close-modal") {
+              cancelShapeModal();
+            }
+          });
+        }
+        if (shapeModalBody) {
+          shapeModalBody.addEventListener("input", handleShapeModalInput);
+        }
+        if (shapeModalCancel) {
+          shapeModalCancel.addEventListener("click", cancelShapeModal);
+        }
+        if (shapeModalClose) {
+          shapeModalClose.addEventListener("click", cancelShapeModal);
+        }
+        if (shapeModalSave) {
+          shapeModalSave.addEventListener("click", saveShapeModal);
+        }
+        document.addEventListener("keydown", (event) => {
+          if (event.key === "Escape") {
+            cancelShapeModal();
+          }
+        });
+        if (shapeModalHeader) {
+          shapeModalHeader.addEventListener("pointerdown", startModalDrag);
+        }
+        document.addEventListener("pointermove", updateModalDrag);
+        document.addEventListener("pointerup", endModalDrag);
 
         setupLayoutObservers();
         renderFigure();
