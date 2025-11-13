@@ -38,14 +38,20 @@ def load_menu_items() -> List[Dict[str, str]]:
 
     root = tree.getroot()
     items: List[Dict[str, str]] = []
-    for child in root:
+    for entry in fallback:
+        tag = entry["tag"]
+        node = root.find(tag)
+        if node is None:
+            # サンプル XML に対象タグがなければフォールバックのまま。
+            items.append(entry)
+            continue
         summary_parts = []
-        if child.attrib:
+        if node.attrib:
             # メニュー表示の補助情報として、先頭の属性を要約に含める。
-            for key, value in list(child.attrib.items())[:2]:
+            for key, value in list(node.attrib.items())[:2]:
                 summary_parts.append(f"{key}={value}")
         summary = " / ".join(summary_parts) if summary_parts else "No additional attributes"
-        items.append({"tag": child.tag, "summary": summary})
+        items.append({"tag": tag, "summary": summary})
 
     return items or fallback
 
