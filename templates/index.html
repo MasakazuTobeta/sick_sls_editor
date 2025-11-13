@@ -725,6 +725,11 @@
         background: rgba(15, 23, 42, 0.35);
         border-radius: 3px;
       }
+      .field-resize-handle {
+        position: sticky;
+        align-self: flex-end;
+        margin: 0;
+      }
       .shape-create-window {
         max-width: 720px;
       }
@@ -1466,6 +1471,7 @@
         const createFieldModalTitle = createFieldModalWindow?.querySelector(".modal-title");
         const createFieldModalSave = document.getElementById("create-field-modal-save");
         const createFieldModalHeader = createFieldModalWindow?.querySelector(".modal-header");
+        const createFieldModalBody = createFieldModalWindow?.querySelector(".modal-body");
         const createFieldsetNameInput = document.getElementById("create-field-fieldset-name");
         const createFieldsetLatinInput = document.getElementById("create-field-fieldset-latin9");
         const createFieldNameInputs = [
@@ -1542,7 +1548,6 @@
         }
         let createShapePreview = null;
         let createShapeDraftId = null;
-        const createFieldModalFieldShapeSelections = [new Set(), new Set()];
         let fieldModalPreview = null;
         updateGlobalFieldAttributes();
 
@@ -3174,7 +3179,11 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               select.value = "Field";
             }
           });
-          createFieldModalFieldShapeSelections.forEach((selection) => selection.clear());
+          createFieldModalFieldShapeSelections.forEach((selection) => {
+            shapeKinds.forEach((kind) => {
+              selection[kind]?.clear();
+            });
+          });
           renderCreateFieldShapeLists();
           if (createFieldModalTitle) {
             createFieldModalTitle.textContent = "Add Fieldset";
@@ -6568,8 +6577,10 @@ function parsePolygonTrace(doc) {
           createFieldModalHeader.addEventListener("pointerdown", startCreateFieldModalDrag);
         }
         const fieldResizeHandle = document.createElement("div");
-        fieldResizeHandle.className = "modal-resize-handle";
-        if (createFieldModalWindow) {
+        fieldResizeHandle.className = "modal-resize-handle field-resize-handle";
+        if (createFieldModalBody) {
+          createFieldModalBody.appendChild(fieldResizeHandle);
+        } else if (createFieldModalWindow) {
           createFieldModalWindow.appendChild(fieldResizeHandle);
         }
         fieldResizeHandle.addEventListener("pointerdown", (event) => {
