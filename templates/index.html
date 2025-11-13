@@ -6358,9 +6358,6 @@ function parsePolygonTrace(doc) {
             select.addEventListener("change", updateFieldModalPreview);
           }
         });
-        if (createFieldNameInput) {
-          createFieldNameInput.addEventListener("input", updateFieldModalPreview);
-        }
         function startCreateShapeDrag(event) {
           if (!createShapeModalWindow) return;
           isCreateShapeDragging = true;
