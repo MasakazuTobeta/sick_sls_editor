@@ -1767,6 +1767,7 @@
           casetablePayload?.configuration
         );
         let casetableCases = initializeCasetableCases(casetablePayload?.cases);
+        let casetableCaseCounter = deriveCasetableCaseCounter(casetableCases);
         let casetableLayout = normalizeCasetableLayout(casetablePayload?.layout);
         let casetableEvals = cloneGenericNode(casetablePayload?.evals);
         let casetableFieldsConfiguration = cloneGenericNode(
@@ -4607,6 +4608,44 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           return { attributes, staticInputs, speedActivation, layout };
         }
 
+        function deriveCasetableCaseCounter(cases) {
+          if (!Array.isArray(cases) || !cases.length) {
+            return 0;
+          }
+          const highestIndex = cases.reduce((maxIndex, entry, index) => {
+            const attributes = entry?.attributes || {};
+            return Math.max(maxIndex, index, extractCaseIndex(attributes));
+          }, -1);
+          return Math.max(0, highestIndex + 1);
+        }
+
+        function extractCaseIndex(attributes) {
+          if (!attributes) {
+            return -1;
+          }
+          const latinKey = attributes.NameLatin9Key;
+          if (typeof latinKey === "string") {
+            const latinMatch = latinKey.match(/_CASE_(\d+)/i);
+            if (latinMatch) {
+              const numeric = Number(latinMatch[1]);
+              if (Number.isFinite(numeric)) {
+                return numeric - 1;
+              }
+            }
+          }
+          const nameValue = attributes.Name;
+          if (typeof nameValue === "string") {
+            const nameMatch = nameValue.match(/(\d+)\s*$/);
+            if (nameMatch) {
+              const numeric = Number(nameMatch[1]);
+              if (Number.isFinite(numeric)) {
+                return numeric - 1;
+              }
+            }
+          }
+          return -1;
+        }
+
         function createDefaultStaticInput(name) {
           return {
             attributes: { Name: name || "StaticInput", State: "Low" },
@@ -5999,6 +6038,7 @@ function parsePolygonTrace(doc) {
             casetableAttributes = { Index: "0" };
             casetableConfiguration = createDefaultCasetableConfiguration();
             casetableCases = [createDefaultCasetableCase(0)];
+            casetableCaseCounter = deriveCasetableCaseCounter(casetableCases);
             casetableLayout = normalizeCasetableLayout([]);
             casetableEvals = null;
             casetableFieldsConfiguration = null;
@@ -6024,6 +6064,7 @@ function parsePolygonTrace(doc) {
                 serializeCaseElement(caseElement)
               );
               casetableCases = initializeCasetableCases(serializedCases);
+              casetableCaseCounter = deriveCasetableCaseCounter(casetableCases);
               layout.push({ kind: "cases" });
             } else if (child.tagName === "Evals") {
               casetableEvals = convertElementToGenericNode(child);
@@ -6038,6 +6079,7 @@ function parsePolygonTrace(doc) {
           casetableLayout = normalizeCasetableLayout(layout);
           if (!layout.some((segment) => segment.kind === "cases")) {
             casetableCases = initializeCasetableCases([]);
+            casetableCaseCounter = deriveCasetableCaseCounter(casetableCases);
           }
           renderCasetableConfiguration();
           renderCasetableCases();
@@ -6306,7 +6348,9 @@ function parsePolygonTrace(doc) {
               setStatus(`Case limit of ${casetableCasesLimit} reached.`, "warning");
               return;
             }
-            casetableCases.push(createDefaultCasetableCase(casetableCases.length));
+            const nextIndex = casetableCaseCounter;
+            casetableCases.push(createDefaultCasetableCase(nextIndex));
+            casetableCaseCounter += 1;
             renderCasetableCases();
           });
         }
