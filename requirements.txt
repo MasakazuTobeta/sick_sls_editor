@@ -3,7 +3,6 @@ plotly>=5.20
 playwright>=1.44
 git+https://github.com/SimonSapin/Frozen-Flask.git
 wxPython
-wxasync
 mike
 mkdocs-material
 pytest
