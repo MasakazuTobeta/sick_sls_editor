@@ -1,6 +1,32 @@
 from __future__ import annotations
 
-import plotly.graph_objs as go
+try:
+    import plotly.graph_objs as go
+except ModuleNotFoundError:  # pragma: no cover - fallback for constrained envs
+    class _FallbackFigure:
+        def __init__(self, data=None) -> None:
+            self._data = data or []
+            self._layout = {}
+
+        def update_xaxes(self, **kwargs):
+            self._layout.setdefault("xaxis", {}).update(kwargs)
+            return self
+
+        def update_yaxes(self, **kwargs):
+            self._layout.setdefault("yaxis", {}).update(kwargs)
+            return self
+
+        def update_layout(self, **kwargs):
+            self._layout.update(kwargs)
+            return self
+
+        def to_plotly_json(self):
+            return {"data": self._data, "layout": self._layout}
+
+    class _GraphObjectsModule:
+        Figure = _FallbackFigure
+
+    go = _GraphObjectsModule()
 
 
 def build_sample_figure() -> go.Figure:

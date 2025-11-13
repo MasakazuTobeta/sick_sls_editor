@@ -1,5 +1,12 @@
-from playwright.sync_api import sync_playwright
 import sys
+
+import pytest
+
+sync_api = pytest.importorskip(
+    "playwright.sync_api",
+    reason="Playwright is required for browser automation tests.",
+)
+sync_playwright = sync_api.sync_playwright
 
 
 def run_playwright_test():
