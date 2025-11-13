@@ -16,6 +16,9 @@ TriOrb メニュー、Structure メニュー、Plotly 上の図形・扇形表�
 
 `run_playwright.ps1` を使えば PowerShell（.venv 内）から Flask サーバーの起動と Playwright テストの実行をまとめて行えます。実行には `domains` の実行ポリシーを `RemoteSigned` など適切に設定してください。
 
+### 依存ライブラリ補足
+現在は主要コンポーネント（Flask / Plotly / Playwright など）に必要なライブラリのみを `requirements.txt` へ記載しています。
+
 <!-- TriOrb / Shape -->
 ## 主要な機能
 - TriOrb メニュー: Fieldtype / Type / Fieldset との関係性を整理し、`TriOrb_SICK_SLS_Editor` 内の Shape 情報を一元管理します。各 Shape は Plotly 上でライブプレビューでき、Fieldset からも ID 参照で再利用されます。
