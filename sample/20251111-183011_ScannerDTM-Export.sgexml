@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<SdImportExport Timestamp="2025-11-11T18:30:11Z" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <FileInfo>
+    <CreationComponent>SICK SafetyDesigner</CreationComponent>
+    <CreationComponentVersion>1.19.23369.0</CreationComponentVersion>
+    <CreatedBy>TriOrb Sample</CreatedBy>
+  </FileInfo>
+  <Export_ScanPlanes>
+    <ScanPlane Index="0" Name="Demo monitoring plane" ScanPlaneDirection="Horizontal" UseReferenceContour="false" ObjectSize="70" MultipleSampling="2" MultipleSamplingOff2OnActivated="false" SelectedCaseSwitching="Fast">
+      <Devices>
+        <Device Index="0" Typekey="NANS3-CAAZ30ZA1P02" TypekeyVersion="1.0" TypekeyDisplayVersion="V 1.0.0" DeviceName="Right" ResponseTime="30" ScanResolutionAddition="0" />
+        <Device Index="1" Typekey="NANS3-CAAZ30ZA1P02" TypekeyVersion="1.0" TypekeyDisplayVersion="V 1.0.0" DeviceName="Left" ResponseTime="30" ScanResolutionAddition="0" />
+      </Devices>
+      <GlobalGeometry UseGlobalGeometry="false" />
+      <Fieldsets>
+        <Fieldset Index="0" Name="Protective Fieldset" Latin9Key="_FSN001_0001">
+          <Field Index="0" Name="Protective Field" Fieldtype="ProtectiveSafeBlanking">
+            <Shapes>
+              <Shape ID="shape-protective" />
+            </Shapes>
+          </Field>
+          <Field Index="1" Name="Warning Field" Fieldtype="WarningSafeBlanking">
+            <Shapes>
+              <Shape ID="shape-warning" />
+            </Shapes>
+          </Field>
+        </Fieldset>
+      </Fieldsets>
+    </ScanPlane>
+  </Export_ScanPlanes>
+  <Export_FieldsetsAndFields>
+    <ScanPlane Index="0" Name="Demo monitoring plane" ScanPlaneDirection="Horizontal" UseReferenceContour="false" ObjectSize="70" MultipleSampling="2" MultipleSamplingOff2OnActivated="false" SelectedCaseSwitching="Fast">
+      <Devices>
+        <Device Index="0" Typekey="NANS3-CAAZ30ZA1P02" TypekeyVersion="1.0" TypekeyDisplayVersion="V 1.0.0" DeviceName="Right" ResponseTime="30" ScanResolutionAddition="0" PositionX="170" PositionY="156" Rotation="290" StandingUpsideDown="true" />
+        <Device Index="1" Typekey="NANS3-CAAZ30ZA1P02" TypekeyVersion="1.0" TypekeyDisplayVersion="V 1.0.0" DeviceName="Left" ResponseTime="30" ScanResolutionAddition="0" PositionX="-170" PositionY="156" Rotation="70" StandingUpsideDown="true" />
+      </Devices>
+      <GlobalGeometry UseGlobalGeometry="false" />
+      <Fieldsets>
+        <Fieldset Index="0" Name="Protective Fieldset" Latin9Key="_FSN001_0001" Description="Demo fieldset">
+          <Field Index="0" Name="Protective Field" Fieldtype="ProtectiveSafeBlanking" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Shapes>
+              <Shape ID="shape-protective" />
+            </Shapes>
+          </Field>
+          <Field Index="1" Name="Warning Field" Fieldtype="WarningSafeBlanking" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Shapes>
+              <Shape ID="shape-warning" />
+            </Shapes>
+          </Field>
+        </Fieldset>
+      </Fieldsets>
+    </ScanPlane>
+  </Export_FieldsetsAndFields>
+  <Export_CasetablesAndCases>
+    <Casetables>
+      <Casetable Index="0">
+        <Configuration>
+          <CaseSwitching SelectedCaseSwitching="Fast" />
+          <StaticInputDefaults LowDefault="true" HighDefault="false" />
+          <SpeedActivationDefaults Mode="Off" MinSpeed="0" MaxSpeed="0" />
+          <FieldsConfiguration>
+            <FieldConfiguration Id="0" FieldsetName="Protective Fieldset" FieldName="Protective Field" Fieldtype="ProtectiveSafeBlanking" Description="Stops hazardous movement" />
+            <FieldConfiguration Id="1" FieldsetName="Protective Fieldset" FieldName="Warning Field" Fieldtype="WarningSafeBlanking" Description="Warning only zone" />
+          </FieldsConfiguration>
+        </Configuration>
+        <Cases>
+          <Case Id="0" DisplayOrder="0" Name="Protective monitoring" Description="Stops when protective field interrupted">
+            <StaticInputs>
+              <StaticInput Name="Low" Value="true" />
+              <StaticInput Name="High" Value="false" />
+            </StaticInputs>
+            <SpeedActivation Mode="Off">
+              <SpeedRange Min="0" Max="0" />
+            </SpeedActivation>
+            <Evals>
+              <Eval Id="1" Q="1" FieldConfigurationId="0" Name="Protective path" />
+            </Evals>
+          </Case>
+          <Case Id="1" DisplayOrder="1" Name="Warning monitoring" Description="Warning-only stop">
+            <StaticInputs>
+              <StaticInput Name="Low" Value="false" />
+              <StaticInput Name="High" Value="true" />
+            </StaticInputs>
+            <SpeedActivation Mode="SpeedRange">
+              <SpeedRange Min="0.5" Max="2.0" />
+            </SpeedActivation>
+            <Evals>
+              <Eval Id="1" Q="1" FieldConfigurationId="0" Name="Protective fallback" />
+              <Eval Id="2" Q="2" FieldConfigurationId="1" Name="Warning path" />
+            </Evals>
+          </Case>
+        </Cases>
+      </Casetable>
+    </Casetables>
+  </Export_CasetablesAndCases>
+  <TriOrb_SICK_SLS_Editor Source="Demo">
+    <Shapes>
+      <Shape ID="shape-protective" Name="Protective polygon" Type="Polygon" Fieldtype="ProtectiveSafeBlanking" Kind="Field">
+        <Polygon Type="Field">
+          <Point X="-150" Y="-50" />
+          <Point X="150" Y="-50" />
+          <Point X="150" Y="250" />
+          <Point X="-150" Y="250" />
+        </Polygon>
+      </Shape>
+      <Shape ID="shape-warning" Name="Warning polygon" Type="Polygon" Fieldtype="WarningSafeBlanking" Kind="Field">
+        <Polygon Type="Field">
+          <Point X="-200" Y="-100" />
+          <Point X="200" Y="-100" />
+          <Point X="200" Y="300" />
+          <Point X="-200" Y="300" />
+        </Polygon>
+      </Shape>
+    </Shapes>
+  </TriOrb_SICK_SLS_Editor>
+</SdImportExport>

@@ -12,7 +12,7 @@ from plotly_panel import build_sample_figure
 # アプリで参照するサンプル XML のパス。
 # 実際の編集データがまだない環境でも UI が壊れないよう、
 # 読み込みに失敗した場合はすべてフォールバックデータを返す方針とする。
-SAMPLE_XML = Path("sample/20251111-105839_ScannerDTM-Export.sgexml")
+SAMPLE_XML = Path("sample/20251111-183011_ScannerDTM-Export.sgexml")
 
 
 def load_menu_items() -> List[Dict[str, str]]:
@@ -38,14 +38,20 @@ def load_menu_items() -> List[Dict[str, str]]:
 
     root = tree.getroot()
     items: List[Dict[str, str]] = []
-    for child in root:
+    for entry in fallback:
+        tag = entry["tag"]
+        node = root.find(tag)
+        if node is None:
+            # サンプル XML に対象タグがなければフォールバックのまま。
+            items.append(entry)
+            continue
         summary_parts = []
-        if child.attrib:
+        if node.attrib:
             # メニュー表示の補助情報として、先頭の属性を要約に含める。
-            for key, value in list(child.attrib.items())[:2]:
+            for key, value in list(node.attrib.items())[:2]:
                 summary_parts.append(f"{key}={value}")
         summary = " / ".join(summary_parts) if summary_parts else "No additional attributes"
-        items.append({"tag": child.tag, "summary": summary})
+        items.append({"tag": tag, "summary": summary})
 
     return items or fallback
 
@@ -120,7 +126,7 @@ def _generate_shape_id() -> str:
 def _build_shape_key(shape_type: str, attrs: Dict[str, str], points: Optional[List[Dict[str, str]]] = None) -> str:
     # TriOrb 共有図形を同一性判定するためのキーを生成。
     # 図形タイプと属性値、必要に応じて座標列を連結して比較する。
-    attr_items = "/".join(f"{key}={attrs.get(key,"")}" for key in sorted(attrs))
+    attr_items = "/".join(f"{key}={attrs.get(key, '')}" for key in sorted(attrs))
     key_parts = [shape_type, attr_items]
     if shape_type == "Polygon" and points is not None:
         points_repr = ",".join(f"{point.get('X','')}:{point.get('Y','')}" for point in points)
@@ -142,6 +148,46 @@ def _parse_rectangle_node(rectangle_node: ET.Element) -> Dict[str, str]:
 
 def _parse_circle_node(circle_node: ET.Element) -> Dict[str, str]:
     return dict(circle_node.attrib)
+
+
+def _parse_static_inputs_node(static_inputs_node: Optional[ET.Element]) -> Dict[str, str]:
+    """Extract StaticInput pairs from a case."""
+
+    values: Dict[str, str] = {}
+    if static_inputs_node is None:
+        return values
+    for static_input in static_inputs_node.findall("StaticInput"):
+        name = static_input.attrib.get("Name")
+        if not name:
+            continue
+        values[name] = static_input.attrib.get("Value", "false")
+    return values
+
+
+def _parse_speed_activation_node(speed_node: Optional[ET.Element]) -> Dict[str, str]:
+    """Extract SpeedActivation settings."""
+
+    if speed_node is None:
+        return {}
+    data: Dict[str, str] = {"Mode": speed_node.attrib.get("Mode", "Off")}
+    range_node = speed_node.find("SpeedRange")
+    if range_node is not None:
+        if "Min" in range_node.attrib:
+            data["Min"] = range_node.attrib["Min"]
+        if "Max" in range_node.attrib:
+            data["Max"] = range_node.attrib["Max"]
+    return data
+
+
+def _parse_eval_nodes(evals_parent: Optional[ET.Element]) -> List[Dict[str, Any]]:
+    """Return Eval nodes as dictionaries."""
+
+    evals: List[Dict[str, Any]] = []
+    if evals_parent is None:
+        return evals
+    for eval_node in evals_parent.findall("Eval"):
+        evals.append({"attributes": dict(eval_node.attrib)})
+    return evals
 
 
 def _load_triorb_shapes_from_root(root: ET.Element) -> Tuple[List[Dict[str, Any]], str]:
@@ -229,6 +275,128 @@ def _ensure_shape(
     shapes.append(shape_entry)
     registry[key] = shape_id
     return shape_id
+
+
+def load_casetables_and_cases() -> Dict[str, Any]:
+    """Parse Export_CasetablesAndCases for UI consumption."""
+
+    default_payload: Dict[str, Any] = {
+        "attributes": {"Index": "0"},
+        "configuration_nodes": [
+            {
+                "tag": "CaseSwitching",
+                "attributes": {"SelectedCaseSwitching": "Fast"},
+                "text": "",
+            },
+            {
+                "tag": "StaticInputDefaults",
+                "attributes": {"LowDefault": "false", "HighDefault": "false"},
+                "text": "",
+            },
+            {
+                "tag": "SpeedActivationDefaults",
+                "attributes": {"Mode": "Off", "MinSpeed": "0", "MaxSpeed": "0"},
+                "text": "",
+            },
+        ],
+        "fields_configuration": [
+            {
+                "attributes": {
+                    "Id": "0",
+                    "FieldsetName": "Fieldset 1",
+                    "FieldName": "Protective Field",
+                    "Fieldtype": "ProtectiveSafeBlanking",
+                    "Description": "Default protective field",
+                }
+            },
+            {
+                "attributes": {
+                    "Id": "1",
+                    "FieldsetName": "Fieldset 1",
+                    "FieldName": "Warning Field",
+                    "Fieldtype": "WarningSafeBlanking",
+                    "Description": "Default warning field",
+                }
+            },
+        ],
+        "cases": [
+            {
+                "attributes": {
+                    "Name": "Protective monitoring",
+                    "Description": "Stops when protective field interrupted",
+                },
+                "static_inputs": {"Low": "true", "High": "false"},
+                "speed_activation": {"Mode": "Off", "Min": "0", "Max": "0"},
+                "evals": [
+                    {
+                        "attributes": {
+                            "FieldConfigurationId": "0",
+                            "Name": "Protective path",
+                        }
+                    }
+                ],
+            }
+        ],
+    }
+
+    if not SAMPLE_XML.exists():
+        return default_payload
+
+    try:
+        tree = ET.parse(SAMPLE_XML)
+    except ET.ParseError:
+        return default_payload
+
+    root = tree.getroot()
+    casetables_parent = root.find("Export_CasetablesAndCases")
+    if casetables_parent is None:
+        return default_payload
+
+    casetable_node = casetables_parent.find("Casetables/Casetable[@Index='0']")
+    if casetable_node is None:
+        casetable_node = casetables_parent.find("Casetables/Casetable")
+    if casetable_node is None:
+        return default_payload
+
+    configuration_nodes: List[Dict[str, Any]] = []
+    fields_configuration: List[Dict[str, Any]] = []
+    configuration_parent = casetable_node.find("Configuration")
+    if configuration_parent is not None:
+        for child in configuration_parent:
+            if child.tag == "FieldsConfiguration":
+                for field_config in child.findall("FieldConfiguration"):
+                    fields_configuration.append({"attributes": dict(field_config.attrib)})
+                continue
+            configuration_nodes.append(
+                {
+                    "tag": child.tag,
+                    "attributes": dict(child.attrib),
+                    "text": (child.text or "").strip(),
+                }
+            )
+
+    cases_payload: List[Dict[str, Any]] = []
+    cases_parent = casetable_node.find("Cases")
+    if cases_parent is not None:
+        for case_node in cases_parent.findall("Case"):
+            static_inputs = _parse_static_inputs_node(case_node.find("StaticInputs"))
+            speed_activation = _parse_speed_activation_node(case_node.find("SpeedActivation"))
+            evals = _parse_eval_nodes(case_node.find("Evals"))
+            cases_payload.append(
+                {
+                    "attributes": dict(case_node.attrib),
+                    "static_inputs": static_inputs,
+                    "speed_activation": speed_activation,
+                    "evals": evals,
+                }
+            )
+
+    return {
+        "attributes": dict(casetable_node.attrib),
+        "configuration_nodes": configuration_nodes or default_payload["configuration_nodes"],
+        "fields_configuration": fields_configuration or default_payload["fields_configuration"],
+        "cases": cases_payload or default_payload["cases"],
+    }
 
 
 def load_fieldsets_and_shapes() -> Tuple[Dict[str, Any], List[Dict[str, Any]], str]:
@@ -392,6 +560,7 @@ def create_app() -> Flask:
             root_attrs=load_root_attributes(),
             scan_planes=load_scan_planes(),
             fieldsets=fieldsets_payload,
+            casetables=load_casetables_and_cases(),
             triorb_shapes=triorb_shapes,
             triorb_source=triorb_source,
         )
