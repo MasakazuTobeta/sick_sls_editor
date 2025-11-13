@@ -6321,15 +6321,16 @@ function parsePolygonTrace(doc) {
             }
           });
 
-          casetableCasesContainer.addEventListener("click", (event) => {
-            const removeBtn = event.target.closest("[data-action='remove-case']");
-            if (removeBtn) {
-              event.preventDefault();
-              const caseIndex = Number(removeBtn.dataset.caseIndex);
-              casetableCases.splice(caseIndex, 1);
-              renderCasetableCases();
-              return;
-            }
+            casetableCasesContainer.addEventListener("click", (event) => {
+              const removeBtn = event.target.closest("[data-action='remove-case']");
+              if (removeBtn) {
+                event.preventDefault();
+                const caseIndex = Number(removeBtn.dataset.caseIndex);
+                casetableCases.splice(caseIndex, 1);
+                casetableCaseCounter = deriveCasetableCaseCounter(casetableCases);
+                renderCasetableCases();
+                return;
+              }
             const toggleBtn = event.target.closest("[data-action='toggle-static-input']");
             if (toggleBtn) {
               event.preventDefault();
