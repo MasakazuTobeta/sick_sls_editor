@@ -198,6 +198,184 @@
         display: flex;
         justify-content: flex-start;
       }
+      .casetable-config-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 0.75rem;
+      }
+      .casetable-config-card,
+      .fields-config-card,
+      .case-card {
+        border: 1px solid rgba(15, 23, 42, 0.15);
+        border-radius: 8px;
+        padding: 0.75rem;
+        background: #f8fafc;
+      }
+      .casetable-config-card h4,
+      .fields-config-card h5,
+      .cases-editor h4 {
+        margin: 0 0 0.5rem;
+        font-size: 1rem;
+      }
+      .casetable-config-card label,
+      .fields-config-card label,
+      .case-field label,
+      .speed-activation-group label,
+      .eval-card label {
+        display: block;
+        font-size: 0.85rem;
+        color: #475569;
+        margin-bottom: 0.2rem;
+      }
+      .casetable-config-card input,
+      .fields-config-card input,
+      .case-field input,
+      .case-field textarea,
+      .speed-activation-group input,
+      .speed-activation-group select,
+      .eval-card input,
+      .eval-card select {
+        width: 100%;
+        border-radius: 6px;
+        border: 1px solid rgba(15, 23, 42, 0.2);
+        padding: 0.35rem 0.5rem;
+        font-size: 0.9rem;
+      }
+      .fields-config-section {
+        margin-top: 1rem;
+      }
+      .fields-config-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 1rem;
+        margin-bottom: 0.5rem;
+      }
+      .fields-config-header p {
+        margin: 0;
+        color: #475569;
+        font-size: 0.85rem;
+      }
+      .fields-config-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.75rem;
+      }
+      .fields-config-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 0.75rem;
+      }
+      .fields-config-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+      }
+      .cases-editor {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+      .cases-editor details > summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+      }
+      .case-summary {
+        font-size: 0.9rem;
+        color: #334155;
+      }
+      .case-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 0.75rem;
+      }
+      .case-field textarea {
+        min-height: 60px;
+        resize: vertical;
+      }
+      .case-field.readonly {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        background: #e2e8f0;
+        border-radius: 6px;
+        padding: 0.5rem;
+        font-size: 0.85rem;
+      }
+      .static-inputs-row {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin: 0.75rem 0;
+      }
+      .static-input-toggle {
+        border-radius: 999px;
+        border: 1px solid rgba(15, 23, 42, 0.2);
+        background: #fff;
+        padding: 0.35rem 0.75rem;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+      .static-input-toggle.active {
+        background: #0b6fb8;
+        color: #fff;
+        border-color: #0b6fb8;
+      }
+      .speed-activation-row {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-bottom: 0.75rem;
+      }
+      .speed-activation-group {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 0.5rem;
+      }
+      .evals-section {
+        border-top: 1px solid rgba(15, 23, 42, 0.12);
+        padding-top: 0.75rem;
+      }
+      .evals-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+      }
+      .evals-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      .eval-card {
+        border: 1px dashed rgba(15, 23, 42, 0.25);
+        border-radius: 6px;
+        padding: 0.5rem;
+        background: #fff;
+      }
+      .eval-card .eval-actions {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 0.5rem;
+      }
+      .casetable-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.75rem;
+      }
+      .casetable-hint {
+        margin: 0;
+        font-size: 0.85rem;
+        color: #475569;
+      }
 
       .triorb-shape-checkbox {
         display: inline-flex;
@@ -1161,6 +1339,37 @@
                 </div>
               </details>
               <div class="fieldsets-editor" id="fieldsets-editor"></div>
+            {% elif item.tag == "Export_CasetablesAndCases" %}
+              <p class="menu-description">{{ item.summary }}</p>
+              <details class="menu-section" open>
+                <summary>Configuration</summary>
+                <div class="menu-content">
+                  <div class="casetable-config-grid" id="casetable-configuration"></div>
+                  <div class="fields-config-section">
+                    <div class="fields-config-header">
+                      <h4>FieldsConfiguration</h4>
+                      <p>Field references used inside each monitoring case.</p>
+                    </div>
+                    <div class="fields-config-actions">
+                      <button type="button" class="inline-btn" id="btn-add-field-configuration">
+                        Add FieldConfiguration
+                      </button>
+                      <p class="casetable-hint">Cases reference these FieldConfiguration Ids.</p>
+                    </div>
+                    <div class="fields-config-list" id="fields-configuration"></div>
+                  </div>
+                </div>
+              </details>
+              <details class="menu-section" open>
+                <summary>Cases</summary>
+                <div class="menu-content">
+                  <div class="casetable-actions">
+                    <button type="button" class="inline-btn" id="btn-add-case">Add Case</button>
+                    <p class="casetable-hint">Up to 128 monitoring cases.</p>
+                  </div>
+                  <div class="cases-editor" id="cases-editor"></div>
+                </div>
+              </details>
             {% else %}
               <p>{{ item.summary }}</p>
             {% endif %}
@@ -1264,6 +1473,11 @@
         const initialFieldsets = fieldsetData.fieldsets || [];
         const initialFieldsetDevices = fieldsetData.devices || [];
         const initialFieldsetGlobal = fieldsetData.global_geometry || {};
+        const casetableData = {{ casetables|tojson }};
+        const initialCasetableAttributes = casetableData.attributes || {};
+        const initialCasetableConfigNodes = casetableData.configuration_nodes || [];
+        const initialFieldsConfiguration = casetableData.fields_configuration || [];
+        const initialMonitoringCases = casetableData.cases || [];
 
         const figureConfig = { responsive: true, displaylogo: false };
         const circleSampleSegments = 72;
@@ -1293,6 +1507,10 @@
           rectangle: ["Field"],
           circle: ["Field"],
         };
+        const staticInputKeys = ["Low", "High"];
+        const speedActivationModes = ["Off", "SpeedRange"];
+        const maxMonitoringCases = 128;
+        const maxEvalsPerCase = 5;
         const colorProfiles = {
           FieldProtective: {
             hueCenter: 350,
@@ -1397,6 +1615,160 @@
         function defaultFieldsetName() {
           return `Fieldset ${fieldsets.length + 1}`;
         }
+        function initializeCasetableAttributes(attrs = {}) {
+          const normalized = { ...(attrs || {}) };
+          if (!normalized.Index) {
+            normalized.Index = "0";
+          }
+          return normalized;
+        }
+        function getDefaultCasetableConfigurationNodes() {
+          return [
+            { tag: "CaseSwitching", attributes: { SelectedCaseSwitching: "Fast" }, text: "" },
+            {
+              tag: "StaticInputDefaults",
+              attributes: { LowDefault: "false", HighDefault: "false" },
+              text: "",
+            },
+            {
+              tag: "SpeedActivationDefaults",
+              attributes: { Mode: "Off", MinSpeed: "0", MaxSpeed: "0" },
+              text: "",
+            },
+          ];
+        }
+        function initializeCasetableConfigurationNodes(nodes = []) {
+          const list = Array.isArray(nodes) && nodes.length ? nodes : getDefaultCasetableConfigurationNodes();
+          return list.map((node) => ({
+            tag: node.tag || "Configuration",
+            attributes: { ...(node.attributes || {}) },
+            text: node.text || "",
+          }));
+        }
+        function createDefaultFieldConfiguration(index = 0) {
+          const isProtective = index % 2 === 0;
+          const fieldName =
+            index === 0
+              ? "Protective Field"
+              : index === 1
+              ? "Warning Field"
+              : `Field ${index + 1}`;
+          return {
+            attributes: {
+              Id: String(index),
+              FieldsetName: `Fieldset ${index + 1}`,
+              FieldName: fieldName,
+              Fieldtype: isProtective ? "ProtectiveSafeBlanking" : "WarningSafeBlanking",
+              Description: isProtective && index === 0 ? "Default protective field" : "",
+            },
+          };
+        }
+        function getDefaultFieldsConfiguration() {
+          return [createDefaultFieldConfiguration(0), createDefaultFieldConfiguration(1)];
+        }
+        function initializeFieldsConfiguration(entries = []) {
+          const list =
+            Array.isArray(entries) && entries.length ? entries : getDefaultFieldsConfiguration();
+          return list.map((entry, index) => {
+            const attributes = { ...(entry.attributes || {}) };
+            if (!attributes.Id) {
+              attributes.Id = String(index);
+            }
+            if (!attributes.FieldsetName) {
+              attributes.FieldsetName = `Fieldset ${index + 1}`;
+            }
+            if (!attributes.FieldName) {
+              attributes.FieldName = `Field ${index + 1}`;
+            }
+            if (!attributes.Fieldtype) {
+              attributes.Fieldtype = index % 2 === 0 ? "ProtectiveSafeBlanking" : "WarningSafeBlanking";
+            }
+            if (attributes.Description === undefined) {
+              attributes.Description = "";
+            }
+            return { attributes };
+          });
+        }
+        function getNextFieldConfigurationId() {
+          const usedIds = new Set(
+            fieldsConfiguration.map((entry) => String(entry.attributes?.Id ?? ""))
+          );
+          let candidate = fieldsConfiguration.length;
+          while (usedIds.has(String(candidate))) {
+            candidate += 1;
+          }
+          return String(candidate);
+        }
+        function normalizeStaticInputValue(value) {
+          if (typeof value === "boolean") {
+            return value;
+          }
+          if (typeof value === "string") {
+            return value.trim().toLowerCase() === "true";
+          }
+          return false;
+        }
+        function createDefaultCaseEval(fieldIndex = 0) {
+          const resolvedIndex = Math.max(0, fieldIndex);
+          const fieldConfig = fieldsConfiguration[resolvedIndex];
+          const fieldId = fieldConfig?.attributes?.Id ?? String(resolvedIndex);
+          return {
+            attributes: {
+              FieldConfigurationId: fieldId,
+              Name: `Path ${resolvedIndex + 1}`,
+            },
+          };
+        }
+        function createDefaultMonitoringCase(index = 0) {
+          return {
+            attributes: {
+              Name: index === 0 ? "Protective monitoring" : `Monitoring case ${index + 1}`,
+              Description: index === 0 ? "Stops when protective field interrupted" : "",
+            },
+            staticInputs: {
+              Low: index % 2 === 0,
+              High: index % 2 === 1,
+            },
+            speedActivation: { mode: "Off", min: "0", max: "0" },
+            evals: [createDefaultCaseEval(index)],
+          };
+        }
+        function initializeMonitoringCases(casesInput = []) {
+          const list = Array.isArray(casesInput) ? casesInput : [];
+          if (!list.length) {
+            return [createDefaultMonitoringCase(0)];
+          }
+          return list.map((caseEntry, index) => {
+            const attributes = { ...(caseEntry.attributes || {}) };
+            if (!attributes.Name) {
+              attributes.Name = `Monitoring case ${index + 1}`;
+            }
+            const staticInputs = {};
+            staticInputKeys.forEach((key) => {
+              staticInputs[key] = normalizeStaticInputValue(
+                (caseEntry.static_inputs || {})[key]
+              );
+            });
+            const speedSource = caseEntry.speed_activation || {};
+            const mode = (speedSource.Mode || speedSource.mode || "Off").trim() || "Off";
+            const speedActivation = {
+              mode: speedActivationModes.includes(mode) ? mode : "Off",
+              min: String(speedSource.Min ?? speedSource.min ?? "0"),
+              max: String(speedSource.Max ?? speedSource.max ?? "0"),
+            };
+            const evals = Array.isArray(caseEntry.evals) && caseEntry.evals.length
+              ? caseEntry.evals.map((evalEntry) => ({
+                  attributes: { ...(evalEntry.attributes || {}) },
+                }))
+              : [createDefaultCaseEval(index)];
+            return {
+              attributes,
+              staticInputs,
+              speedActivation,
+              evals,
+            };
+          });
+        }
         function pickFieldColor(fieldType, seed) {
           const profile =
             fieldType === "WarningSafeBlanking"
@@ -1418,6 +1790,11 @@
         const addFieldsetDeviceBtn = document.getElementById("btn-add-fieldset-device");
         const fieldsetGlobalContainer = document.getElementById("fieldset-global");
         const addFieldsetBtn = document.getElementById("btn-add-fieldset");
+        const casetableConfigurationContainer = document.getElementById("casetable-configuration");
+        const fieldsConfigurationContainer = document.getElementById("fields-configuration");
+        const casesContainer = document.getElementById("cases-editor");
+        const addCaseBtn = document.getElementById("btn-add-case");
+        const addFieldConfigurationBtn = document.getElementById("btn-add-field-configuration");
         const globalMultipleSamplingInput = document.getElementById("global-multiple-sampling");
         const fieldsetCheckboxes = document.getElementById("fieldset-checkboxes");
         if (fieldsetCheckboxes) {
@@ -1520,6 +1897,13 @@
         let fieldsets = initializeFieldsets(initialFieldsets);
         let fieldsetDevices = initializeFieldsetDevices(initialFieldsetDevices);
         let fieldsetGlobalGeometry = initializeGlobalGeometry(initialFieldsetGlobal);
+        let casetableAttributes = initializeCasetableAttributes(initialCasetableAttributes);
+        let casetableConfigurationNodes = initializeCasetableConfigurationNodes(
+          initialCasetableConfigNodes
+        );
+        let fieldsConfiguration = initializeFieldsConfiguration(initialFieldsConfiguration);
+        let monitoringCases = initializeMonitoringCases(initialMonitoringCases);
+        syncCaseEvalFieldConfigurationIds();
         let globalMultipleSampling = deriveInitialMultipleSampling(fieldsets);
         let legendVisible = true;
         let fieldOfViewDegrees = parseNumeric(fieldOfViewInput?.value, 270);
@@ -1550,6 +1934,7 @@
         let createShapeDraftId = null;
         let fieldModalPreview = null;
         updateGlobalFieldAttributes();
+        renderCasetableSections();
 
         let lastHoverPoint = null;
         let modalShapeMeta = null;
@@ -4412,6 +4797,555 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             .join("");
         }
 
+        function renderCasetableConfiguration() {
+          if (!casetableConfigurationContainer) return;
+          if (!casetableConfigurationNodes.length) {
+            casetableConfigurationContainer.innerHTML = "<p>No configuration entries.</p>";
+            return;
+          }
+          casetableConfigurationContainer.innerHTML = casetableConfigurationNodes
+            .map((node, index) => {
+              const attributeFields = Object.entries(node.attributes || {})
+                .map(
+                  ([key, value]) => `
+              <label>${escapeHtml(key)}</label>
+              <input
+                type="text"
+                class="casetable-config-input"
+                data-node-index="${index}"
+                data-field="${escapeHtml(key)}"
+                value="${escapeHtml(value ?? "")}" />`
+                )
+                .join("");
+              return `
+            <div class="casetable-config-card">
+              <h4>${escapeHtml(node.tag)}</h4>
+              ${
+                attributeFields ||
+                '<p class="casetable-hint">No attributes defined.</p>'
+              }
+              <label>Value</label>
+              <input
+                type="text"
+                class="casetable-config-text"
+                data-node-index="${index}"
+                value="${escapeHtml(node.text || "")}"
+                placeholder="(optional text content)"
+              />
+            </div>`;
+            })
+            .join("");
+        }
+        function renderFieldsConfiguration() {
+          if (!fieldsConfigurationContainer) return;
+          if (!fieldsConfiguration.length) {
+            fieldsConfigurationContainer.innerHTML = "<p>No field definitions.</p>";
+            return;
+          }
+          const allowRemoval = fieldsConfiguration.length > 1;
+          fieldsConfigurationContainer.innerHTML = fieldsConfiguration
+            .map((entry, index) => {
+              const attributes = entry.attributes || {};
+              const rows = Object.entries(attributes)
+                .map(
+                  ([key, value]) => `
+              <label>${escapeHtml(key)}</label>
+              <input
+                type="text"
+                class="fields-config-input"
+                data-field-config-index="${index}"
+                data-field="${escapeHtml(key)}"
+                value="${escapeHtml(value ?? "")}" />`
+                )
+                .join("");
+              return `
+            <div class="fields-config-card" data-field-config-index="${index}">
+              <div class="fields-config-card-header">
+                <h5>FieldConfiguration #${index + 1}</h5>
+                <button
+                  type="button"
+                  class="inline-btn inline-danger"
+                  data-action="remove-field-config"
+                  data-field-config-index="${index}"
+                  ${allowRemoval ? "" : "disabled"}
+                >
+                  Remove
+                </button>
+              </div>
+              ${rows}
+            </div>`;
+            })
+            .join("");
+        }
+        function formatStaticInputLabel(key, value) {
+          return `${key}: ${value ? "On" : "Off"}`;
+        }
+        function buildCaseEvalOptions(selectedValue) {
+          if (!fieldsConfiguration.length) {
+            return '<option value="0">Field 1</option>';
+          }
+          return fieldsConfiguration
+            .map((entry, index) => {
+              const attributes = entry.attributes || {};
+              const optionValue = attributes.Id ?? String(index);
+              const label = attributes.FieldName || `Field ${index + 1}`;
+              const isSelected = String(selectedValue ?? "") === String(optionValue);
+              return `<option value="${escapeHtml(optionValue)}"${
+                isSelected ? " selected" : ""
+              }>${escapeHtml(label)}</option>`;
+            })
+            .join("");
+        }
+        function refreshCaseEvalDropdowns() {
+          if (!casesContainer) {
+            return;
+          }
+          const selects = casesContainer.querySelectorAll(".eval-field-config");
+          selects.forEach((select) => {
+            const caseIndex = Number(select.dataset.caseIndex);
+            const evalIndex = Number(select.dataset.evalIndex);
+            const evalEntry = monitoringCases[caseIndex]?.evals?.[evalIndex];
+            const selectedValue = evalEntry?.attributes?.FieldConfigurationId;
+            select.innerHTML = buildCaseEvalOptions(selectedValue);
+          });
+        }
+        function renderCaseList() {
+          if (!casesContainer) return;
+          if (!monitoringCases.length) {
+            casesContainer.innerHTML = "<p>No monitoring cases defined.</p>";
+            if (addCaseBtn) {
+              addCaseBtn.disabled = false;
+            }
+            return;
+          }
+          casesContainer.innerHTML = monitoringCases
+            .map((caseEntry, caseIndex) => {
+              const staticButtons = staticInputKeys
+                .map((key) => {
+                  const value = Boolean(caseEntry.staticInputs?.[key]);
+                  return `
+                <button
+                  type="button"
+                  class="static-input-toggle${value ? " active" : ""}"
+                  data-action="toggle-static-input"
+                  data-case-index="${caseIndex}"
+                  data-input-key="${key}"
+                  aria-pressed="${value}"
+                >
+                  ${escapeHtml(formatStaticInputLabel(key, value))}
+                </button>`;
+                })
+                .join("");
+              const speedMode = caseEntry.speedActivation?.mode || "Off";
+              const speedOptions = speedActivationModes
+                .map(
+                  (mode) =>
+                    `<option value="${mode}"${mode === speedMode ? " selected" : ""}>${mode}</option>`
+                )
+                .join("");
+              const showSpeedRange = speedMode === "SpeedRange";
+              const speedRangeFields = `
+                <div>
+                  <label>Min speed</label>
+                  <input
+                    type="number"
+                    class="case-speed-range"
+                    data-case-index="${caseIndex}"
+                    data-range-field="min"
+                    step="0.1"
+                    value="${escapeHtml(caseEntry.speedActivation?.min ?? "0")}"
+                    ${showSpeedRange ? "" : "disabled"}
+                  />
+                </div>
+                <div>
+                  <label>Max speed</label>
+                  <input
+                    type="number"
+                    class="case-speed-range"
+                    data-case-index="${caseIndex}"
+                    data-range-field="max"
+                    step="0.1"
+                    value="${escapeHtml(caseEntry.speedActivation?.max ?? "0")}"
+                    ${showSpeedRange ? "" : "disabled"}
+                  />
+                </div>`;
+              const evalCards = (caseEntry.evals || [])
+                .map((evalEntry, evalIndex) => {
+                  const evalAttributes = evalEntry.attributes || {};
+                  const fieldOptions = buildCaseEvalOptions(evalAttributes.FieldConfigurationId);
+                  return `
+                <div class="eval-card" data-case-index="${caseIndex}" data-eval-index="${evalIndex}">
+                  <label>FieldConfiguration</label>
+                  <select
+                    class="eval-field-config"
+                    data-case-index="${caseIndex}"
+                    data-eval-index="${evalIndex}"
+                  >
+                    ${fieldOptions}
+                  </select>
+                  <label>Eval name</label>
+                  <input
+                    type="text"
+                    class="eval-name-input"
+                    data-case-index="${caseIndex}"
+                    data-eval-index="${evalIndex}"
+                    value="${escapeHtml(evalAttributes.Name || "")}" />
+                  <div class="eval-actions">
+                    <button
+                      type="button"
+                      class="inline-btn inline-danger"
+                      data-action="remove-eval"
+                      data-case-index="${caseIndex}"
+                      data-eval-index="${evalIndex}"
+                      ${caseEntry.evals.length <= 1 ? "disabled" : ""}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>`;
+                })
+                .join("");
+              return `
+            <div class="case-card" data-case-index="${caseIndex}">
+              <details open>
+                <summary>
+                  <span>Case #${caseIndex + 1}</span>
+                  <span class="case-summary">${escapeHtml(caseEntry.attributes?.Name || "")}</span>
+                  <button
+                    type="button"
+                    class="inline-btn inline-danger"
+                    data-action="remove-case"
+                    data-case-index="${caseIndex}"
+                  >
+                    Remove
+                  </button>
+                </summary>
+                <div class="menu-content">
+                  <div class="case-grid">
+                    <div class="case-field">
+                      <label>Case name</label>
+                      <input
+                        type="text"
+                        class="case-name-input"
+                        data-case-index="${caseIndex}"
+                        value="${escapeHtml(caseEntry.attributes?.Name || "" )}" />
+                    </div>
+                    <div class="case-field">
+                      <label>Description</label>
+                      <textarea
+                        class="case-description-input"
+                        data-case-index="${caseIndex}"
+                      >${escapeHtml(caseEntry.attributes?.Description || "")}</textarea>
+                    </div>
+                    <div class="case-field readonly">
+                      <label>Case Id / DisplayOrder</label>
+                      <strong>${caseIndex}</strong>
+                    </div>
+                  </div>
+                  <div class="static-inputs-row">
+                    ${staticButtons}
+                  </div>
+                  <div class="speed-activation-row">
+                    <label>Speed activation</label>
+                    <div class="speed-activation-group">
+                      <div>
+                        <label>Mode</label>
+                        <select
+                          class="case-speed-mode"
+                          data-case-index="${caseIndex}"
+                        >
+                          ${speedOptions}
+                        </select>
+                      </div>
+                      ${speedRangeFields}
+                    </div>
+                  </div>
+                  <div class="evals-section">
+                    <div class="evals-header">
+                      <h4>Evals</h4>
+                      <button
+                        type="button"
+                        class="inline-btn"
+                        data-action="add-eval"
+                        data-case-index="${caseIndex}"
+                        ${caseEntry.evals.length >= maxEvalsPerCase ? "disabled" : ""}
+                      >
+                        Add Eval
+                      </button>
+                    </div>
+                    <div class="evals-list">
+                      ${evalCards || '<p class="casetable-hint">No evals defined.</p>'}
+                    </div>
+                  </div>
+                </div>
+              </details>
+            </div>`;
+            })
+            .join("");
+          if (addCaseBtn) {
+            addCaseBtn.disabled = monitoringCases.length >= maxMonitoringCases;
+          }
+        }
+        function renderCasetableSections() {
+          renderCasetableConfiguration();
+          renderFieldsConfiguration();
+          renderCaseList();
+        }
+
+        function updateCasetableConfigurationAttribute(nodeIndex, key, value) {
+          const node = casetableConfigurationNodes[nodeIndex];
+          if (!node) return;
+          node.attributes = node.attributes || {};
+          node.attributes[key] = value;
+        }
+
+        function updateCasetableConfigurationText(nodeIndex, value) {
+          const node = casetableConfigurationNodes[nodeIndex];
+          if (!node) return;
+          node.text = value || "";
+        }
+
+        function updateFieldConfigurationAttribute(index, key, value) {
+          const entry = fieldsConfiguration[index];
+          if (!entry) return;
+          entry.attributes = entry.attributes || {};
+          if (key === "Id") {
+            const previousId = entry.attributes.Id;
+            entry.attributes[key] = value;
+            propagateFieldConfigurationIdChange(previousId, value);
+          } else {
+            entry.attributes[key] = value;
+            refreshCaseEvalDropdowns();
+          }
+        }
+
+        function propagateFieldConfigurationIdChange(oldId, newId) {
+          const oldValue = String(oldId ?? "");
+          const newValue = String(newId ?? "");
+          if (oldValue === newValue) {
+            refreshCaseEvalDropdowns();
+            return;
+          }
+          monitoringCases.forEach((caseEntry) => {
+            (caseEntry.evals || []).forEach((evalEntry) => {
+              evalEntry.attributes = evalEntry.attributes || {};
+              const currentId = String(evalEntry.attributes.FieldConfigurationId ?? "");
+              if (currentId === oldValue) {
+                evalEntry.attributes.FieldConfigurationId = newValue;
+              }
+            });
+          });
+          refreshCaseEvalDropdowns();
+        }
+
+        function syncCaseEvalFieldConfigurationIds() {
+          if (!fieldsConfiguration.length) {
+            return;
+          }
+          const validIds = new Set(
+            fieldsConfiguration.map((entry) => String(entry.attributes?.Id ?? ""))
+          );
+          const fallbackId = fieldsConfiguration[0].attributes?.Id ?? "0";
+          monitoringCases.forEach((caseEntry) => {
+            if (!Array.isArray(caseEntry.evals) || !caseEntry.evals.length) {
+              caseEntry.evals = [createDefaultCaseEval(0)];
+            }
+            caseEntry.evals.forEach((evalEntry) => {
+              evalEntry.attributes = evalEntry.attributes || {};
+              const currentId = String(evalEntry.attributes.FieldConfigurationId ?? "");
+              if (!validIds.has(currentId)) {
+                evalEntry.attributes.FieldConfigurationId = fallbackId;
+              }
+            });
+          });
+        }
+
+        function addFieldConfigurationEntry() {
+          const nextIndex = fieldsConfiguration.length;
+          const newEntry = createDefaultFieldConfiguration(nextIndex);
+          newEntry.attributes.Id = getNextFieldConfigurationId();
+          fieldsConfiguration.push(newEntry);
+          renderCasetableSections();
+        }
+
+        function removeFieldConfigurationEntry(index) {
+          if (fieldsConfiguration.length <= 1) {
+            return;
+          }
+          if (!Number.isFinite(index) || index < 0 || index >= fieldsConfiguration.length) {
+            return;
+          }
+          fieldsConfiguration.splice(index, 1);
+          syncCaseEvalFieldConfigurationIds();
+          renderCasetableSections();
+        }
+
+        function addMonitoringCase() {
+          if (monitoringCases.length >= maxMonitoringCases) {
+            return;
+          }
+          monitoringCases.push(createDefaultMonitoringCase(monitoringCases.length));
+          renderCaseList();
+        }
+
+        function removeMonitoringCase(caseIndex) {
+          if (!Number.isFinite(caseIndex) || caseIndex < 0 || caseIndex >= monitoringCases.length) {
+            return;
+          }
+          monitoringCases.splice(caseIndex, 1);
+          renderCaseList();
+        }
+
+        function updateCaseAttribute(caseIndex, field, value) {
+          const caseEntry = monitoringCases[caseIndex];
+          if (!caseEntry) return;
+          caseEntry.attributes = caseEntry.attributes || {};
+          caseEntry.attributes[field] = value;
+          if (field === "Name") {
+            const summary = document.querySelector(
+              `.case-card[data-case-index="${caseIndex}"] .case-summary`
+            );
+            if (summary) {
+              summary.textContent = value;
+            }
+          }
+        }
+
+        function toggleCaseStaticInput(caseIndex, key) {
+          const caseEntry = monitoringCases[caseIndex];
+          if (!caseEntry || !staticInputKeys.includes(key)) {
+            return;
+          }
+          caseEntry.staticInputs = caseEntry.staticInputs || {};
+          caseEntry.staticInputs[key] = !caseEntry.staticInputs[key];
+          renderCaseList();
+        }
+
+        function updateCaseSpeedMode(caseIndex, mode) {
+          const caseEntry = monitoringCases[caseIndex];
+          if (!caseEntry) return;
+          caseEntry.speedActivation = caseEntry.speedActivation || { mode: "Off", min: "0", max: "0" };
+          caseEntry.speedActivation.mode = speedActivationModes.includes(mode) ? mode : "Off";
+          renderCaseList();
+        }
+
+        function updateCaseSpeedRange(caseIndex, rangeField, value) {
+          const caseEntry = monitoringCases[caseIndex];
+          if (!caseEntry) return;
+          caseEntry.speedActivation = caseEntry.speedActivation || { mode: "Off", min: "0", max: "0" };
+          if (rangeField === "min") {
+            caseEntry.speedActivation.min = value;
+          } else if (rangeField === "max") {
+            caseEntry.speedActivation.max = value;
+          }
+        }
+
+        function addCaseEval(caseIndex) {
+          const caseEntry = monitoringCases[caseIndex];
+          if (!caseEntry) return;
+          caseEntry.evals = caseEntry.evals || [];
+          if (caseEntry.evals.length >= maxEvalsPerCase) {
+            return;
+          }
+          caseEntry.evals.push(createDefaultCaseEval(caseEntry.evals.length));
+          renderCaseList();
+        }
+
+        function removeCaseEval(caseIndex, evalIndex) {
+          const caseEntry = monitoringCases[caseIndex];
+          if (!caseEntry || !Array.isArray(caseEntry.evals) || caseEntry.evals.length <= 1) {
+            return;
+          }
+          caseEntry.evals.splice(evalIndex, 1);
+          renderCaseList();
+        }
+
+        function updateEvalAttribute(caseIndex, evalIndex, field, value) {
+          const caseEntry = monitoringCases[caseIndex];
+          if (!caseEntry) return;
+          const evalEntry = caseEntry.evals?.[evalIndex];
+          if (!evalEntry) return;
+          evalEntry.attributes = evalEntry.attributes || {};
+          evalEntry.attributes[field] = value;
+        }
+
+        function handleCasetableConfigurationInput(event) {
+          const target = event.target;
+          if (!(target instanceof HTMLInputElement)) {
+            return;
+          }
+          const nodeIndex = Number(target.dataset.nodeIndex);
+          if (!Number.isFinite(nodeIndex)) {
+            return;
+          }
+          const field = target.dataset.field;
+          if (field) {
+            updateCasetableConfigurationAttribute(nodeIndex, field, target.value);
+          } else {
+            updateCasetableConfigurationText(nodeIndex, target.value);
+          }
+        }
+
+        function handleFieldsConfigurationInput(event) {
+          const target = event.target;
+          if (!(target instanceof HTMLInputElement)) {
+            return;
+          }
+          const index = Number(target.dataset.fieldConfigIndex);
+          if (!Number.isFinite(index)) {
+            return;
+          }
+          const field = target.dataset.field;
+          if (!field) {
+            return;
+          }
+          updateFieldConfigurationAttribute(index, field, target.value);
+        }
+
+        function handleCaseInput(event) {
+          const target = event.target;
+          if (
+            !(
+              target instanceof HTMLInputElement ||
+              target instanceof HTMLTextAreaElement ||
+              target instanceof HTMLSelectElement
+            )
+          ) {
+            return;
+          }
+          const caseIndex = Number(target.dataset.caseIndex);
+          if (!Number.isFinite(caseIndex)) {
+            return;
+          }
+          if (target.classList.contains("case-name-input")) {
+            updateCaseAttribute(caseIndex, "Name", target.value);
+            return;
+          }
+          if (target.classList.contains("case-description-input")) {
+            updateCaseAttribute(caseIndex, "Description", target.value);
+            return;
+          }
+          if (target.classList.contains("case-speed-mode")) {
+            updateCaseSpeedMode(caseIndex, target.value);
+            return;
+          }
+          if (target.classList.contains("case-speed-range")) {
+            const rangeField = target.dataset.rangeField === "max" ? "max" : "min";
+            updateCaseSpeedRange(caseIndex, rangeField, target.value);
+            return;
+          }
+          if (target.classList.contains("eval-name-input")) {
+            const evalIndex = Number(target.dataset.evalIndex);
+            updateEvalAttribute(caseIndex, evalIndex, "Name", target.value);
+            return;
+          }
+          if (target.classList.contains("eval-field-config")) {
+            const evalIndex = Number(target.dataset.evalIndex);
+            updateEvalAttribute(caseIndex, evalIndex, "FieldConfigurationId", target.value);
+          }
+        }
+
+
         function updateFieldsetDeviceAttribute(deviceIndex, key, value) {
           const device = fieldsetDevices[deviceIndex];
           if (!device) return;
@@ -4436,6 +5370,7 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
           const fileInfoLines = buildFileInfoLines();
           const scanPlaneLines = buildScanPlanesXml(scanDeviceAttrs);
           const fieldsetLines = buildFieldsetsXml(fieldsetDeviceAttrs);
+          const casetableLines = buildCasetablesXml();
           const rootAttrOverrides = {
             ...rootAttributes,
             Timestamp: new Date().toISOString(),
@@ -4458,7 +5393,7 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
             "  <Export_FieldsetsAndFields>",
             ...fieldsetLines,
             "  </Export_FieldsetsAndFields>",
-            "  <Export_CasetablesAndCases />",
+            ...casetableLines,
             "</SdImportExport>",
           ];
           return lines;
@@ -4668,6 +5603,104 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
           return lines;
         }
 
+
+        function buildCasetablesXml() {
+          const lines = [];
+          lines.push("  <Export_CasetablesAndCases>");
+          lines.push("    <Casetables>");
+          const casetableAttr = buildAttributeString(
+            casetableAttributes,
+            getAttributeOrder("Casetable")
+          );
+          lines.push(`      <Casetable${casetableAttr ? " " + casetableAttr : ""}>`);
+          lines.push("        <Configuration>");
+          casetableConfigurationNodes.forEach((node) => {
+            const attrText = buildAttributeString(
+              node.attributes,
+              getAttributeOrder(node.tag)
+            );
+            const value = (node.text || "").trim();
+            if (value) {
+              lines.push(
+                `          <${node.tag}${attrText ? " " + attrText : ""}>${escapeXml(value)}</${node.tag}>`
+              );
+            } else if (attrText) {
+              lines.push(`          <${node.tag} ${attrText} />`);
+            } else {
+              lines.push(`          <${node.tag} />`);
+            }
+          });
+          lines.push("          <FieldsConfiguration>");
+          fieldsConfiguration.forEach((entry) => {
+            const attrText = buildAttributeString(
+              entry.attributes,
+              getAttributeOrder("FieldConfiguration")
+            );
+            lines.push(`            <FieldConfiguration${attrText ? " " + attrText : ""} />`);
+          });
+          if (!fieldsConfiguration.length) {
+            lines.push("            <!-- No FieldConfiguration entries -->");
+          }
+          lines.push("          </FieldsConfiguration>");
+          lines.push("        </Configuration>");
+          lines.push("        <Cases>");
+          if (!monitoringCases.length) {
+            lines.push("          <!-- No monitoring cases -->");
+          }
+          monitoringCases.forEach((caseEntry, caseIndex) => {
+            const attributes = { ...(caseEntry.attributes || {}) };
+            attributes.Id = String(caseIndex);
+            attributes.DisplayOrder = String(caseIndex);
+            const attrText = buildAttributeString(attributes, getAttributeOrder("Case"));
+            lines.push(`          <Case${attrText ? " " + attrText : ""}>`);
+            lines.push("            <StaticInputs>");
+            staticInputKeys.forEach((key) => {
+              const value = caseEntry.staticInputs?.[key] ? "true" : "false";
+              lines.push(`              <StaticInput Name="${key}" Value="${value}" />`);
+            });
+            lines.push("            </StaticInputs>");
+            const mode = caseEntry.speedActivation?.mode || "Off";
+            const speedAttr = buildAttributeString(
+              { Mode: mode },
+              getAttributeOrder("SpeedActivation")
+            );
+            lines.push(`            <SpeedActivation${speedAttr ? " " + speedAttr : ""}>`);
+            const rangeAttr = buildAttributeString(
+              {
+                Min: caseEntry.speedActivation?.min ?? "0",
+                Max: caseEntry.speedActivation?.max ?? "0",
+              },
+              getAttributeOrder("SpeedRange")
+            );
+            lines.push(`              <SpeedRange${rangeAttr ? " " + rangeAttr : ""} />`);
+            lines.push("            </SpeedActivation>");
+            lines.push("            <Evals>");
+            if (!caseEntry.evals || !caseEntry.evals.length) {
+              lines.push("              <!-- No evals defined -->");
+            }
+            (caseEntry.evals || []).forEach((evalEntry, evalIndex) => {
+              const attributes = { ...(evalEntry.attributes || {}) };
+              attributes.Id = String(evalIndex + 1);
+              attributes.Q = String(evalIndex + 1);
+              if (!attributes.FieldConfigurationId && fieldsConfiguration[0]) {
+                attributes.FieldConfigurationId =
+                  fieldsConfiguration[0].attributes?.Id ?? "0";
+              }
+              const evalAttrText = buildAttributeString(
+                attributes,
+                getAttributeOrder("Eval")
+              );
+              lines.push(`              <Eval${evalAttrText ? " " + evalAttrText : ""} />`);
+            });
+            lines.push("            </Evals>");
+            lines.push("          </Case>");
+          });
+          lines.push("        </Cases>");
+          lines.push("      </Casetable>");
+          lines.push("    </Casetables>");
+          lines.push("  </Export_CasetablesAndCases>");
+          return lines;
+        }
         function buildAttributeString(attrs, order = []) {
           if (!attrs) return "";
           const keys = Object.keys(attrs);
@@ -4721,6 +5754,10 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
               ];
             case "Fieldset":
               return ["Name", "NameLatin9Key"];
+            case "Casetable":
+              return ["Index"];
+            case "FieldConfiguration":
+              return ["Id", "FieldsetName", "FieldName", "Fieldtype", "Description"];
             case "Field":
               return [
                 "Name",
@@ -4740,6 +5777,16 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
               return ["X", "Y"];
             case "GlobalGeometry":
               return ["UseGlobalGeometry"];
+            case "Case":
+              return ["Id", "DisplayOrder", "Name", "Description"];
+            case "StaticInput":
+              return ["Name", "Value"];
+            case "SpeedActivation":
+              return ["Mode"];
+            case "SpeedRange":
+              return ["Min", "Max"];
+            case "Eval":
+              return ["Id", "Q", "FieldConfigurationId", "Name"];
             default:
               return [];
           }
@@ -4900,6 +5947,7 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
           populateScanPlanesFromDoc(doc);
           populateTriOrbShapesFromDoc(triOrbDoc);
           populateFieldsetsFromDoc(doc);
+          populateCasetablesFromDoc(doc);
 
           const tracesFromPlotData = parsePlotDataTraces(doc);
           if (tracesFromPlotData.length) {
@@ -5255,6 +6303,101 @@ function parsePolygonTrace(doc) {
           renderFieldsetGlobal();
         }
 
+
+        function populateCasetablesFromDoc(doc) {
+          const casetableNode =
+            doc.querySelector(
+              "Export_CasetablesAndCases > Casetables > Casetable[Index='0']"
+            ) || doc.querySelector("Export_CasetablesAndCases > Casetables > Casetable");
+          if (!casetableNode) {
+            casetableAttributes = initializeCasetableAttributes({});
+            casetableConfigurationNodes = initializeCasetableConfigurationNodes([]);
+            fieldsConfiguration = initializeFieldsConfiguration([]);
+            monitoringCases = initializeMonitoringCases([]);
+            syncCaseEvalFieldConfigurationIds();
+            renderCasetableSections();
+            return;
+          }
+          const attrs = {};
+          Array.from(casetableNode.attributes).forEach((attr) => {
+            attrs[attr.name] = attr.value;
+          });
+          casetableAttributes = initializeCasetableAttributes(attrs);
+          const configNodes = [];
+          const fieldsEntries = [];
+          const configurationNode = casetableNode.querySelector("Configuration");
+          if (configurationNode) {
+            Array.from(configurationNode.children).forEach((child) => {
+              if (child.tagName === "FieldsConfiguration") {
+                Array.from(child.querySelectorAll("FieldConfiguration")).forEach(
+                  (fieldNode) => {
+                    const fieldAttrs = {};
+                    Array.from(fieldNode.attributes).forEach((attr) => {
+                      fieldAttrs[attr.name] = attr.value;
+                    });
+                    fieldsEntries.push({ attributes: fieldAttrs });
+                  }
+                );
+              } else {
+                const childAttrs = {};
+                Array.from(child.attributes).forEach((attr) => {
+                  childAttrs[attr.name] = attr.value;
+                });
+                configNodes.push({
+                  tag: child.tagName,
+                  attributes: childAttrs,
+                  text: (child.textContent || "").trim(),
+                });
+              }
+            });
+          }
+          const casesEntries = [];
+          const casesParent = casetableNode.querySelector("Cases");
+          if (casesParent) {
+            Array.from(casesParent.children).forEach((caseNode) => {
+              if (caseNode.tagName !== "Case") {
+                return;
+              }
+              const caseAttrs = {};
+              Array.from(caseNode.attributes).forEach((attr) => {
+                caseAttrs[attr.name] = attr.value;
+              });
+              const staticInputs = {};
+              caseNode.querySelectorAll("StaticInputs > StaticInput").forEach((inputNode) => {
+                const name = inputNode.getAttribute("Name");
+                if (name) {
+                  staticInputs[name] = inputNode.getAttribute("Value") || "false";
+                }
+              });
+              const speedNode = caseNode.querySelector("SpeedActivation");
+              const speedRange = speedNode?.querySelector("SpeedRange");
+              const speedActivation = {
+                Mode: speedNode?.getAttribute("Mode") || "Off",
+                Min: speedRange?.getAttribute("Min") || "0",
+                Max: speedRange?.getAttribute("Max") || "0",
+              };
+              const evals = [];
+              caseNode.querySelectorAll("Evals > Eval").forEach((evalNode) => {
+                const evalAttrs = {};
+                Array.from(evalNode.attributes).forEach((attr) => {
+                  evalAttrs[attr.name] = attr.value;
+                });
+                evals.push({ attributes: evalAttrs });
+              });
+              casesEntries.push({
+                attributes: caseAttrs,
+                static_inputs: staticInputs,
+                speed_activation: speedActivation,
+                evals,
+              });
+            });
+          }
+          casetableConfigurationNodes = initializeCasetableConfigurationNodes(configNodes);
+          fieldsConfiguration = initializeFieldsConfiguration(fieldsEntries);
+          monitoringCases = initializeMonitoringCases(casesEntries);
+          syncCaseEvalFieldConfigurationIds();
+          renderCasetableSections();
+        }
         function findOriginTrace(figure) {
           return figure.data?.find((trace) => {
             const x = trace.x || [];
@@ -5704,6 +6847,78 @@ function parsePolygonTrace(doc) {
           });
           fieldsetsContainer.addEventListener("change", (event) => {
             handleFieldsetInput(event);
+          });
+        }
+
+        if (casetableConfigurationContainer) {
+          casetableConfigurationContainer.addEventListener("input", (event) => {
+            if (!(event.target instanceof HTMLInputElement)) {
+              return;
+            }
+            handleCasetableConfigurationInput(event);
+          });
+        }
+
+        if (fieldsConfigurationContainer) {
+          fieldsConfigurationContainer.addEventListener("input", (event) => {
+            if (!(event.target instanceof HTMLInputElement)) {
+              return;
+            }
+            handleFieldsConfigurationInput(event);
+          });
+          fieldsConfigurationContainer.addEventListener("click", (event) => {
+            const button =
+              event.target instanceof Element
+                ? event.target.closest("[data-action='remove-field-config']")
+                : null;
+            if (!button) {
+              return;
+            }
+            event.preventDefault();
+            const index = Number(button.dataset.fieldConfigIndex);
+            removeFieldConfigurationEntry(index);
+          });
+        }
+
+        if (addFieldConfigurationBtn) {
+          addFieldConfigurationBtn.addEventListener("click", (event) => {
+            event.preventDefault();
+            addFieldConfigurationEntry();
+          });
+        }
+
+        if (addCaseBtn) {
+          addCaseBtn.addEventListener("click", (event) => {
+            event.preventDefault();
+            addMonitoringCase();
+          });
+        }
+
+        if (casesContainer) {
+          casesContainer.addEventListener("click", (event) => {
+            const button = event.target.closest("[data-action]");
+            if (!button) {
+              return;
+            }
+            event.preventDefault();
+            const caseIndex = Number(button.dataset.caseIndex);
+            const action = button.dataset.action;
+            if (action === "remove-case") {
+              removeMonitoringCase(caseIndex);
+            } else if (action === "toggle-static-input") {
+              toggleCaseStaticInput(caseIndex, button.dataset.inputKey);
+            } else if (action === "add-eval") {
+              addCaseEval(caseIndex);
+            } else if (action === "remove-eval") {
+              const evalIndex = Number(button.dataset.evalIndex);
+              removeCaseEval(caseIndex, evalIndex);
+            }
+          });
+          casesContainer.addEventListener("input", (event) => {
+            handleCaseInput(event);
+          });
+          casesContainer.addEventListener("change", (event) => {
+            handleCaseInput(event);
           });
         }
 
