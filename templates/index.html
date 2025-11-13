@@ -772,9 +772,12 @@
         width: 100%;
       }
       .field-create-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(220px, 1fr));
+        display: flex;
         gap: 1rem;
+      }
+      .field-create-grid .field-create-column {
+        flex: 1;
+        min-width: 0;
       }
       .field-create-column {
         border: 1px solid rgba(15, 23, 42, 0.1);
