@@ -1677,6 +1677,7 @@
         }
         const triorbShapeCheckAllBtn = document.getElementById("btn-triorb-shape-check-all");
         const triorbShapeUncheckAllBtn = document.getElementById("btn-triorb-shape-uncheck-all");
+        let globalMultipleSampling = "2";
         const initialTriOrbShapes = {{ triorb_shapes|tojson }};
         const shapeModal = document.getElementById("shape-modal");
         const shapeModalBody = document.getElementById("shape-modal-body");
@@ -1772,7 +1773,7 @@
         let casetableFieldsConfiguration = cloneGenericNode(
           casetablePayload?.fields_configuration
         );
-        let globalMultipleSampling = deriveInitialMultipleSampling(fieldsets);
+        globalMultipleSampling = deriveInitialMultipleSampling(fieldsets);
         let legendVisible = true;
         let fieldOfViewDegrees = parseNumeric(fieldOfViewInput?.value, 270);
         const debugMode = Boolean(new URLSearchParams(window.location.search).get("debug"));
