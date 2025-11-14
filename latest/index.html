@@ -451,6 +451,209 @@
         font-size: 0.85rem;
       }
 
+      .casetable-section {
+        margin-top: 1rem;
+        padding: 0.75rem;
+        border: 1px solid rgba(15, 23, 42, 0.12);
+        border-radius: 8px;
+        background: #f8fafc;
+      }
+
+      .casetable-section h3 {
+        margin: 0 0 0.5rem;
+        font-size: 1rem;
+        color: #0d4b91;
+      }
+
+      .casetable-configuration details {
+        border: 1px solid rgba(15, 23, 42, 0.08);
+        border-radius: 6px;
+        padding: 0.4rem 0.6rem;
+        background: #fff;
+        margin-bottom: 0.5rem;
+      }
+
+      .casetable-configuration summary {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-weight: 600;
+        color: #0f172a;
+        cursor: pointer;
+      }
+
+      .casetable-config-attrs {
+        margin-top: 0.5rem;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 0.5rem;
+      }
+
+      .casetable-config-attrs label {
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-bottom: 0.15rem;
+        color: #475569;
+      }
+
+      .casetable-config-attrs input,
+      .casetable-config-attrs textarea {
+        border-radius: 6px;
+        border: 1px solid rgba(15, 23, 42, 0.2);
+        padding: 0.35rem 0.45rem;
+        font-size: 0.85rem;
+        width: 100%;
+      }
+
+      .casetable-config-text {
+        min-height: 60px;
+        resize: vertical;
+      }
+
+      .casetable-cases-header {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+
+      .casetable-case-count {
+        margin-left: auto;
+        font-size: 0.85rem;
+        color: #475569;
+      }
+
+      .casetable-cases-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        margin-top: 0.5rem;
+      }
+
+      .casetable-case-card {
+        border: 1px solid rgba(15, 23, 42, 0.12);
+        border-radius: 8px;
+        background: #fff;
+      }
+
+      .casetable-case-card summary {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 600;
+        color: #0d4b91;
+        cursor: pointer;
+      }
+
+      .casetable-case-card summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .casetable-case-body {
+        padding: 0.5rem 0.75rem 0.75rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .casetable-case-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 0.5rem;
+      }
+
+      .casetable-case-field {
+        display: flex;
+        flex-direction: column;
+        font-size: 0.85rem;
+      }
+
+      .casetable-case-field label {
+        font-weight: 600;
+        color: #475569;
+        margin-bottom: 0.2rem;
+      }
+
+      .casetable-case-field input {
+        border-radius: 6px;
+        border: 1px solid rgba(15, 23, 42, 0.2);
+        padding: 0.35rem 0.45rem;
+        font-size: 0.85rem;
+      }
+
+      .casetable-static-inputs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+      }
+
+      .casetable-static-group {
+        flex: 1 1 160px;
+      }
+
+      .casetable-static-label {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #475569;
+        margin-bottom: 0.35rem;
+        display: block;
+      }
+
+      .toggle-group {
+        display: inline-flex;
+        border: 1px solid rgba(15, 23, 42, 0.2);
+        border-radius: 999px;
+        overflow: hidden;
+      }
+
+      .toggle-option {
+        border: none;
+        background: transparent;
+        padding: 0.35rem 0.9rem;
+        font-size: 0.8rem;
+        color: #475569;
+        cursor: pointer;
+      }
+
+      .toggle-option.is-active {
+        background: #0b6fb8;
+        color: #fff;
+      }
+
+      .casetable-speed-activation {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .casetable-speed-activation label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #475569;
+      }
+
+      .casetable-speed-activation select {
+        min-width: 160px;
+        border-radius: 6px;
+        border: 1px solid rgba(15, 23, 42, 0.2);
+        padding: 0.35rem 0.45rem;
+        font-size: 0.85rem;
+        background: #fff;
+      }
+
+      .casetable-help-text {
+        font-size: 0.8rem;
+        color: #64748b;
+        margin-top: 0.35rem;
+      }
+
+      .casetable-readonly-note {
+        font-size: 0.75rem;
+        color: #94a3b8;
+      }
+
       .debug-hidden {
         display: none !important;
       }
@@ -1088,12 +1291,24 @@
         
         
         <details class="menu-section" >
-        
+
           <summary>Export_CasetablesAndCases</summary>
           <div class="menu-content">
-            
-              <p>No additional attributes</p>
-            
+
+              <div class="casetable-section">
+                <h3>Configuration</h3>
+                <div class="casetable-configuration" id="casetable-configuration"></div>
+              </div>
+              <div class="casetable-section">
+                <div class="casetable-cases-header">
+                  <h3>Cases</h3>
+                  <button type="button" class="inline-btn" id="btn-add-case">Add Case</button>
+                  <span class="casetable-case-count" id="casetable-case-count"></span>
+                </div>
+                <div class="casetable-cases-list" id="casetable-cases"></div>
+                <p class="casetable-help-text">Up to 128 monitoring cases can be defined.</p>
+              </div>
+
           </div>
         </details>
         
@@ -1194,6 +1409,19 @@
         const initialFieldsets = fieldsetData.fieldsets || [];
         const initialFieldsetDevices = fieldsetData.devices || [];
         const initialFieldsetGlobal = fieldsetData.global_geometry || {};
+        const casetablePayload = {
+          casetable_attributes: { Index: "0" },
+          configuration: null,
+          cases: [],
+          evals: null,
+          fields_configuration: null,
+          layout: [
+            { kind: "configuration" },
+            { kind: "cases" },
+            { kind: "evals" },
+            { kind: "fields_configuration" },
+          ],
+        };
 
         const figureConfig = { responsive: true, displaylogo: false };
         const fieldsetColorPalette = [
@@ -1288,6 +1516,10 @@
         if (fieldsetCheckboxes) {
           fieldsetCheckboxes.classList.add("toggle-pill-grid");
         }
+        const casetableConfigurationContainer = document.getElementById("casetable-configuration");
+        const casetableCasesContainer = document.getElementById("casetable-cases");
+        const casetableCaseCountLabel = document.getElementById("casetable-case-count");
+        const addCasetableCaseBtn = document.getElementById("btn-add-case");
         const checkAllBtn = document.getElementById("btn-fieldset-check-all");
         const uncheckAllBtn = document.getElementById("btn-fieldset-uncheck-all");
         const toggleLegendBtn = document.getElementById("btn-toggle-legend");
@@ -1303,6 +1535,7 @@
         }
         const triorbShapeCheckAllBtn = document.getElementById("btn-triorb-shape-check-all");
         const triorbShapeUncheckAllBtn = document.getElementById("btn-triorb-shape-uncheck-all");
+        let globalMultipleSampling = "2";
         const initialTriOrbShapes = [{"fieldtype": "ProtectiveSafeBlanking", "id": "shape-e579f9ce", "kind": "CutOut", "name": "\u53f30.65 Protective Polygon", "polygon": {"Type": "CutOut", "points": [{"X": "0", "Y": "245"}, {"X": "170", "Y": "156"}, {"X": "0", "Y": "-299"}, {"X": "-170", "Y": "156"}]}, "type": "Polygon"}, {"fieldtype": "ProtectiveSafeBlanking", "id": "shape-a0cf782e", "kind": "Field", "name": "\u53f30.65 Protective Rectangle", "rectangle": {"Height": "924", "OriginX": "-200", "OriginY": "464", "Rotation": "0", "Type": "Field", "Width": "950"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-ce8cb225", "kind": "Field", "name": "\u53f30.65 Speed down Rectangle", "rectangle": {"Height": "1024", "OriginX": "-200", "OriginY": "512", "Rotation": "0", "Type": "Field", "Width": "1600"}, "type": "Rectangle"}, {"fieldtype": "ProtectiveSafeBlanking", "id": "shape-a74436a8", "kind": "Field", "name": "\u53f3\u524d0.65 Protective Rectangle", "rectangle": {"Height": "924", "OriginX": "-325", "OriginY": "329", "Rotation": "45", "Type": "Field", "Width": "826"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-7e844a0d", "kind": "Field", "name": "\u53f3\u524d0.65 Speed down Rectangle", "rectangle": {"Height": "1024", "OriginX": "-361", "OriginY": "363", "Rotation": "45", "Type": "Field", "Width": "1474"}, "type": "Rectangle"}, {"fieldtype": "ProtectiveSafeBlanking", "id": "shape-c1922699", "kind": "Field", "name": "\u524d0.65 Protective Rectangle", "rectangle": {"Height": "950", "OriginX": "-462", "OriginY": "750", "Rotation": "0", "Type": "Field", "Width": "924"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-9ac47d6a", "kind": "Field", "name": "\u524d0.65 Speed down Rectangle", "rectangle": {"Height": "1600", "OriginX": "-512", "OriginY": "1400", "Rotation": "0", "Type": "Field", "Width": "1024"}, "type": "Rectangle"}, {"fieldtype": "ProtectiveSafeBlanking", "id": "shape-a5cff1cd", "kind": "Field", "name": "\u5de6\u524d0.65 Protective Rectangle", "rectangle": {"Height": "924", "OriginX": "-268", "OriginY": "916", "Rotation": "315", "Type": "Field", "Width": "839"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-d3704ab3", "kind": "Field", "name": "\u5de6\u524d0.65 Speed down Rectangle", "rectangle": {"Height": "1024", "OriginX": "-682", "OriginY": "1404", "Rotation": "315", "Type": "Field", "Width": "1477"}, "type": "Rectangle"}, {"fieldtype": "ProtectiveSafeBlanking", "id": "shape-ac43285c", "kind": "Field", "name": "\u5de60.65 Protective Rectangle", "rectangle": {"Height": "924", "OriginX": "-750", "OriginY": "462", "Rotation": "0", "Type": "Field", "Width": "950"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-6961448d", "kind": "Field", "name": "\u5de60.65 Speed down Rectangle", "rectangle": {"Height": "1024", "OriginX": "-1400", "OriginY": "512", "Rotation": "0", "Type": "Field", "Width": "1600"}, "type": "Rectangle"}, {"fieldtype": "ProtectiveSafeBlanking", "id": "shape-893f9bbb", "kind": "Field", "name": "\u5de6\u5f8c0.65 Protective Rectangle", "rectangle": {"Height": "924", "OriginX": "-916", "OriginY": "-262", "Rotation": "45", "Type": "Field", "Width": "833"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-3f637e22", "kind": "Field", "name": "\u5de6\u5f8c0.65 Speed down Rectangle", "rectangle": {"Height": "1024", "OriginX": "-1407", "OriginY": "-687", "Rotation": "45", "Type": "Field", "Width": "1481"}, "type": "Rectangle"}, {"fieldtype": "ProtectiveSafeBlanking", "id": "shape-68016821", "kind": "Field", "name": "\u5f8c0.65 Protective Rectangle", "rectangle": {"Height": "950", "OriginX": "-462", "OriginY": "200", "Rotation": "0", "Type": "Field", "Width": "924"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-e60cd506", "kind": "Field", "name": "\u5f8c0.65 Speed down Rectangle", "rectangle": {"Height": "1600", "OriginX": "-512", "OriginY": "200", "Rotation": "0", "Type": "Field", "Width": "1024"}, "type": "Rectangle"}, {"fieldtype": "ProtectiveSafeBlanking", "id": "shape-5bf508b2", "kind": "Field", "name": "\u53f3\u5f8c0.65 Protective Rectangle", "rectangle": {"Height": "924", "OriginX": "325", "OriginY": "325", "Rotation": "315", "Type": "Field", "Width": "830"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-7bae92f0", "kind": "Field", "name": "\u53f3\u5f8c0.65 Speed down Rectangle", "rectangle": {"Height": "1024", "OriginX": "361", "OriginY": "361", "Rotation": "315", "Type": "Field", "Width": "1486"}, "type": "Rectangle"}, {"fieldtype": "ProtectiveSafeBlanking", "id": "shape-d42c017e", "kind": "Field", "name": "\u53f30.3 Protective Rectangle", "rectangle": {"Height": "724", "OriginX": "-200", "OriginY": "362", "Rotation": "0", "Type": "Field", "Width": "750"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-6c08b469", "kind": "Field", "name": "\u53f30.3 Speed down Rectangle", "rectangle": {"Height": "824", "OriginX": "-200", "OriginY": "412", "Rotation": "0", "Type": "Field", "Width": "1200"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-d2d33732", "kind": "Field", "name": "\u53f30.3 Speed up Rectangle", "rectangle": {"Height": "1124", "OriginX": "-200", "OriginY": "562", "Rotation": "0", "Type": "Field", "Width": "1700"}, "type": "Rectangle"}, {"fieldtype": "ProtectiveSafeBlanking", "id": "shape-6dc064a4", "kind": "Field", "name": "\u53f3\u524d0.3 Protective Rectangle", "rectangle": {"Height": "724", "OriginX": "-257", "OriginY": "257", "Rotation": "45", "Type": "Field", "Width": "634"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-96302e4a", "kind": "Field", "name": "\u53f3\u524d0.3 Speed down Rectangle", "rectangle": {"Height": "824", "OriginX": "-291", "OriginY": "291", "Rotation": "45", "Type": "Field", "Width": "1078"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-28c82220", "kind": "Field", "name": "\u53f3\u524d0.3 Speed up Rectangle", "rectangle": {"Height": "1124", "OriginX": "-396", "OriginY": "396", "Rotation": "45", "Type": "Field", "Width": "1579"}, "type": "Rectangle"}, {"fieldtype": "ProtectiveSafeBlanking", "id": "shape-6c7dcf0c", "kind": "Field", "name": "\u524d0.3 Protective Rectangle", "rectangle": {"Height": "750", "OriginX": "-362", "OriginY": "550", "Rotation": "0", "Type": "Field", "Width": "724"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-f1f8e7ec", "kind": "Field", "name": "\u524d0.3 Speed down Rectangle", "rectangle": {"Height": "1200", "OriginX": "-412", "OriginY": "1000", "Rotation": "0", "Type": "Field", "Width": "824"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-a3cd07f4", "kind": "Field", "name": "\u524d0.3 Speed up Rectangle", "rectangle": {"Height": "1700", "OriginX": "-562", "OriginY": "1500", "Rotation": "0", "Type": "Field", "Width": "1124"}, "type": "Rectangle"}, {"fieldtype": "ProtectiveSafeBlanking", "id": "shape-4d998f65", "kind": "Field", "name": "\u5de6\u524d0.3 Protective Rectangle", "rectangle": {"Height": "724", "OriginX": "-195", "OriginY": "705", "Rotation": "315", "Type": "Field", "Width": "635"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-b5052a8a", "kind": "Field", "name": "\u5de6\u524d0.3 Speed down Rectangle", "rectangle": {"Height": "824", "OriginX": "-456", "OriginY": "1040", "Rotation": "315", "Type": "Field", "Width": "1058"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-3f30982d", "kind": "Field", "name": "\u5de6\u524d0.3 Speed up Rectangle", "rectangle": {"Height": "1124", "OriginX": "-629", "OriginY": "1421", "Rotation": "315", "Type": "Field", "Width": "1451"}, "type": "Rectangle"}, {"fieldtype": "ProtectiveSafeBlanking", "id": "shape-6d6e5536", "kind": "Field", "name": "\u5de60.3 Protective Rectangle", "rectangle": {"Height": "724", "OriginX": "-550", "OriginY": "362", "Rotation": "0", "Type": "Field", "Width": "750"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-147eb446", "kind": "Field", "name": "\u5de60.3 Speed down Rectangle", "rectangle": {"Height": "824", "OriginX": "-1000", "OriginY": "412", "Rotation": "0", "Type": "Field", "Width": "1200"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-839cff8b", "kind": "Field", "name": "\u5de60.3 Speed up Rectangle", "rectangle": {"Height": "1124", "OriginX": "-1500", "OriginY": "562", "Rotation": "0", "Type": "Field", "Width": "1700"}, "type": "Rectangle"}, {"fieldtype": "ProtectiveSafeBlanking", "id": "shape-3608b9db", "kind": "Field", "name": "\u5de6\u5f8c0.3 Protective Rectangle", "rectangle": {"Height": "724", "OriginX": "-699", "OriginY": "-191", "Rotation": "45", "Type": "Field", "Width": "629"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-6658247d", "kind": "Field", "name": "\u5de6\u5f8c0.3 Speed down Rectangle", "rectangle": {"Height": "824", "OriginX": "-1058", "OriginY": "-474", "Rotation": "45", "Type": "Field", "Width": "1084"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-3917624b", "kind": "Field", "name": "\u5de6\u5f8c0.3 Speed up Rectangle", "rectangle": {"Height": "1124", "OriginX": "-1519", "OriginY": "-721", "Rotation": "45", "Type": "Field", "Width": "1585"}, "type": "Rectangle"}, {"fieldtype": "ProtectiveSafeBlanking", "id": "shape-011b748c", "kind": "Field", "name": "\u5f8c0.3 Protective Rectangle", "rectangle": {"Height": "750", "OriginX": "-362", "OriginY": "200", "Rotation": "0", "Type": "Field", "Width": "724"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-0ca97f3f", "kind": "Field", "name": "\u5f8c0.3 Speed down Rectangle", "rectangle": {"Height": "1200", "OriginX": "-412", "OriginY": "200", "Rotation": "0", "Type": "Field", "Width": "824"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-d3559519", "kind": "Field", "name": "\u5f8c0.3 Speed up Rectangle", "rectangle": {"Height": "1700", "OriginX": "-562", "OriginY": "200", "Rotation": "0", "Type": "Field", "Width": "1124"}, "type": "Rectangle"}, {"fieldtype": "ProtectiveSafeBlanking", "id": "shape-ffbdf4d7", "kind": "Field", "name": "\u53f3\u5f8c0.3 Protective Rectangle", "rectangle": {"Height": "724", "OriginX": "259", "OriginY": "255", "Rotation": "315", "Type": "Field", "Width": "634"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-02c93537", "kind": "Field", "name": "\u53f3\u5f8c0.3 Speed down Rectangle", "rectangle": {"Height": "824", "OriginX": "294", "OriginY": "290", "Rotation": "315", "Type": "Field", "Width": "1072"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-43d7c4b2", "kind": "Field", "name": "\u53f3\u5f8c0.3 Speed up Rectangle", "rectangle": {"Height": "1024", "OriginX": "361", "OriginY": "361", "Rotation": "315", "Type": "Field", "Width": "1575"}, "type": "Rectangle"}, {"fieldtype": "ProtectiveSafeBlanking", "id": "shape-f5cde190", "kind": "Field", "name": "\u53f30.15 Protective Rectangle", "rectangle": {"Height": "724", "OriginX": "-200", "OriginY": "362", "Rotation": "0", "Type": "Field", "Width": "700"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-968bfc3d", "kind": "Field", "name": "\u53f30.15 Speed up Rectangle", "rectangle": {"Height": "924", "OriginX": "-200", "OriginY": "462", "Rotation": "0", "Type": "Field", "Width": "1300"}, "type": "Rectangle"}, {"fieldtype": "ProtectiveSafeBlanking", "id": "shape-7cb65d29", "kind": "Field", "name": "\u53f3\u524d0.15 Protective Rectangle", "rectangle": {"Height": "724", "OriginX": "-255", "OriginY": "259", "Rotation": "45", "Type": "Field", "Width": "585"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-0c82138a", "kind": "Field", "name": "\u53f3\u524d0.15 Speed up Rectangle", "rectangle": {"Height": "924", "OriginX": "-324", "OriginY": "324", "Rotation": "45", "Type": "Field", "Width": "1183"}, "type": "Rectangle"}, {"fieldtype": "ProtectiveSafeBlanking", "id": "shape-b2c7ee4b", "kind": "Field", "name": "\u524d0.15 Protective Rectangle", "rectangle": {"Height": "700", "OriginX": "-362", "OriginY": "500", "Rotation": "0", "Type": "Field", "Width": "724"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-65172861", "kind": "Field", "name": "\u524d0.15 Speed up Rectangle", "rectangle": {"Height": "1300", "OriginX": "-462", "OriginY": "1100", "Rotation": "0", "Type": "Field", "Width": "924"}, "type": "Rectangle"}, {"fieldtype": "ProtectiveSafeBlanking", "id": "shape-9e9a0ad5", "kind": "Field", "name": "\u5de6\u524d0.15 Protective Rectangle", "rectangle": {"Height": "724", "OriginX": "-158", "OriginY": "668", "Rotation": "315", "Type": "Field", "Width": "585"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-18d51a7c", "kind": "Field", "name": "\u5de6\u524d0.15 Speed up Rectangle", "rectangle": {"Height": "924", "OriginX": "-509", "OriginY": "1167", "Rotation": "315", "Type": "Field", "Width": "1187"}, "type": "Rectangle"}, {"fieldtype": "ProtectiveSafeBlanking", "id": "shape-9f15db80", "kind": "Field", "name": "\u5de60.15 Protective Rectangle", "rectangle": {"Height": "724", "OriginX": "-500", "OriginY": "362", "Rotation": "0", "Type": "Field", "Width": "700"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-721e99e7", "kind": "Field", "name": "\u5de60.15 Speed up Rectangle", "rectangle": {"Height": "924", "OriginX": "-1100", "OriginY": "462", "Rotation": "0", "Type": "Field", "Width": "1300"}, "type": "Rectangle"}, {"fieldtype": "ProtectiveSafeBlanking", "id": "shape-06401945", "kind": "Field", "name": "\u5de6\u5f8c0.15 Protective Rectangle", "rectangle": {"Height": "724", "OriginX": "-666", "OriginY": "-158", "Rotation": "45", "Type": "Field", "Width": "587"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-0c7bed21", "kind": "Field", "name": "\u5de6\u5f8c0.15 Speed up Rectangle", "rectangle": {"Height": "924", "OriginX": "-1159", "OriginY": "-503", "Rotation": "45", "Type": "Field", "Width": "1177"}, "type": "Rectangle"}, {"fieldtype": "ProtectiveSafeBlanking", "id": "shape-ca3a47c4", "kind": "Field", "name": "\u5f8c0.15 Protective Rectangle", "rectangle": {"Height": "700", "OriginX": "-362", "OriginY": "200", "Rotation": "0", "Type": "Field", "Width": "724"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-6775565f", "kind": "Field", "name": "\u5f8c0.15 Speed up Rectangle", "rectangle": {"Height": "1300", "OriginX": "-462", "OriginY": "200", "Rotation": "0", "Type": "Field", "Width": "924"}, "type": "Rectangle"}, {"fieldtype": "ProtectiveSafeBlanking", "id": "shape-fd204bea", "kind": "Field", "name": "\u53f3\u5f8c0.15 Protective Rectangle", "rectangle": {"Height": "724", "OriginX": "257", "OriginY": "257", "Rotation": "315", "Type": "Field", "Width": "586"}, "type": "Rectangle"}, {"fieldtype": "WarningSafeBlanking", "id": "shape-f07c92db", "kind": "Field", "name": "\u53f3\u5f8c0.15 Speed up Rectangle", "rectangle": {"Height": "1024", "OriginX": "362", "OriginY": "360", "Rotation": "315", "Type": "Field", "Width": "1180"}, "type": "Rectangle"}, {"circle": {"CenterX": "0", "CenterY": "0", "Radius": "542", "Type": "Field"}, "fieldtype": "ProtectiveSafeBlanking", "id": "shape-9b230cc4", "kind": "Field", "name": "\u56de\u8ee2 Protective Circle", "type": "Circle"}, {"fieldtype": "ProtectiveSafeBlanking", "id": "shape-7ab37b41", "kind": "Field", "name": "Stop(minimum) Protective Polygon", "polygon": {"Type": "Field", "points": [{"X": "-245", "Y": "86"}, {"X": "-98", "Y": "-161"}, {"X": "98", "Y": "-163"}, {"X": "240", "Y": "79"}, {"X": "139", "Y": "250"}, {"X": "-137", "Y": "247"}]}, "type": "Polygon"}, {"fieldtype": "ProtectiveSafeBlanking", "id": "shape-2e2c7edc", "kind": "CutOut", "name": "Stop(minimum) Protective Polygon", "polygon": {"Type": "CutOut", "points": [{"X": "-173", "Y": "160"}, {"X": "-1", "Y": "227"}, {"X": "165", "Y": "157"}, {"X": "0", "Y": "-242"}]}, "type": "Polygon"}, {"circle": {"CenterX": "-1", "CenterY": "-163", "Radius": "1", "Type": "Field"}, "fieldtype": "ProtectiveSafeBlanking", "id": "shape-e338d649", "kind": "Field", "name": "Stop(minimum) Protective Circle", "type": "Circle"}, {"circle": {"CenterX": "0", "CenterY": "-167", "Radius": "99", "Type": "Field"}, "fieldtype": "ProtectiveSafeBlanking", "id": "shape-f9ab7733", "kind": "Field", "name": "Stop(minimum) Protective Circle", "type": "Circle"}, {"circle": {"CenterX": "-190", "CenterY": "166", "Radius": "99", "Type": "Field"}, "fieldtype": "ProtectiveSafeBlanking", "id": "shape-c56161ab", "kind": "Field", "name": "Stop(minimum) Protective Circle", "type": "Circle"}, {"circle": {"CenterX": "188", "CenterY": "164", "Radius": "99", "Type": "Field"}, "fieldtype": "ProtectiveSafeBlanking", "id": "shape-faa9b302", "kind": "Field", "name": "Stop(minimum) Protective Circle", "type": "Circle"}];
         const shapeModal = document.getElementById("shape-modal");
         const shapeModalBody = document.getElementById("shape-modal-body");
@@ -1343,11 +1576,24 @@
         let currentFigure = cloneFigure(defaultFigure);
         let scanPlanes = initializeScanPlanes(initialScanPlanes);
         let triorbShapes = initializeTriOrbShapes(initialTriOrbShapes);
-        let triorbSource = "" || "";
+        let triorbSource = "";
         let fieldsets = initializeFieldsets(initialFieldsets);
         let fieldsetDevices = initializeFieldsetDevices(initialFieldsetDevices);
         let fieldsetGlobalGeometry = initializeGlobalGeometry(initialFieldsetGlobal);
-        let globalMultipleSampling = deriveInitialMultipleSampling(fieldsets);
+        const casetableCasesLimit = 128;
+        let casetableAttributes = cloneAttributes(
+          casetablePayload?.casetable_attributes || { Index: "0" }
+        );
+        let casetableConfiguration = normalizeCasetableConfiguration(
+          casetablePayload?.configuration
+        );
+        let casetableCases = initializeCasetableCases(casetablePayload?.cases);
+        let casetableLayout = normalizeCasetableLayout(casetablePayload?.layout);
+        let casetableEvals = cloneGenericNode(casetablePayload?.evals);
+        let casetableFieldsConfiguration = cloneGenericNode(
+          casetablePayload?.fields_configuration
+        );
+        globalMultipleSampling = deriveInitialMultipleSampling(fieldsets);
         let legendVisible = true;
         let fieldOfViewDegrees = parseNumeric(fieldOfViewInput?.value, 270);
         const debugMode = Boolean(new URLSearchParams(window.location.search).get("debug"));
@@ -1393,6 +1639,8 @@
         renderFieldsetCheckboxes();
         renderTriOrbShapes();
         renderTriOrbShapeCheckboxes();
+        renderCasetableConfiguration();
+        renderCasetableCases();
 
         function initializeScanPlanes(data) {
           let planes;
@@ -3739,6 +3987,260 @@ function buildCircleTrace(circle, color, label, fieldType, fieldsetIndex, fieldI
           return { ...data };
         }
 
+        function cloneGenericNode(node) {
+          if (!node || typeof node !== "object") {
+            return null;
+          }
+          const children = Array.isArray(node.children)
+            ? node.children.map((child) => cloneGenericNode(child)).filter(Boolean)
+            : [];
+          return {
+            tag: node.tag || "Node",
+            attributes: { ...(node.attributes || {}) },
+            text: typeof node.text === "string" ? node.text : "",
+            children,
+          };
+        }
+
+        function normalizeCasetableConfiguration(node) {
+          const cloned = cloneGenericNode(node);
+          if (cloned) {
+            return cloned;
+          }
+          return createDefaultCasetableConfiguration();
+        }
+
+        function createDefaultCasetableConfiguration() {
+          return { tag: "Configuration", attributes: {}, text: "", children: [] };
+        }
+
+        function normalizeCasetableLayout(layoutEntries) {
+          const normalized = [];
+          if (Array.isArray(layoutEntries)) {
+            layoutEntries.forEach((entry) => {
+              if (!entry || typeof entry !== "object") {
+                return;
+              }
+              if (entry.kind === "node" && entry.node) {
+                normalized.push({ kind: "node", node: cloneGenericNode(entry.node) });
+              } else if (
+                entry.kind === "configuration" ||
+                entry.kind === "cases" ||
+                entry.kind === "evals" ||
+                entry.kind === "fields_configuration"
+              ) {
+                if (!normalized.some((item) => item.kind === entry.kind)) {
+                  normalized.push({ kind: entry.kind });
+                }
+              }
+            });
+          }
+          ["configuration", "cases", "evals", "fields_configuration"].forEach((kind) => {
+            if (!normalized.some((entry) => entry.kind === kind)) {
+              normalized.push({ kind });
+            }
+          });
+          return normalized;
+        }
+
+        function normalizeCaseLayout(layoutEntries, staticInputs, speedActivation) {
+          const layout = [];
+          if (Array.isArray(layoutEntries)) {
+            layoutEntries.forEach((segment) => {
+              if (!segment || typeof segment !== "object") {
+                return;
+              }
+              if (segment.kind === "node" && segment.node) {
+                layout.push({ kind: "node", node: cloneGenericNode(segment.node) });
+              } else if (segment.kind === "static-inputs") {
+                if (!layout.some((entry) => entry.kind === "static-inputs")) {
+                  layout.push({ kind: "static-inputs" });
+                }
+              } else if (segment.kind === "speed-activation") {
+                if (!layout.some((entry) => entry.kind === "speed-activation")) {
+                  layout.push({ kind: "speed-activation" });
+                }
+              }
+            });
+          }
+          if (staticInputs?.length && !layout.some((entry) => entry.kind === "static-inputs")) {
+            layout.push({ kind: "static-inputs" });
+          }
+          if (speedActivation && !layout.some((entry) => entry.kind === "speed-activation")) {
+            layout.push({ kind: "speed-activation" });
+          }
+          return layout;
+        }
+
+        function initializeCasetableCases(data) {
+          if (!Array.isArray(data) || !data.length) {
+            return [createDefaultCasetableCase(0)];
+          }
+          return data
+            .slice(0, casetableCasesLimit)
+            .map((entry, index) => normalizeCasetableCase(entry, index));
+        }
+
+        function normalizeCasetableCase(entry, index) {
+          const attributes = { ...(entry?.attributes || {}) };
+          if (!attributes.Name) {
+            attributes.Name = buildCaseName(index);
+          }
+          const staticInputs = normalizeStaticInputs(entry?.static_inputs);
+          const speedActivation = normalizeSpeedActivation(entry?.speed_activation);
+          const layout = normalizeCaseLayout(entry?.layout, staticInputs, speedActivation);
+          return { attributes, staticInputs, speedActivation, layout };
+        }
+
+        function buildCaseName(index) {
+          return `Case ${index + 1}`;
+        }
+
+        function createDefaultCasetableCase(index = 0) {
+          const attributes = {
+            Name: buildCaseName(index),
+            NameLatin9Key: `_CASE_${String(index + 1).padStart(3, "0")}`,
+          };
+          const staticInputs = [createDefaultStaticInput(`StaticInput ${index + 1}`)];
+          const speedActivation = normalizeSpeedActivation({ attributes: { Mode: "Off" }, mode_key: "Mode" });
+          const layout = normalizeCaseLayout(null, staticInputs, speedActivation);
+          return { attributes, staticInputs, speedActivation, layout };
+        }
+
+        function createDefaultStaticInput(name) {
+          return {
+            attributes: { Name: name || "StaticInput", State: "Low" },
+            valueKey: "State",
+          };
+        }
+
+        function resolveStaticInputValueKey(attrs) {
+          const candidates = ["Value", "State", "Level", "Mode"];
+          for (const candidate of candidates) {
+            if (candidate in (attrs || {})) {
+              return candidate;
+            }
+          }
+          return "Value";
+        }
+
+        function resolveSpeedActivationKey(attrs) {
+          const candidates = ["Mode", "Type", "State", "Value"];
+          for (const candidate of candidates) {
+            if (candidate in (attrs || {})) {
+              return candidate;
+            }
+          }
+          return "Mode";
+        }
+
+        function normalizeStaticInputs(list) {
+          if (!Array.isArray(list) || !list.length) {
+            return [createDefaultStaticInput("StaticInput")];
+          }
+          return list.map((item, index) => {
+            const attributes = { ...(item?.attributes || {}) };
+            if (!attributes.Name) {
+              attributes.Name = `StaticInput ${index + 1}`;
+            }
+            const valueKey = item?.value_key || resolveStaticInputValueKey(attributes);
+            if (!(valueKey in attributes)) {
+              attributes[valueKey] = "Low";
+            }
+            return { attributes, valueKey };
+          });
+        }
+
+        function normalizeSpeedActivation(entry) {
+          const attributes = { ...(entry?.attributes || {}) };
+          const modeKey = entry?.mode_key || resolveSpeedActivationKey(attributes);
+          if (!(modeKey in attributes)) {
+            attributes[modeKey] = "Off";
+          }
+          return { attributes, modeKey };
+        }
+
+        function findCasetableConfigNode(path) {
+          if (!path) {
+            return null;
+          }
+          if (path === "root") {
+            return casetableConfiguration;
+          }
+          const parts = path.split(".");
+          let node = casetableConfiguration;
+          for (let index = 1; index < parts.length; index += 1) {
+            const childIndex = Number(parts[index]);
+            if (Number.isNaN(childIndex) || !node?.children?.[childIndex]) {
+              return null;
+            }
+            node = node.children[childIndex];
+          }
+          return node;
+        }
+
+        function updateCasetableConfigAttribute(path, field, value) {
+          if (!field) {
+            return;
+          }
+          const node = findCasetableConfigNode(path);
+          if (!node) {
+            return;
+          }
+          node.attributes = node.attributes || {};
+          node.attributes[field] = value;
+        }
+
+        function updateCasetableConfigText(path, value) {
+          const node = findCasetableConfigNode(path);
+          if (!node) {
+            return;
+          }
+          node.text = value;
+        }
+
+        function updateCaseAttribute(caseIndex, field, value) {
+          const caseData = casetableCases[caseIndex];
+          if (!caseData || !field) {
+            return;
+          }
+          caseData.attributes[field] = value;
+          if (field === "Name") {
+            const summary = casetableCasesContainer?.querySelector(
+              `.casetable-case-card[data-case-index="${caseIndex}"] .casetable-case-summary`
+            );
+            if (summary) {
+              summary.textContent = value || buildCaseName(caseIndex);
+            }
+          }
+        }
+
+        function updateStaticInputValue(caseIndex, staticIndex, value) {
+          const caseData = casetableCases[caseIndex];
+          if (!caseData) {
+            return;
+          }
+          const staticEntry = caseData.staticInputs?.[staticIndex];
+          if (!staticEntry) {
+            return;
+          }
+          const key = staticEntry.valueKey || resolveStaticInputValueKey(staticEntry.attributes || {});
+          staticEntry.valueKey = key;
+          staticEntry.attributes[key] = value;
+        }
+
+        function updateSpeedActivationValue(caseIndex, value) {
+          const caseData = casetableCases[caseIndex];
+          if (!caseData || !caseData.speedActivation) {
+            return;
+          }
+          const key =
+            caseData.speedActivation.modeKey ||
+            resolveSpeedActivationKey(caseData.speedActivation.attributes || {});
+          caseData.speedActivation.modeKey = key;
+          caseData.speedActivation.attributes[key] = value;
+        }
+
         function createDefaultFieldsetDevice(index = 0, overrides = {}) {
           const options = getScanPlaneDeviceOptions();
           const fallbackOption =
@@ -3940,11 +4442,12 @@ function buildCircleTrace(circle, color, label, fieldType, fieldsetIndex, fieldI
           fieldsetGlobalGeometry[key] = value;
         }
 
-function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAttrs = null } = {}) {
+        function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAttrs = null } = {}) {
           const figure = currentFigure || defaultFigure;
           const fileInfoLines = buildFileInfoLines();
           const scanPlaneLines = buildScanPlanesXml(scanDeviceAttrs);
           const fieldsetLines = buildFieldsetsXml(fieldsetDeviceAttrs);
+          const casetableLines = buildCasetablesXml();
           const rootAttrOverrides = {
             ...rootAttributes,
             Timestamp: new Date().toISOString(),
@@ -3967,7 +4470,9 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
             "  <Export_FieldsetsAndFields>",
             ...fieldsetLines,
             "  </Export_FieldsetsAndFields>",
-            "  <Export_CasetablesAndCases />",
+            "  <Export_CasetablesAndCases>",
+            ...casetableLines,
+            "  </Export_CasetablesAndCases>",
             "</SdImportExport>",
           ];
           return lines;
@@ -4177,6 +4682,160 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
           return lines;
         }
 
+        function buildGenericNodeLines(node, indentLevel = 0) {
+          if (!node || !node.tag) {
+            return [];
+          }
+          const indent = "  ".repeat(indentLevel);
+          const attrText = buildRootAttributes(node.attributes, getAttributeOrder(node.tag));
+          const hasChildren = Array.isArray(node.children) && node.children.length;
+          const hasText = typeof node.text === "string" && node.text.length;
+          if (!hasChildren && !hasText) {
+            return [`${indent}<${sanitizeTagName(node.tag)}${attrText ? ` ${attrText}` : ""} />`];
+          }
+          const lines = [
+            `${indent}<${sanitizeTagName(node.tag)}${attrText ? ` ${attrText}` : ""}>`,
+          ];
+          if (hasText) {
+            lines.push(`${indent}  ${escapeXml(node.text)}`);
+          }
+          if (hasChildren) {
+            node.children.forEach((child) => {
+              lines.push(...buildGenericNodeLines(child, indentLevel + 1));
+            });
+          }
+          lines.push(`${indent}</${sanitizeTagName(node.tag)}>`);
+          return lines;
+        }
+
+        function buildStaticInputsLines(staticInputs, indentLevel) {
+          const indent = "  ".repeat(indentLevel);
+          const lines = [`${indent}<StaticInputs>`];
+          if (staticInputs && staticInputs.length) {
+            staticInputs.forEach((input) => {
+              const attrs = buildRootAttributes(
+                input.attributes,
+                getAttributeOrder("StaticInput")
+              );
+              lines.push(`${indent}  <StaticInput${attrs ? ` ${attrs}` : ""} />`);
+            });
+          } else {
+            lines.push(`${indent}  <!-- No StaticInput -->`);
+          }
+          lines.push(`${indent}</StaticInputs>`);
+          return lines;
+        }
+
+        function buildSpeedActivationLines(speedActivation, indentLevel) {
+          const indent = "  ".repeat(indentLevel);
+          if (!speedActivation) {
+            return [`${indent}<SpeedActivation Mode="Off" />`];
+          }
+          const attrs = buildRootAttributes(
+            speedActivation.attributes,
+            getAttributeOrder("SpeedActivation")
+          );
+          return [`${indent}<SpeedActivation${attrs ? ` ${attrs}` : ""} />`];
+        }
+
+        function deriveCaseLayout(caseData) {
+          const layout = [];
+          if (Array.isArray(caseData.layout)) {
+            caseData.layout.forEach((segment) => {
+              if (!segment || typeof segment !== "object") {
+                return;
+              }
+              if (segment.kind === "node" && segment.node) {
+                layout.push({ kind: "node", node: cloneGenericNode(segment.node) });
+              } else if (
+                segment.kind === "static-inputs" ||
+                segment.kind === "speed-activation"
+              ) {
+                if (!layout.some((entry) => entry.kind === segment.kind)) {
+                  layout.push({ kind: segment.kind });
+                }
+              }
+            });
+          }
+          if (caseData.staticInputs?.length && !layout.some((entry) => entry.kind === "static-inputs")) {
+            layout.push({ kind: "static-inputs" });
+          }
+          if (caseData.speedActivation && !layout.some((entry) => entry.kind === "speed-activation")) {
+            layout.push({ kind: "speed-activation" });
+          }
+          return layout;
+        }
+
+        function buildCaseLines(caseData, caseIndex, indentLevel = 4) {
+          const indent = "  ".repeat(indentLevel);
+          const attrs = { ...(caseData.attributes || {}) };
+          attrs.Id = String(caseIndex);
+          attrs.DisplayOrder = String(caseIndex);
+          const attrText = buildRootAttributes(attrs, getAttributeOrder("Case"));
+          const lines = [`${indent}<Case${attrText ? ` ${attrText}` : ""}>`];
+          const layout = deriveCaseLayout(caseData);
+          layout.forEach((segment) => {
+            if (segment.kind === "static-inputs") {
+              lines.push(...buildStaticInputsLines(caseData.staticInputs, indentLevel + 1));
+            } else if (segment.kind === "speed-activation") {
+              lines.push(...buildSpeedActivationLines(caseData.speedActivation, indentLevel + 1));
+            } else if (segment.kind === "node" && segment.node) {
+              lines.push(...buildGenericNodeLines(segment.node, indentLevel + 1));
+            }
+          });
+          lines.push(`${indent}</Case>`);
+          return lines;
+        }
+
+        function buildCasetablesXml() {
+          const lines = [];
+          const attrs = { ...(casetableAttributes || {}) };
+          if (!("Index" in attrs)) {
+            attrs.Index = "0";
+          }
+          const attrText = buildRootAttributes(attrs, getAttributeOrder("Casetable"));
+          const layout =
+            Array.isArray(casetableLayout) && casetableLayout.length
+              ? casetableLayout
+              : normalizeCasetableLayout([]);
+          lines.push(`    <Casetable${attrText ? ` ${attrText}` : ""}>`);
+          layout.forEach((segment) => {
+            if (segment.kind === "configuration") {
+              if (casetableConfiguration) {
+                lines.push(...buildGenericNodeLines(casetableConfiguration, 3));
+              } else {
+                lines.push("      <Configuration />");
+              }
+            } else if (segment.kind === "cases") {
+              lines.push("      <Cases>");
+              if (casetableCases.length) {
+                casetableCases.forEach((caseData, index) => {
+                  lines.push(...buildCaseLines(caseData, index, 4));
+                });
+              } else {
+                lines.push("        <!-- No cases defined -->");
+              }
+              lines.push("      </Cases>");
+            } else if (segment.kind === "evals") {
+              if (casetableEvals) {
+                lines.push(...buildGenericNodeLines(casetableEvals, 3));
+              } else {
+                lines.push("      <Evals />");
+              }
+            } else if (segment.kind === "fields_configuration") {
+              if (casetableFieldsConfiguration) {
+                lines.push(...buildGenericNodeLines(casetableFieldsConfiguration, 3));
+              } else {
+                lines.push("      <FieldsConfiguration />");
+              }
+            } else if (segment.kind === "node" && segment.node) {
+              lines.push(...buildGenericNodeLines(segment.node, 3));
+            }
+          });
+          lines.push("    </Casetable>");
+          return lines;
+        }
+
         function buildAttributeString(attrs, order = []) {
           if (!attrs) return "";
           const keys = Object.keys(attrs);
@@ -4239,6 +4898,14 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
                 "TolerancePositive",
                 "ToleranceNegative",
               ];
+            case "Casetable":
+              return ["Index", "Name"];
+            case "Case":
+              return ["Id", "DisplayOrder", "Name", "NameLatin9Key"];
+            case "StaticInput":
+              return ["Name", "State", "Value"];
+            case "SpeedActivation":
+              return ["Mode", "Type"];
             case "Polygon":
               return ["Type"];
             case "Rectangle":
@@ -4409,6 +5076,7 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
           populateScanPlanesFromDoc(doc);
           populateTriOrbShapesFromDoc(triOrbDoc);
           populateFieldsetsFromDoc(doc);
+          populateCasetablesFromDoc(doc);
 
           const tracesFromPlotData = parsePlotDataTraces(doc);
           if (tracesFromPlotData.length) {
@@ -4764,6 +5432,121 @@ function parsePolygonTrace(doc) {
           renderFieldsetGlobal();
         }
 
+        function convertElementToGenericNode(element) {
+          if (!element) {
+            return null;
+          }
+          const attrs = {};
+          Array.from(element.attributes || []).forEach((attr) => {
+            attrs[attr.name] = attr.value;
+          });
+          const textContent = Array.from(element.childNodes || [])
+            .filter((node) => node.nodeType === Node.TEXT_NODE)
+            .map((node) => node.textContent || "")
+            .join("")
+            .trim();
+          const children = Array.from(element.children || [])
+            .map((child) => convertElementToGenericNode(child))
+            .filter(Boolean);
+          return { tag: element.tagName, attributes: attrs, text: textContent, children };
+        }
+
+        function serializeStaticInputElement(element) {
+          const attrs = {};
+          Array.from(element.attributes || []).forEach((attr) => {
+            attrs[attr.name] = attr.value;
+          });
+          const valueKey = resolveStaticInputValueKey(attrs);
+          return { attributes: attrs, value_key: valueKey };
+        }
+
+        function serializeSpeedActivationElement(element) {
+          const attrs = {};
+          Array.from(element.attributes || []).forEach((attr) => {
+            attrs[attr.name] = attr.value;
+          });
+          return { attributes: attrs, mode_key: resolveSpeedActivationKey(attrs) };
+        }
+
+        function serializeCaseElement(caseElement) {
+          const attrs = {};
+          Array.from(caseElement.attributes || []).forEach((attr) => {
+            attrs[attr.name] = attr.value;
+          });
+          const entry = { attributes: attrs, static_inputs: [], speed_activation: null, layout: [] };
+          Array.from(caseElement.children || []).forEach((child) => {
+            if (child.tagName === "StaticInputs") {
+              const staticInputs = Array.from(child.querySelectorAll(":scope > StaticInput")).map((staticNode) =>
+                serializeStaticInputElement(staticNode)
+              );
+              entry.static_inputs = staticInputs;
+              entry.layout.push({ kind: "static-inputs" });
+            } else if (child.tagName === "SpeedActivation") {
+              entry.speed_activation = serializeSpeedActivationElement(child);
+              entry.layout.push({ kind: "speed-activation" });
+            } else {
+              entry.layout.push({ kind: "node", node: convertElementToGenericNode(child) });
+            }
+          });
+          return entry;
+        }
+
+        function populateCasetablesFromDoc(doc) {
+          const casetableNodes = Array.from(
+            doc.querySelectorAll("Export_CasetablesAndCases > Casetable")
+          );
+          let casetableNode =
+            casetableNodes.find((node) => node.getAttribute("Index") === "0") ||
+            casetableNodes[0] ||
+            null;
+          if (!casetableNode) {
+            casetableAttributes = { Index: "0" };
+            casetableConfiguration = createDefaultCasetableConfiguration();
+            casetableCases = [createDefaultCasetableCase(0)];
+            casetableLayout = normalizeCasetableLayout([]);
+            casetableEvals = null;
+            casetableFieldsConfiguration = null;
+            renderCasetableConfiguration();
+            renderCasetableCases();
+            return;
+          }
+          casetableAttributes = Array.from(casetableNode.attributes || []).reduce(
+            (acc, attr) => {
+              acc[attr.name] = attr.value;
+              return acc;
+            },
+            {}
+          );
+          const layout = [];
+          Array.from(casetableNode.children || []).forEach((child) => {
+            if (child.tagName === "Configuration") {
+              casetableConfiguration =
+                convertElementToGenericNode(child) || createDefaultCasetableConfiguration();
+              layout.push({ kind: "configuration" });
+            } else if (child.tagName === "Cases") {
+              const serializedCases = Array.from(child.querySelectorAll(":scope > Case")).map((caseElement) =>
+                serializeCaseElement(caseElement)
+              );
+              casetableCases = initializeCasetableCases(serializedCases);
+              layout.push({ kind: "cases" });
+            } else if (child.tagName === "Evals") {
+              casetableEvals = convertElementToGenericNode(child);
+              layout.push({ kind: "evals" });
+            } else if (child.tagName === "FieldsConfiguration") {
+              casetableFieldsConfiguration = convertElementToGenericNode(child);
+              layout.push({ kind: "fields_configuration" });
+            } else {
+              layout.push({ kind: "node", node: convertElementToGenericNode(child) });
+            }
+          });
+          casetableLayout = normalizeCasetableLayout(layout);
+          if (!layout.some((segment) => segment.kind === "cases")) {
+            casetableCases = initializeCasetableCases([]);
+          }
+          renderCasetableConfiguration();
+          renderCasetableCases();
+        }
+
         function findOriginTrace(figure) {
           return figure.data?.find((trace) => {
             const x = trace.x || [];
@@ -4973,6 +5756,207 @@ function parsePolygonTrace(doc) {
           });
         }
 
+        function renderCasetableConfiguration() {
+          if (!casetableConfigurationContainer) {
+            return;
+          }
+          if (!casetableConfiguration) {
+            casetableConfigurationContainer.innerHTML =
+              '<p class="casetable-help-text">No configuration nodes.</p>';
+            return;
+          }
+          casetableConfigurationContainer.innerHTML = renderCasetableConfigNode(
+            casetableConfiguration,
+            "root"
+          );
+        }
+
+        function renderCasetableConfigNode(node, path) {
+          if (!node) {
+            return "";
+          }
+          const attributes = Object.entries(node.attributes || {});
+          const attrHtml = attributes.length
+            ? `<div class="casetable-config-attrs">
+                ${attributes
+                  .map(
+                    ([key, value]) => `
+                  <div class="casetable-case-field">
+                    <label>${escapeHtml(key)}</label>
+                    <input
+                      type="text"
+                      class="casetable-config-input"
+                      data-config-path="${path}"
+                      data-config-field="${escapeHtml(key)}"
+                      value="${escapeHtml(value ?? "")}"
+                    />
+                  </div>`
+                  )
+                  .join("")}
+              </div>`
+            : '<p class="casetable-help-text">No attributes.</p>';
+          const textField =
+            typeof node.text === "string" && node.text.length
+              ? `<div class="casetable-config-attrs">
+                  <div class="casetable-case-field">
+                    <label>Text</label>
+                    <textarea
+                      class="casetable-config-text"
+                      data-config-path="${path}"
+                      data-config-text="true"
+                    >${escapeHtml(node.text)}</textarea>
+                  </div>
+                </div>`
+              : "";
+          const childrenHtml = Array.isArray(node.children)
+            ? node.children
+                .map((child, childIndex) =>
+                  renderCasetableConfigNode(child, `${path}.${childIndex}`)
+                )
+                .join("")
+            : "";
+          return `
+            <div class="casetable-config-node" data-config-node="${path}">
+              <details open>
+                <summary>${escapeHtml(node.tag || "Node")}</summary>
+                ${attrHtml}
+                ${textField}
+                ${childrenHtml ? `<div class="casetable-config-children">${childrenHtml}</div>` : ""}
+              </details>
+            </div>`;
+        }
+
+        function renderCasetableCases() {
+          if (casetableCaseCountLabel) {
+            casetableCaseCountLabel.textContent = `${casetableCases.length} / ${casetableCasesLimit}`;
+          }
+          if (!casetableCasesContainer) {
+            return;
+          }
+          if (!casetableCases.length) {
+            casetableCasesContainer.innerHTML =
+              '<p class="casetable-help-text">No cases defined.</p>';
+          } else {
+            casetableCasesContainer.innerHTML = casetableCases
+              .map((caseData, caseIndex) => renderCasetableCase(caseData, caseIndex))
+              .join("");
+          }
+          if (addCasetableCaseBtn) {
+            addCasetableCaseBtn.disabled = casetableCases.length >= casetableCasesLimit;
+          }
+        }
+
+        function renderCasetableCase(caseData, caseIndex) {
+          const attributes = Object.entries(caseData.attributes || {}).filter(
+            ([key]) => key !== "Id" && key !== "DisplayOrder"
+          );
+          const attrFields = attributes.length
+            ? `<div class="casetable-case-grid">
+                ${attributes
+                  .map(
+                    ([key, value]) => `
+                  <div class="casetable-case-field">
+                    <label>${escapeHtml(key)}</label>
+                    <input
+                      type="text"
+                      class="casetable-case-input"
+                      data-case-index="${caseIndex}"
+                      data-case-field="${escapeHtml(key)}"
+                      value="${escapeHtml(value ?? "")}"
+                    />
+                  </div>`
+                  )
+                  .join("")}
+              </div>`
+            : '<p class="casetable-help-text">No editable attributes.</p>';
+          const staticInputsSection = caseData.staticInputs?.length
+            ? `<div class="casetable-static-inputs">
+                ${caseData.staticInputs
+                  .map((input, staticIndex) =>
+                    renderStaticInputToggle(caseIndex, staticIndex, input)
+                  )
+                  .join("")}
+              </div>`
+            : '<p class="casetable-help-text">No static inputs defined.</p>';
+          const speedActivationSection = caseData.speedActivation
+            ? `<div class="casetable-speed-activation">
+                <label>SpeedActivation</label>
+                <select class="casetable-speed-select" data-case-index="${caseIndex}">
+                  ${["Off", "SpeedRange"]
+                    .map((option) => {
+                      const currentValue = String(
+                        caseData.speedActivation.attributes?.[
+                          caseData.speedActivation.modeKey
+                        ] ?? ""
+                      ).toLowerCase();
+                      const isSelected = currentValue === option.toLowerCase();
+                      return `<option value="${option}"${
+                        isSelected ? " selected" : ""
+                      }>${option}</option>`;
+                    })
+                    .join("")}
+                </select>
+              </div>`
+            : "";
+          const hasReadonlyNodes = Array.isArray(caseData.layout)
+            ? caseData.layout.some((segment) => segment.kind === "node")
+            : false;
+          const summaryName = caseData.attributes?.Name || buildCaseName(caseIndex);
+          return `
+            <div class="casetable-case-card" data-case-index="${caseIndex}">
+              <details open>
+                <summary>
+                  <span>Case #${caseIndex + 1}</span>
+                  <span class="casetable-case-summary">${escapeHtml(summaryName)}</span>
+                  <button
+                    type="button"
+                    class="inline-btn inline-danger"
+                    data-action="remove-case"
+                    data-case-index="${caseIndex}"
+                  >
+                    Remove
+                  </button>
+                </summary>
+                <div class="casetable-case-body">
+                  ${attrFields}
+                  ${staticInputsSection}
+                  ${speedActivationSection || ""}
+                  ${
+                    hasReadonlyNodes
+                      ? '<p class="casetable-readonly-note">Additional nodes will be preserved when saving.</p>'
+                      : ""
+                  }
+                </div>
+              </details>
+            </div>`;
+        }
+
+        function renderStaticInputToggle(caseIndex, staticIndex, input) {
+          const attributes = input?.attributes || {};
+          const label = attributes.Name || `StaticInput ${staticIndex + 1}`;
+          const key = input?.valueKey || resolveStaticInputValueKey(attributes);
+          const currentValue = String(attributes[key] || "Low").toLowerCase();
+          const options = ["Low", "High"];
+          const buttons = options
+            .map((option) => {
+              const isActive = currentValue === option.toLowerCase();
+              return `<button
+                type="button"
+                class="toggle-option${isActive ? " is-active" : ""}"
+                data-action="toggle-static-input"
+                data-case-index="${caseIndex}"
+                data-static-index="${staticIndex}"
+                data-static-value="${option}"
+              >${option}</button>`;
+            })
+            .join("");
+          return `
+            <div class="casetable-static-group">
+              <span class="casetable-static-label">${escapeHtml(label)}</span>
+              <div class="toggle-group">${buttons}</div>
+            </div>`;
+        }
+
         function renderFieldsetCheckboxes() {
           if (!fieldsetCheckboxes) {
             return;
@@ -5063,6 +6047,65 @@ function parsePolygonTrace(doc) {
         if (triorbShapeUncheckAllBtn) {
           triorbShapeUncheckAllBtn.addEventListener("click", () => {
             setTriOrbShapeVisibility(false);
+          });
+        }
+
+        if (casetableConfigurationContainer) {
+          casetableConfigurationContainer.addEventListener("input", (event) => {
+            const target = event.target;
+            if (target.classList.contains("casetable-config-input")) {
+              const path = target.dataset.configPath;
+              const field = target.dataset.configField;
+              updateCasetableConfigAttribute(path, field, target.value);
+            } else if (target.classList.contains("casetable-config-text")) {
+              const path = target.dataset.configPath;
+              updateCasetableConfigText(path, target.value);
+            }
+          });
+        }
+
+        if (casetableCasesContainer) {
+          casetableCasesContainer.addEventListener("input", (event) => {
+            const target = event.target;
+            if (target.classList.contains("casetable-case-input")) {
+              const caseIndex = Number(target.dataset.caseIndex);
+              const field = target.dataset.caseField;
+              updateCaseAttribute(caseIndex, field, target.value);
+            } else if (target.classList.contains("casetable-speed-select")) {
+              const caseIndex = Number(target.dataset.caseIndex);
+              updateSpeedActivationValue(caseIndex, target.value);
+            }
+          });
+
+          casetableCasesContainer.addEventListener("click", (event) => {
+            const removeBtn = event.target.closest("[data-action='remove-case']");
+            if (removeBtn) {
+              event.preventDefault();
+              const caseIndex = Number(removeBtn.dataset.caseIndex);
+              casetableCases.splice(caseIndex, 1);
+              renderCasetableCases();
+              return;
+            }
+            const toggleBtn = event.target.closest("[data-action='toggle-static-input']");
+            if (toggleBtn) {
+              event.preventDefault();
+              const caseIndex = Number(toggleBtn.dataset.caseIndex);
+              const staticIndex = Number(toggleBtn.dataset.staticIndex);
+              const value = toggleBtn.dataset.staticValue;
+              updateStaticInputValue(caseIndex, staticIndex, value);
+              renderCasetableCases();
+            }
+          });
+        }
+
+        if (addCasetableCaseBtn) {
+          addCasetableCaseBtn.addEventListener("click", () => {
+            if (casetableCases.length >= casetableCasesLimit) {
+              setStatus(`Case limit of ${casetableCasesLimit} reached.`, "warning");
+              return;
+            }
+            casetableCases.push(createDefaultCasetableCase(casetableCases.length));
+            renderCasetableCases();
           });
         }
 
