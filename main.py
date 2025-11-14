@@ -12,7 +12,7 @@ from plotly_panel import build_sample_figure
 # アプリで参照するサンプル XML のパス。
 # 実際の編集データがまだない環境でも UI が壊れないよう、
 # 読み込みに失敗した場合はすべてフォールバックデータを返す方針とする。
-SAMPLE_XML = Path("sample/20251111-105839_ScannerDTM-Export.sgexml")
+SAMPLE_XML = Path("sample/ScannerDTM-Export_Mini.sgexml")
 
 
 def load_menu_items() -> List[Dict[str, str]]:
