@@ -24,3 +24,22 @@
 - TriOrb モーダルでは、Fieldset チェックのトグル化とモーダルのドラッグ/リサイズ、Add/Edit/Delete の区別、Cancel での値リセットが揃っていることを確認する。
 - `README.md` を常に最新化して、Playwright 実行手順や `pip install -r requirements.txt` などのセットアップを明文化する。これらが現場のドキュメントとなる。
 - +Field モーダル: Protective/Warning の Field 内で Type=Field/CutOut ごとの Shape 選択と Plotly プレビュー、OK/Cancel で Fieldset を保存/破棄できる UI を導入しました。
+
+
+## Export_CasetablesAndCases編集機能要件
+- Save (SICK) で出力されるXML構造はsample\20251111-105839_ScannerDTM-Export.sgexmlと一致すること
+- このアプリではCasetableはIndex="0"のみを取り扱う
+- Configurationツリーはsample\20251111-105839_ScannerDTM-Export.sgexmlの定義を参考に、Structure Menu/Export_CasetablesAndCases以下にConfigurationツリーを作って各種Inputboxを作成
+- Casesツリーは、監視ケースを最大128個Add出来る
+- 監視ケースはAddもRemoveも出来る
+    - Case Idはツリー内リストのIndexとする
+    - DisplayOrderはツリー内リストのIndexとする（Case Idと一致）
+    - StaticInputs/StaticInputはLow,Highの2択なので、横並びのトグルボタンとする
+    - SpeedActivationはOff/SpeedRangeのセレクタ
+- Evalsツリーの基本構成は[Agent_Export-CasetablesAndCases_Casetable_Evals.md](./Agent_Export-CasetablesAndCases_Casetable_Evals.md)を参照
+    - Evalは1～5個の範囲でAdd/Remove出来る
+    - Eval/Casesツリー内のCase数は、Export_CasetablesAndCases/Casetable/Casesの数と一致すること
+    - Eval/Cases/Case内のScanPlanesツリーにはScanPlaneが1個とする
+    - Eval/Cases/Case/ScanPlanes/ScanPlane内のUserFieldIdは全体でユニークな整数とする
+- FieldsConfigurationツリーの基本構成は[Agent_Export-CasetablesAndCases_Casetable_FieldsConfiguration.md](./Agent_Export-CasetablesAndCases_Casetable_FieldsConfiguration.md)を参照
+    - (構造確認中)
