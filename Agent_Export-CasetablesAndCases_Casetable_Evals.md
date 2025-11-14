@@ -19,7 +19,7 @@
   - サンプルの Casetable 0（Eval 1）では `Case Id="0"`〜`26` まで 27 通りを用意し、速度段や警告段に応じた `UserFieldId` をマッピングしている。【F:sample/20251111-105839_ScannerDTM-Export.sgexml†L1969-L2186】
   - `Case` 直下の `ScanPlanes/ScanPlane` は監視面単位の設定で、`Id="1"` のスキャンプレーンに対して `UserFieldId` と `IsSplitted` フラグ（分割フィールドかどうか）を与える。`IsSplitted=true` は細分化された警告フィールド、`false` は通常フィールドを意味する。【F:sample/20251111-105839_ScannerDTM-Export.sgexml†L1970-L2105】【F:sample/20251111-105839_ScannerDTM-Export.sgexml†L2440-L2649】
   - Casetable 1 の Eval ではケース数が 2 件ずつで、いずれも `UserFieldId` 58/59/9/10 を割り当てており、簡易な切替ロジックになっている。【F:sample/20251111-105839_ScannerDTM-Export.sgexml†L3537-L3589】
-- `UserFieldId` と `FieldMode` は `FieldsConfiguration` 側の `UserField`／`StatFields` とリンクするため、Evals では「どのケースでどのフィールドをアクティブにするか」を宣言するのみで、幾何情報は保持しない。
+- `UserFieldId` と `FieldMode` は `FieldsConfiguration` 側の `UserField`／`StatFields` とリンクするため、Evals では「どのケースでどのフィールドをアクティブにするか」を宣言するのみで、幾何情報は保持しない。`UserFieldId` は TriOrb Menu 上の Shape の 1 始まり Index（Fieldset の Index とは別管理）を参照し、Shape が 0 件の場合でも末尾に確保された 3 つのデフォルト Field (Index 1〜3) を指定できる仕様とする。
 
 ## PermanentPreset
 - 各 Eval 共通で `PermanentPreset/ScanPlanes/ScanPlane` を 1 件だけ持ち、そこに `FieldMode` を記述する。サンプルでは全て `59` で固定出力を指定しており、デバイス初期化時に参照する安全フィールドモードが定義されている。【F:sample/20251111-105839_ScannerDTM-Export.sgexml†L2187-L2193】【F:sample/20251111-105839_ScannerDTM-Export.sgexml†L3555-L3596】

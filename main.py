@@ -145,6 +145,70 @@ def _serialize_case_element(case_element: ET.Element) -> Dict[str, Any]:
     return entry
 
 
+def _serialize_eval_case_node(case_element: ET.Element) -> Dict[str, Any]:
+    attributes = dict(case_element.attrib)
+    scan_plane = case_element.find("./ScanPlanes/ScanPlane")
+    scan_attributes = dict(scan_plane.attrib) if scan_plane is not None else {}
+    user_field_id = ""
+    is_splitted = ""
+    if scan_plane is not None:
+        user_field_id = (scan_plane.findtext("UserFieldId") or "").strip()
+        is_splitted = (scan_plane.findtext("IsSplitted") or "").strip()
+    return {
+        "attributes": attributes,
+        "scanPlane": {
+            "attributes": scan_attributes,
+            "userFieldId": user_field_id,
+            "isSplitted": is_splitted,
+        },
+    }
+
+
+def _serialize_eval_node(eval_element: ET.Element) -> Dict[str, Any]:
+    reset_block = eval_element.find("Reset")
+    permanent_scan_plane = eval_element.find("PermanentPreset/ScanPlanes/ScanPlane")
+    cases_parent = eval_element.find("Cases")
+    reset_data = {
+        "resetType": (reset_block.findtext("ResetType") if reset_block is not None else ""),
+        "autoResetTime": (reset_block.findtext("AutoResetTime") if reset_block is not None else ""),
+        "evalResetSource": (
+            reset_block.findtext("EvalResetSource") if reset_block is not None else ""
+        ),
+    }
+    permanent_preset = {
+        "scanPlaneAttributes": dict(permanent_scan_plane.attrib)
+        if permanent_scan_plane is not None
+        else {},
+        "fieldMode": (
+            permanent_scan_plane.findtext("FieldMode")
+            if permanent_scan_plane is not None
+            else ""
+        ),
+    }
+    cases = []
+    if cases_parent is not None:
+        cases = [_serialize_eval_case_node(case_el) for case_el in cases_parent.findall("Case")]
+    return {
+        "attributes": dict(eval_element.attrib),
+        "name": (eval_element.findtext("Name") or "").strip(),
+        "nameLatin9Key": (eval_element.findtext("NameLatin9Key") or "").strip(),
+        "q": (eval_element.findtext("Q") or "").strip(),
+        "reset": {key: (value or "").strip() for key, value in reset_data.items()},
+        "cases": cases,
+        "permanentPreset": {
+            "scanPlaneAttributes": permanent_preset["scanPlaneAttributes"],
+            "fieldMode": (permanent_preset["fieldMode"] or "").strip(),
+        },
+    }
+
+
+def _serialize_evals_node(evals_element: ET.Element) -> Dict[str, Any]:
+    return {
+        "attributes": dict(evals_element.attrib),
+        "evals": [_serialize_eval_node(eval_el) for eval_el in evals_element.findall("Eval")],
+    }
+
+
 def load_casetable_payload() -> Dict[str, Any]:
     """Extract Export_CasetablesAndCases content for the template."""
 
@@ -158,7 +222,7 @@ def load_casetable_payload() -> Dict[str, Any]:
         "casetable_attributes": {"Index": "0"},
         "configuration": None,
         "cases": [],
-        "evals": None,
+        "evals": {"attributes": {}, "evals": []},
         "fields_configuration": None,
         "layout": default_layout,
     }
@@ -191,7 +255,7 @@ def load_casetable_payload() -> Dict[str, Any]:
         "casetable_attributes": dict(target.attrib) or {"Index": "0"},
         "configuration": None,
         "cases": [],
-        "evals": None,
+        "evals": {"attributes": {}, "evals": []},
         "fields_configuration": None,
         "layout": [],
     }
@@ -207,7 +271,7 @@ def load_casetable_payload() -> Dict[str, Any]:
             ]
             payload["layout"].append({"kind": "cases"})
         elif child.tag == "Evals":
-            payload["evals"] = _convert_element_to_node(child)
+            payload["evals"] = _serialize_evals_node(child)
             payload["layout"].append({"kind": "evals"})
         elif child.tag == "FieldsConfiguration":
             payload["fields_configuration"] = _convert_element_to_node(child)

@@ -510,6 +510,145 @@
         display: none;
       }
 
+      .casetable-evals-header {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+
+      .casetable-eval-count {
+        margin-left: auto;
+        font-size: 0.85rem;
+        color: #475569;
+      }
+
+      .casetable-evals-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        margin-top: 0.5rem;
+      }
+
+      .casetable-eval-card {
+        border: 1px solid rgba(15, 23, 42, 0.12);
+        border-radius: 8px;
+        background: #fff;
+      }
+
+      .casetable-eval-card summary {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 600;
+        color: #0d4b91;
+        cursor: pointer;
+      }
+
+      .casetable-eval-card summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .casetable-eval-body {
+        padding: 0.5rem 0.75rem 0.75rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .casetable-eval-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 0.5rem;
+      }
+
+      .casetable-eval-field {
+        display: flex;
+        flex-direction: column;
+        font-size: 0.85rem;
+      }
+
+      .casetable-eval-field label {
+        font-weight: 600;
+        color: #475569;
+        margin-bottom: 0.2rem;
+      }
+
+      .casetable-eval-field input {
+        border-radius: 6px;
+        border: 1px solid rgba(15, 23, 42, 0.2);
+        padding: 0.35rem 0.45rem;
+        font-size: 0.85rem;
+      }
+
+      .casetable-eval-section h4 {
+        margin: 0 0 0.35rem;
+        font-size: 0.9rem;
+        color: #0f172a;
+      }
+
+      .casetable-eval-cases {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .casetable-eval-case {
+        border: 1px solid rgba(15, 23, 42, 0.08);
+        border-radius: 6px;
+        padding: 0.5rem;
+        background: #f8fafc;
+      }
+
+      .casetable-eval-case-header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 0.25rem;
+        margin-bottom: 0.35rem;
+      }
+
+      .casetable-eval-case-header span {
+        font-weight: 600;
+        color: #0d4b91;
+      }
+
+      .casetable-eval-case-summary {
+        font-size: 0.8rem;
+        color: #475569;
+      }
+
+      .casetable-eval-case-fields {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 0.5rem;
+        align-items: center;
+      }
+
+      .casetable-eval-toggle {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+      }
+
+      .casetable-eval-toggle span {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #475569;
+      }
+
+      .casetable-warning {
+        margin-top: 0.5rem;
+        font-size: 0.85rem;
+        color: #b45309;
+      }
+
+      .input-error {
+        border-color: #dc2626 !important;
+        background: #fef2f2;
+      }
+
       .casetable-case-body {
         padding: 0.5rem 0.75rem 0.75rem;
         display: flex;
@@ -1378,6 +1517,18 @@
                 <div class="casetable-cases-list" id="casetable-cases"></div>
                 <p class="casetable-help-text">Up to 128 monitoring cases can be defined.</p>
               </div>
+              <div class="casetable-section">
+                <div class="casetable-evals-header">
+                  <h3>Evals</h3>
+                  <button type="button" class="inline-btn" id="btn-add-eval">Add Eval</button>
+                  <span class="casetable-eval-count" id="casetable-eval-count"></span>
+                </div>
+                <div class="casetable-evals-list" id="casetable-evals"></div>
+                <p class="casetable-help-text">
+                  Eval cases stay aligned with the Cases tree. UserFieldId values must map to the TriOrb shape indices (1-based) or the trailing preset slots when no shapes exist.
+                </p>
+                <p class="casetable-warning" id="casetable-evals-warning"></p>
+              </div>
             {% else %}
               <p>{{ item.summary }}</p>
             {% endif %}
@@ -1657,6 +1808,10 @@
         const casetableCasesContainer = document.getElementById("casetable-cases");
         const casetableCaseCountLabel = document.getElementById("casetable-case-count");
         const addCasetableCaseBtn = document.getElementById("btn-add-case");
+        const casetableEvalsContainer = document.getElementById("casetable-evals");
+        const casetableEvalCountLabel = document.getElementById("casetable-eval-count");
+        const addCasetableEvalBtn = document.getElementById("btn-add-eval");
+        const casetableEvalsWarning = document.getElementById("casetable-evals-warning");
         const globalMultipleSamplingInput = document.getElementById("global-multiple-sampling");
         const fieldsetCheckboxes = document.getElementById("fieldset-checkboxes");
         if (fieldsetCheckboxes) {
@@ -1761,6 +1916,7 @@
         let fieldsetDevices = initializeFieldsetDevices(initialFieldsetDevices);
         let fieldsetGlobalGeometry = initializeGlobalGeometry(initialFieldsetGlobal);
         const casetableCasesLimit = 128;
+        const casetableEvalsLimit = 5;
         let casetableAttributes = cloneAttributes(
           casetablePayload?.casetable_attributes || { Index: "0" }
         );
@@ -1769,7 +1925,15 @@
         );
         let casetableCases = initializeCasetableCases(casetablePayload?.cases);
         let casetableLayout = normalizeCasetableLayout(casetablePayload?.layout);
-        let casetableEvals = cloneGenericNode(casetablePayload?.evals);
+        const evalUserFieldFallbackLabels = [
+          "Preset Field 1",
+          "Preset Field 2",
+          "Preset Field 3",
+        ];
+        let casetableEvals = normalizeCasetableEvals(
+          casetablePayload?.evals,
+          casetableCases.length
+        );
         let casetableFieldsConfiguration = cloneGenericNode(
           casetablePayload?.fields_configuration
         );
@@ -3665,6 +3829,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           }
           if (!triorbShapes.length) {
             triorbShapesContainer.innerHTML = "<p>No shapes defined.</p>";
+            renderCasetableEvals();
             return;
           }
           triorbShapesContainer.innerHTML = triorbShapes
@@ -3673,6 +3838,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           if (createFieldModal) {
             renderCreateFieldShapeLists();
           }
+          renderCasetableEvals();
         }
 
         function renderTriOrbShapeCard(shapeIndex, shape) {
@@ -4608,6 +4774,181 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           return { attributes, staticInputs, speedActivation, layout };
         }
 
+        function buildEvalName(index) {
+          return `Eval ${index + 1}`;
+        }
+
+        function resolveEvalUserFieldOptions() {
+          const options = triorbShapes.map((shape, index) => {
+            const displayIndex = index + 1;
+            return {
+              value: String(displayIndex),
+              label: `#${displayIndex} ${shape.name || shape.id}`,
+            };
+          });
+          const fallbackStart = triorbShapes.length ? triorbShapes.length + 1 : 1;
+          evalUserFieldFallbackLabels.forEach((label, offset) => {
+            const indexValue = fallbackStart + offset;
+            options.push({
+              value: String(indexValue),
+              label: `#${indexValue} ${label}`,
+              isFallback: true,
+            });
+          });
+          return {
+            options,
+            values: new Set(options.map((option) => option.value)),
+            defaultValue: options[0]?.value ?? "",
+          };
+        }
+
+        function buildEvalUserFieldOptionsHtml(selectedValue) {
+          const { options, defaultValue } = resolveEvalUserFieldOptions();
+          let value = selectedValue;
+          if (!value && defaultValue) {
+            value = defaultValue;
+          }
+          const hasSelection = options.some((option) => option.value === value);
+          const unknownOption =
+            !hasSelection && value
+              ? `<option value="${escapeHtml(value)}" selected disabled>Unknown (#${escapeHtml(value)})</option>`
+              : "";
+          const optionHtml = options
+            .map(
+              (option) => `
+                <option value="${escapeHtml(option.value)}"${
+                  option.value === value ? " selected" : ""
+                }>${escapeHtml(option.label)}</option>`
+            )
+            .join("");
+          return { html: unknownOption + optionHtml, selectedValue: value };
+        }
+
+        function normalizeEvalReset(entry) {
+          return {
+            resetType: entry?.resetType ?? "NoReset",
+            autoResetTime: entry?.autoResetTime ?? "0",
+            evalResetSource: entry?.evalResetSource ?? "",
+          };
+        }
+
+        function normalizePermanentPreset(entry) {
+          const scanPlaneAttributes = { ...(entry?.scanPlaneAttributes || {}) };
+          if (!("Id" in scanPlaneAttributes)) {
+            scanPlaneAttributes.Id = "1";
+          }
+          return {
+            scanPlaneAttributes,
+            fieldMode: entry?.fieldMode ?? "59",
+          };
+        }
+
+        function normalizeEvalCase(entry, caseIndex, defaults) {
+          const optionDefaults = defaults || resolveEvalUserFieldOptions();
+          const attributes = { ...(entry?.attributes || {}) };
+          attributes.Id = String(caseIndex);
+          const scanPlaneAttributes = { ...(entry?.scanPlane?.attributes || {}) };
+          if (!("Id" in scanPlaneAttributes)) {
+            scanPlaneAttributes.Id = "1";
+          }
+          let userFieldId = String(entry?.scanPlane?.userFieldId ?? "").trim();
+          if (!userFieldId && optionDefaults.defaultValue) {
+            userFieldId = optionDefaults.defaultValue;
+          }
+          const isSplitted =
+            String(entry?.scanPlane?.isSplitted ?? "false").toLowerCase() === "true"
+              ? "true"
+              : "false";
+          return {
+            attributes,
+            scanPlane: {
+              attributes: scanPlaneAttributes,
+              userFieldId,
+              isSplitted,
+            },
+          };
+        }
+
+        function createDefaultEvalCase(caseIndex, defaults) {
+          return normalizeEvalCase(
+            {
+              attributes: { Id: String(caseIndex) },
+              scanPlane: {
+                attributes: { Id: "1" },
+                userFieldId: "",
+                isSplitted: "false",
+              },
+            },
+            caseIndex,
+            defaults
+          );
+        }
+
+        function normalizeEvalCases(list, caseCount, defaults) {
+          const normalized = [];
+          const safeCount = Math.max(1, caseCount || 0);
+          if (Array.isArray(list) && list.length) {
+            list.slice(0, safeCount).forEach((entry, index) => {
+              normalized.push(normalizeEvalCase(entry, index, defaults));
+            });
+          }
+          while (normalized.length < safeCount) {
+            normalized.push(createDefaultEvalCase(normalized.length, defaults));
+          }
+          return normalized;
+        }
+
+        function normalizeEvalEntry(entry, evalIndex, caseCount, defaults) {
+          const attributes = { ...(entry?.attributes || {}) };
+          if (!attributes.Id) {
+            attributes.Id = String(evalIndex + 1);
+          }
+          const cases = normalizeEvalCases(entry?.cases, caseCount, defaults);
+          return {
+            attributes,
+            name: entry?.name ?? buildEvalName(evalIndex),
+            nameLatin9Key:
+              entry?.nameLatin9Key ?? `_EVAL_${String(evalIndex + 1).padStart(3, "0")}`,
+            q: entry?.q ?? String(evalIndex + 1),
+            reset: normalizeEvalReset(entry?.reset),
+            cases,
+            permanentPreset: normalizePermanentPreset(entry?.permanentPreset),
+          };
+        }
+
+        function createDefaultEval(evalIndex, caseCount, defaults) {
+          return normalizeEvalEntry(
+            {
+              attributes: { Id: String(evalIndex + 1) },
+              name: buildEvalName(evalIndex),
+              nameLatin9Key: `_EVAL_${String(evalIndex + 1).padStart(3, "0")}`,
+              q: String(evalIndex + 1),
+              reset: { resetType: "NoReset", autoResetTime: "0", evalResetSource: "" },
+              cases: [],
+              permanentPreset: { scanPlaneAttributes: { Id: "1" }, fieldMode: "59" },
+            },
+            evalIndex,
+            caseCount,
+            defaults
+          );
+        }
+
+        function normalizeCasetableEvals(data, caseCount) {
+          const attributes = { ...(data?.attributes || {}) };
+          const safeCount = Math.max(1, caseCount || 0);
+          const optionDefaults = resolveEvalUserFieldOptions();
+          let evalEntries = [];
+          if (Array.isArray(data?.evals) && data.evals.length) {
+            evalEntries = data.evals
+              .slice(0, casetableEvalsLimit)
+              .map((entry, index) => normalizeEvalEntry(entry, index, safeCount, optionDefaults));
+          }
+          if (!evalEntries.length) {
+            evalEntries = [createDefaultEval(0, safeCount, optionDefaults)];
+          }
+          return { attributes, evals: evalEntries };
+        }
+
         function createDefaultStaticInput(name) {
           return {
             attributes: { Name: name || "StaticInput", State: "Low" },
@@ -4713,7 +5054,99 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             if (summary) {
               summary.textContent = value || buildCaseName(caseIndex);
             }
+            updateEvalCaseLabels(caseIndex, value);
           }
+        }
+
+        function updateEvalCaseLabels(caseIndex, value) {
+          if (!casetableEvalsContainer) {
+            return;
+          }
+          const labelNodes = casetableEvalsContainer.querySelectorAll(
+            `.casetable-eval-case[data-case-index="${caseIndex}"] .casetable-eval-case-summary`
+          );
+          labelNodes.forEach((node) => {
+            node.textContent = value || buildCaseName(caseIndex);
+          });
+        }
+
+        function updateEvalSummaryLabel(evalIndex, value) {
+          if (!casetableEvalsContainer) {
+            return;
+          }
+          const summary = casetableEvalsContainer.querySelector(
+            `.casetable-eval-card[data-eval-index="${evalIndex}"] .casetable-eval-summary`
+          );
+          if (summary) {
+            summary.textContent = value || buildEvalName(evalIndex);
+          }
+        }
+
+        function updateEvalAttribute(evalIndex, field, value) {
+          const evalEntry = casetableEvals?.evals?.[evalIndex];
+          if (!evalEntry || !field) {
+            return;
+          }
+          evalEntry.attributes = evalEntry.attributes || {};
+          evalEntry.attributes[field] = value;
+        }
+
+        function updateEvalBasicField(evalIndex, field, value) {
+          const evalEntry = casetableEvals?.evals?.[evalIndex];
+          if (!evalEntry || !field) {
+            return;
+          }
+          evalEntry[field] = value;
+          if (field === "name") {
+            updateEvalSummaryLabel(evalIndex, value);
+          }
+        }
+
+        function updateEvalResetField(evalIndex, field, value) {
+          const evalEntry = casetableEvals?.evals?.[evalIndex];
+          if (!evalEntry || !field) {
+            return;
+          }
+          evalEntry.reset = evalEntry.reset || normalizeEvalReset(null);
+          evalEntry.reset[field] = value;
+        }
+
+        function updateEvalFieldMode(evalIndex, value) {
+          const evalEntry = casetableEvals?.evals?.[evalIndex];
+          if (!evalEntry) {
+            return;
+          }
+          evalEntry.permanentPreset = evalEntry.permanentPreset || normalizePermanentPreset(null);
+          evalEntry.permanentPreset.fieldMode = value;
+        }
+
+        function updateEvalUserFieldId(evalIndex, caseIndex, value) {
+          const evalEntry = casetableEvals?.evals?.[evalIndex];
+          const caseEntry = evalEntry?.cases?.[caseIndex];
+          if (!caseEntry) {
+            return;
+          }
+          caseEntry.scanPlane = caseEntry.scanPlane || {
+            attributes: { Id: "1" },
+            userFieldId: "",
+            isSplitted: "false",
+          };
+          caseEntry.scanPlane.userFieldId = value;
+          applyEvalUserFieldValidation();
+        }
+
+        function updateEvalSplitValue(evalIndex, caseIndex, value) {
+          const evalEntry = casetableEvals?.evals?.[evalIndex];
+          const caseEntry = evalEntry?.cases?.[caseIndex];
+          if (!caseEntry) {
+            return;
+          }
+          caseEntry.scanPlane = caseEntry.scanPlane || {
+            attributes: { Id: "1" },
+            userFieldId: "",
+            isSplitted: "false",
+          };
+          caseEntry.scanPlane.isSplitted = value === "true" ? "true" : "false";
         }
 
         function updateStaticInputValue(caseIndex, staticIndex, value) {
@@ -5286,6 +5719,109 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
           return lines;
         }
 
+        function buildEvalCaseLines(evalCase, caseIndex, indentLevel) {
+          const indent = "  ".repeat(indentLevel);
+          const attributes = { ...(evalCase?.attributes || {}) };
+          attributes.Id = String(caseIndex);
+          const attrText = buildRootAttributes(attributes, getAttributeOrder("Case"));
+          const scanAttrs = buildRootAttributes(
+            { ...(evalCase?.scanPlane?.attributes || {}), Id: evalCase?.scanPlane?.attributes?.Id || "1" },
+            getAttributeOrder("ScanPlane")
+          );
+          const userFieldId = evalCase?.scanPlane?.userFieldId ?? "";
+          const isSplitted = evalCase?.scanPlane?.isSplitted ?? "false";
+          return [
+            `${indent}<Case${attrText ? ` ${attrText}` : ""}>`,
+            `${indent}  <ScanPlanes>`,
+            `${indent}    <ScanPlane${scanAttrs ? ` ${scanAttrs}` : ""}>`,
+            `${indent}      <UserFieldId>${escapeXml(userFieldId)}</UserFieldId>`,
+            `${indent}      <IsSplitted>${escapeXml(isSplitted)}</IsSplitted>`,
+            `${indent}    </ScanPlane>`,
+            `${indent}  </ScanPlanes>`,
+            `${indent}</Case>`,
+          ];
+        }
+
+        function buildEvalResetLines(reset, indentLevel) {
+          const indent = "  ".repeat(indentLevel);
+          const normalized = normalizeEvalReset(reset);
+          return [
+            `${indent}<Reset>`,
+            `${indent}  <ResetType>${escapeXml(normalized.resetType)}</ResetType>`,
+            `${indent}  <AutoResetTime>${escapeXml(normalized.autoResetTime)}</AutoResetTime>`,
+            `${indent}  <EvalResetSource>${escapeXml(normalized.evalResetSource)}</EvalResetSource>`,
+            `${indent}</Reset>`,
+          ];
+        }
+
+        function buildPermanentPresetLines(permanentPreset, indentLevel) {
+          const indent = "  ".repeat(indentLevel);
+          const normalized = normalizePermanentPreset(permanentPreset);
+          const scanAttrs = buildRootAttributes(
+            normalized.scanPlaneAttributes,
+            getAttributeOrder("ScanPlane")
+          );
+          return [
+            `${indent}<PermanentPreset>`,
+            `${indent}  <ScanPlanes>`,
+            `${indent}    <ScanPlane${scanAttrs ? ` ${scanAttrs}` : ""}>`,
+            `${indent}      <FieldMode>${escapeXml(normalized.fieldMode)}</FieldMode>`,
+            `${indent}    </ScanPlane>`,
+            `${indent}  </ScanPlanes>`,
+            `${indent}</PermanentPreset>`,
+          ];
+        }
+
+        function buildEvalLines(evalEntry, evalIndex, indentLevel) {
+          const indent = "  ".repeat(indentLevel);
+          const attributes = { ...(evalEntry?.attributes || {}) };
+          if (!attributes.Id) {
+            attributes.Id = String(evalIndex + 1);
+          }
+          const attrText = buildRootAttributes(attributes, getAttributeOrder("Eval"));
+          const name = evalEntry?.name ?? buildEvalName(evalIndex);
+          const nameLatin9Key = evalEntry?.nameLatin9Key ?? "";
+          const qValue = evalEntry?.q ?? String(evalIndex + 1);
+          const lines = [
+            `${indent}<Eval${attrText ? ` ${attrText}` : ""}>`,
+            `${indent}  <Name>${escapeXml(name)}</Name>`,
+            `${indent}  <NameLatin9Key>${escapeXml(nameLatin9Key)}</NameLatin9Key>`,
+            `${indent}  <Q>${escapeXml(qValue)}</Q>`,
+          ];
+          lines.push(...buildEvalResetLines(evalEntry?.reset, indentLevel + 1));
+          lines.push(`${indent}  <Cases>`);
+          if (Array.isArray(evalEntry?.cases) && evalEntry.cases.length) {
+            evalEntry.cases.forEach((caseEntry, caseIndex) => {
+              lines.push(...buildEvalCaseLines(caseEntry, caseIndex, indentLevel + 2));
+            });
+          } else {
+            lines.push(`${indent}    <!-- No cases defined -->`);
+          }
+          lines.push(`${indent}  </Cases>`);
+          lines.push(...buildPermanentPresetLines(evalEntry?.permanentPreset, indentLevel + 1));
+          lines.push(`${indent}</Eval>`);
+          return lines;
+        }
+
+        function buildEvalsLines(evalsData, indentLevel = 3) {
+          const indent = "  ".repeat(indentLevel);
+          const attrText = buildRootAttributes(
+            evalsData?.attributes,
+            getAttributeOrder("Evals")
+          );
+          const lines = [`${indent}<Evals${attrText ? ` ${attrText}` : ""}>`];
+          const evalEntries = evalsData?.evals || [];
+          if (evalEntries.length) {
+            evalEntries.forEach((entry, index) => {
+              lines.push(...buildEvalLines(entry, index, indentLevel + 1));
+            });
+          } else {
+            lines.push(`${indent}  <!-- No evals defined -->`);
+          }
+          lines.push(`${indent}</Evals>`);
+          return lines;
+        }
+
         function buildCasetablesXml() {
           const lines = [];
           lines.push("  <Export_CasetablesAndCases>");
@@ -5317,11 +5853,7 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
               }
               lines.push("      </Cases>");
             } else if (segment.kind === "evals") {
-              if (casetableEvals) {
-                lines.push(...buildGenericNodeLines(casetableEvals, 3));
-              } else {
-                lines.push("      <Evals />");
-              }
+              lines.push(...buildEvalsLines(casetableEvals, 3));
             } else if (segment.kind === "fields_configuration") {
               if (casetableFieldsConfiguration) {
                 lines.push(...buildGenericNodeLines(casetableFieldsConfiguration, 3));
@@ -5403,6 +5935,10 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
               return ["Index", "Name", "CaseTableType"];
             case "Case":
               return ["Id", "DisplayOrder", "Name", "NameLatin9Key"];
+            case "Eval":
+              return ["Id"];
+            case "Evals":
+              return [];
             case "StaticInput":
               return ["Name", "State", "Value", "Level", "Mode"];
             case "SpeedActivation":
@@ -5988,6 +6524,89 @@ function parsePolygonTrace(doc) {
           return entry;
         }
 
+        function serializeEvalCaseElement(caseElement) {
+          const attributes = {};
+          Array.from(caseElement.attributes || []).forEach((attr) => {
+            attributes[attr.name] = attr.value;
+          });
+          const scanPlaneNode = caseElement.querySelector("ScanPlanes > ScanPlane");
+          const scanPlaneAttributes = {};
+          let userFieldId = "";
+          let isSplitted = "";
+          if (scanPlaneNode) {
+            Array.from(scanPlaneNode.attributes || []).forEach((attr) => {
+              scanPlaneAttributes[attr.name] = attr.value;
+            });
+            const userFieldNode = scanPlaneNode.querySelector("UserFieldId");
+            const splitNode = scanPlaneNode.querySelector("IsSplitted");
+            if (userFieldNode && typeof userFieldNode.textContent === "string") {
+              userFieldId = userFieldNode.textContent.trim();
+            }
+            if (splitNode && typeof splitNode.textContent === "string") {
+              isSplitted = splitNode.textContent.trim();
+            }
+          }
+          return {
+            attributes,
+            scanPlane: { attributes: scanPlaneAttributes, userFieldId, isSplitted },
+          };
+        }
+
+        function serializeEvalElement(evalElement) {
+          const attributes = {};
+          Array.from(evalElement.attributes || []).forEach((attr) => {
+            attributes[attr.name] = attr.value;
+          });
+          const name = evalElement.querySelector(":scope > Name");
+          const latinKey = evalElement.querySelector(":scope > NameLatin9Key");
+          const qNode = evalElement.querySelector(":scope > Q");
+          const resetNode = evalElement.querySelector(":scope > Reset");
+          const permanentNode = evalElement.querySelector(
+            ":scope > PermanentPreset > ScanPlanes > ScanPlane"
+          );
+          const casesParent = evalElement.querySelector(":scope > Cases");
+          const reset = {
+            resetType: resetNode?.querySelector("ResetType")?.textContent?.trim() || "",
+            autoResetTime: resetNode?.querySelector("AutoResetTime")?.textContent?.trim() || "",
+            evalResetSource:
+              resetNode?.querySelector("EvalResetSource")?.textContent?.trim() || "",
+          };
+          const permanentPreset = {
+            scanPlaneAttributes: {},
+            fieldMode: permanentNode?.querySelector("FieldMode")?.textContent?.trim() || "",
+          };
+          if (permanentNode) {
+            Array.from(permanentNode.attributes || []).forEach((attr) => {
+              permanentPreset.scanPlaneAttributes[attr.name] = attr.value;
+            });
+          }
+          const cases = casesParent
+            ? Array.from(casesParent.querySelectorAll(":scope > Case")).map((caseElement) =>
+                serializeEvalCaseElement(caseElement)
+              )
+            : [];
+          return {
+            attributes,
+            name: name?.textContent?.trim() || "",
+            nameLatin9Key: latinKey?.textContent?.trim() || "",
+            q: qNode?.textContent?.trim() || "",
+            reset,
+            cases,
+            permanentPreset,
+          };
+        }
+
+        function serializeEvalsElement(evalsElement) {
+          const attributes = {};
+          Array.from(evalsElement.attributes || []).forEach((attr) => {
+            attributes[attr.name] = attr.value;
+          });
+          const evals = Array.from(evalsElement.querySelectorAll(":scope > Eval")).map((evalElement) =>
+            serializeEvalElement(evalElement)
+          );
+          return { attributes, evals };
+        }
+
         function populateCasetablesFromDoc(doc) {
           const casetableNodes = Array.from(
             doc.querySelectorAll("Export_CasetablesAndCases > Casetable")
@@ -6001,7 +6620,7 @@ function parsePolygonTrace(doc) {
             casetableConfiguration = createDefaultCasetableConfiguration();
             casetableCases = [createDefaultCasetableCase(0)];
             casetableLayout = normalizeCasetableLayout([]);
-            casetableEvals = null;
+            casetableEvals = normalizeCasetableEvals(null, casetableCases.length);
             casetableFieldsConfiguration = null;
             renderCasetableConfiguration();
             renderCasetableCases();
@@ -6027,7 +6646,10 @@ function parsePolygonTrace(doc) {
               casetableCases = initializeCasetableCases(serializedCases);
               layout.push({ kind: "cases" });
             } else if (child.tagName === "Evals") {
-              casetableEvals = convertElementToGenericNode(child);
+              casetableEvals = normalizeCasetableEvals(
+                serializeEvalsElement(child),
+                casetableCases.length
+              );
               layout.push({ kind: "evals" });
             } else if (child.tagName === "FieldsConfiguration") {
               casetableFieldsConfiguration = convertElementToGenericNode(child);
@@ -6039,6 +6661,9 @@ function parsePolygonTrace(doc) {
           casetableLayout = normalizeCasetableLayout(layout);
           if (!layout.some((segment) => segment.kind === "cases")) {
             casetableCases = initializeCasetableCases([]);
+          }
+          if (!layout.some((segment) => segment.kind === "evals")) {
+            casetableEvals = normalizeCasetableEvals(null, casetableCases.length);
           }
           renderCasetableConfiguration();
           renderCasetableCases();
@@ -6312,6 +6937,354 @@ function parsePolygonTrace(doc) {
           });
         }
 
+        if (casetableEvalsContainer) {
+          casetableEvalsContainer.addEventListener("input", (event) => {
+            const target = event.target;
+            if (target.classList.contains("eval-attr-input")) {
+              const evalIndex = Number(target.dataset.evalIndex);
+              const field = target.dataset.evalField;
+              updateEvalAttribute(evalIndex, field, target.value);
+            } else if (target.classList.contains("eval-basic-input")) {
+              const evalIndex = Number(target.dataset.evalIndex);
+              const field = target.dataset.evalField;
+              updateEvalBasicField(evalIndex, field, target.value);
+            } else if (target.classList.contains("eval-reset-input")) {
+              const evalIndex = Number(target.dataset.evalIndex);
+              const field = target.dataset.resetField;
+              updateEvalResetField(evalIndex, field, target.value);
+            } else if (target.classList.contains("eval-fieldmode-input")) {
+              const evalIndex = Number(target.dataset.evalIndex);
+              updateEvalFieldMode(evalIndex, target.value);
+            }
+          });
+
+          casetableEvalsContainer.addEventListener("change", (event) => {
+            const target = event.target;
+            if (target.classList.contains("eval-userfield-input")) {
+              const evalIndex = Number(target.dataset.evalIndex);
+              const caseIndex = Number(target.dataset.caseIndex);
+              updateEvalUserFieldId(evalIndex, caseIndex, target.value);
+            }
+          });
+
+          casetableEvalsContainer.addEventListener("click", (event) => {
+            const removeBtn = event.target.closest("[data-action='remove-eval']");
+            if (removeBtn) {
+              event.preventDefault();
+              if (casetableEvals?.evals?.length <= 1) {
+                setStatus("At least one Eval is required.", "warning");
+                return;
+              }
+              const evalIndex = Number(removeBtn.dataset.evalIndex);
+              casetableEvals.evals.splice(evalIndex, 1);
+              renderCasetableEvals();
+              return;
+            }
+            const toggleBtn = event.target.closest("[data-action='toggle-eval-split']");
+            if (toggleBtn) {
+              event.preventDefault();
+              const evalIndex = Number(toggleBtn.dataset.evalIndex);
+              const caseIndex = Number(toggleBtn.dataset.caseIndex);
+              const value = toggleBtn.dataset.splitValue === "true" ? "true" : "false";
+              updateEvalSplitValue(evalIndex, caseIndex, value);
+              updateEvalSplitButtons(evalIndex, caseIndex, value);
+            }
+          });
+        }
+
+        if (addCasetableEvalBtn) {
+          addCasetableEvalBtn.addEventListener("click", () => {
+            if (casetableEvals?.evals?.length >= casetableEvalsLimit) {
+              setStatus(`Eval limit of ${casetableEvalsLimit} reached.`, "warning");
+              return;
+            }
+            const defaults = resolveEvalUserFieldOptions();
+            const newEval = createDefaultEval(
+              casetableEvals.evals.length,
+              casetableCases.length,
+              defaults
+            );
+            casetableEvals.evals.push(newEval);
+            renderCasetableEvals();
+          });
+        }
+
+        function resolveCaseSummary(caseIndex) {
+          const caseData = casetableCases[caseIndex];
+          return caseData?.attributes?.Name || buildCaseName(caseIndex);
+        }
+
+        function resolveEvalSummary(evalEntry, evalIndex) {
+          return evalEntry?.name || buildEvalName(evalIndex);
+        }
+
+        function applyEvalUserFieldValidation() {
+          if (!casetableEvalsContainer) {
+            return;
+          }
+          const { values } = resolveEvalUserFieldOptions();
+          const inputs = casetableEvalsContainer.querySelectorAll(".eval-userfield-input");
+          const invalidValues = new Set();
+          inputs.forEach((input) => {
+            const value = (input.value || "").trim();
+            const isInvalid = Boolean(value) && !values.has(value);
+            input.classList.toggle("input-error", isInvalid);
+            if (isInvalid) {
+              invalidValues.add(value);
+            }
+          });
+          if (casetableEvalsWarning) {
+            casetableEvalsWarning.textContent = invalidValues.size
+              ? `Unknown UserFieldId indices: ${Array.from(invalidValues).join(", ")}`
+              : "";
+          }
+        }
+
+        function updateEvalSplitButtons(evalIndex, caseIndex, value) {
+          if (!casetableEvalsContainer) {
+            return;
+          }
+          const caseNode = casetableEvalsContainer.querySelector(
+            `.casetable-eval-case[data-eval-index="${evalIndex}"][data-case-index="${caseIndex}"]`
+          );
+          if (!caseNode) {
+            return;
+          }
+          const buttons = caseNode.querySelectorAll("[data-action='toggle-eval-split']");
+          buttons.forEach((button) => {
+            button.classList.toggle("is-active", button.dataset.splitValue === value);
+          });
+        }
+
+        function syncEvalCaseAssignments() {
+          if (!casetableEvals?.evals) {
+            return;
+          }
+          const caseCount = casetableCases.length;
+          const defaults = resolveEvalUserFieldOptions();
+          casetableEvals.evals.forEach((evalEntry) => {
+            if (!Array.isArray(evalEntry.cases)) {
+              evalEntry.cases = [];
+            }
+            while (evalEntry.cases.length < caseCount) {
+              const newCase = createDefaultEvalCase(evalEntry.cases.length, defaults);
+              evalEntry.cases.push(newCase);
+            }
+            if (evalEntry.cases.length > caseCount) {
+              evalEntry.cases.length = caseCount;
+            }
+            evalEntry.cases.forEach((caseEntry, index) => {
+              caseEntry.attributes = caseEntry.attributes || {};
+              caseEntry.attributes.Id = String(index);
+            });
+          });
+        }
+
+        function renderEvalCase(evalEntry, evalIndex, caseEntry, caseIndex) {
+          const caseName = resolveCaseSummary(caseIndex);
+          const scanPlaneId = caseEntry?.scanPlane?.attributes?.Id || "1";
+          const userFieldId = caseEntry?.scanPlane?.userFieldId ?? "";
+          const isSplitted =
+            String(caseEntry?.scanPlane?.isSplitted ?? "false").toLowerCase() === "true"
+              ? "true"
+              : "false";
+          const userFieldOptions = buildEvalUserFieldOptionsHtml(userFieldId);
+          const toggleOptions = [
+            { value: "true", label: "Split" },
+            { value: "false", label: "Full" },
+          ]
+            .map(
+              (option) => `
+                  <button
+                    type="button"
+                    class="toggle-option${isSplitted === option.value ? " is-active" : ""}"
+                    data-action="toggle-eval-split"
+                    data-eval-index="${evalIndex}"
+                    data-case-index="${caseIndex}"
+                    data-split-value="${option.value}"
+                  >${option.label}</button>`
+            )
+            .join("");
+          return `
+            <div class="casetable-eval-case" data-eval-index="${evalIndex}" data-case-index="${caseIndex}">
+              <div class="casetable-eval-case-header">
+                <span>Case #${caseIndex + 1}</span>
+                <span class="casetable-eval-case-summary">${escapeHtml(caseName)}</span>
+                <span class="casetable-eval-case-summary">ScanPlane Id: ${escapeHtml(scanPlaneId)}</span>
+              </div>
+              <div class="casetable-eval-case-fields">
+                <div class="casetable-eval-field">
+                  <label>UserFieldId (TriOrb index)</label>
+                  <select
+                    class="casetable-eval-input eval-userfield-input"
+                    data-eval-index="${evalIndex}"
+                    data-case-index="${caseIndex}"
+                  >
+                    ${userFieldOptions.html}
+                  </select>
+                </div>
+                <div class="casetable-eval-toggle">
+                  <span>IsSplitted</span>
+                  <div class="toggle-group">
+                    ${toggleOptions}
+                  </div>
+                </div>
+              </div>
+            </div>`;
+        }
+
+        function renderCasetableEvalCard(evalEntry, evalIndex) {
+          const summaryName = resolveEvalSummary(evalEntry, evalIndex);
+          const attrId = evalEntry?.attributes?.Id ?? String(evalIndex + 1);
+          const reset = normalizeEvalReset(evalEntry?.reset);
+          const cases = Array.isArray(evalEntry?.cases) ? evalEntry.cases : [];
+          const permanentPreset = normalizePermanentPreset(evalEntry?.permanentPreset);
+          const casesHtml = cases
+            .map((caseEntry, caseIndex) => renderEvalCase(evalEntry, evalIndex, caseEntry, caseIndex))
+            .join("");
+          return `
+            <div class="casetable-eval-card" data-eval-index="${evalIndex}">
+              <details open>
+                <summary>
+                  <span>Eval #${evalIndex + 1}</span>
+                  <span class="casetable-eval-summary">${escapeHtml(summaryName)}</span>
+                  <button
+                    type="button"
+                    class="inline-btn inline-danger"
+                    data-action="remove-eval"
+                    data-eval-index="${evalIndex}"
+                  >
+                    Remove
+                  </button>
+                </summary>
+                <div class="casetable-eval-body">
+                  <div class="casetable-eval-grid">
+                    <div class="casetable-eval-field">
+                      <label>Id</label>
+                      <input
+                        type="text"
+                        class="casetable-eval-input eval-attr-input"
+                        data-eval-index="${evalIndex}"
+                        data-eval-field="Id"
+                        value="${escapeHtml(attrId)}"
+                      />
+                    </div>
+                    <div class="casetable-eval-field">
+                      <label>Name</label>
+                      <input
+                        type="text"
+                        class="casetable-eval-input eval-basic-input"
+                        data-eval-index="${evalIndex}"
+                        data-eval-field="name"
+                        value="${escapeHtml(evalEntry?.name ?? "")}" 
+                      />
+                    </div>
+                    <div class="casetable-eval-field">
+                      <label>NameLatin9Key</label>
+                      <input
+                        type="text"
+                        class="casetable-eval-input eval-basic-input"
+                        data-eval-index="${evalIndex}"
+                        data-eval-field="nameLatin9Key"
+                        value="${escapeHtml(evalEntry?.nameLatin9Key ?? "")}" 
+                      />
+                    </div>
+                    <div class="casetable-eval-field">
+                      <label>Q</label>
+                      <input
+                        type="number"
+                        class="casetable-eval-input eval-basic-input"
+                        data-eval-index="${evalIndex}"
+                        data-eval-field="q"
+                        value="${escapeHtml(evalEntry?.q ?? String(evalIndex + 1))}"
+                      />
+                    </div>
+                  </div>
+                  <div class="casetable-eval-section">
+                    <h4>Reset</h4>
+                    <div class="casetable-eval-grid">
+                      <div class="casetable-eval-field">
+                        <label>ResetType</label>
+                        <input
+                          type="text"
+                          class="casetable-eval-input eval-reset-input"
+                          data-eval-index="${evalIndex}"
+                          data-reset-field="resetType"
+                          value="${escapeHtml(reset.resetType)}"
+                        />
+                      </div>
+                      <div class="casetable-eval-field">
+                        <label>AutoResetTime</label>
+                        <input
+                          type="text"
+                          class="casetable-eval-input eval-reset-input"
+                          data-eval-index="${evalIndex}"
+                          data-reset-field="autoResetTime"
+                          value="${escapeHtml(reset.autoResetTime)}"
+                        />
+                      </div>
+                      <div class="casetable-eval-field">
+                        <label>EvalResetSource</label>
+                        <input
+                          type="text"
+                          class="casetable-eval-input eval-reset-input"
+                          data-eval-index="${evalIndex}"
+                          data-reset-field="evalResetSource"
+                          value="${escapeHtml(reset.evalResetSource)}"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div class="casetable-eval-section casetable-eval-cases">
+                    <h4>Cases</h4>
+                    ${casesHtml || '<p class="casetable-help-text">No cases defined.</p>'}
+                  </div>
+                  <div class="casetable-eval-section">
+                    <h4>PermanentPreset</h4>
+                    <div class="casetable-eval-grid">
+                      <div class="casetable-eval-field">
+                        <label>FieldMode</label>
+                        <input
+                          type="text"
+                          class="casetable-eval-input eval-fieldmode-input"
+                          data-eval-index="${evalIndex}"
+                          value="${escapeHtml(permanentPreset.fieldMode)}"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </details>
+            </div>`;
+        }
+
+        function renderCasetableEvals() {
+          if (!casetableEvalsContainer) {
+            return;
+          }
+          const evalEntries = casetableEvals?.evals || [];
+          if (casetableEvalCountLabel) {
+            casetableEvalCountLabel.textContent = `${evalEntries.length} / ${casetableEvalsLimit}`;
+          }
+          if (!evalEntries.length) {
+            casetableEvalsContainer.innerHTML = '<p class="casetable-help-text">No evals defined.</p>';
+          } else {
+            casetableEvalsContainer.innerHTML = evalEntries
+              .map((entry, index) => renderCasetableEvalCard(entry, index))
+              .join("");
+            if (evalEntries.length <= 1) {
+              const removeButtons = casetableEvalsContainer.querySelectorAll("[data-action='remove-eval']");
+              removeButtons.forEach((button) => {
+                button.disabled = true;
+              });
+            }
+          }
+          if (addCasetableEvalBtn) {
+            addCasetableEvalBtn.disabled = evalEntries.length >= casetableEvalsLimit;
+          }
+          applyEvalUserFieldValidation();
+        }
+
         function renderCasetableConfiguration() {
           if (!casetableConfigurationContainer) {
             return;
@@ -6383,10 +7356,12 @@ function parsePolygonTrace(doc) {
         }
 
         function renderCasetableCases() {
+          syncEvalCaseAssignments();
           if (casetableCaseCountLabel) {
             casetableCaseCountLabel.textContent = `${casetableCases.length} / ${casetableCasesLimit}`;
           }
           if (!casetableCasesContainer) {
+            renderCasetableEvals();
             return;
           }
           if (!casetableCases.length) {
@@ -6400,6 +7375,7 @@ function parsePolygonTrace(doc) {
           if (addCasetableCaseBtn) {
             addCasetableCaseBtn.disabled = casetableCases.length >= casetableCasesLimit;
           }
+          renderCasetableEvals();
         }
 
         function renderCasetableCase(caseData, caseIndex) {
