@@ -1525,7 +1525,7 @@
                 </div>
                 <div class="casetable-evals-list" id="casetable-evals"></div>
                 <p class="casetable-help-text">
-                  Eval cases stay aligned with the Cases tree. UserFieldId values must map to the TriOrb shape indices (0-based) or the trailing preset slots when no shapes exist.
+                  Eval cases stay aligned with the Cases tree. UserFieldId values must map to the TriOrb shape indices (1-based) or the trailing preset slots when no shapes exist.
                 </p>
                 <p class="casetable-warning" id="casetable-evals-warning"></p>
               </div>
@@ -4780,11 +4780,14 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
         ];
 
         function resolveEvalUserFieldOptions() {
-          const options = triorbShapes.map((shape, index) => ({
-            value: String(index),
-            label: `#${index} ${shape.name || shape.id}`,
-          }));
-          const fallbackStart = Math.max(triorbShapes.length, 1);
+          const options = triorbShapes.map((shape, index) => {
+            const displayIndex = index + 1;
+            return {
+              value: String(displayIndex),
+              label: `#${displayIndex} ${shape.name || shape.id}`,
+            };
+          });
+          const fallbackStart = triorbShapes.length ? triorbShapes.length + 1 : 1;
           evalUserFieldFallbackLabels.forEach((label, offset) => {
             const indexValue = fallbackStart + offset;
             options.push({

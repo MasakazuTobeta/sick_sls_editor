@@ -40,6 +40,6 @@
     - Evalは1～5個の範囲でAdd/Remove出来る
     - Eval/Casesツリー内のCase数は、Export_CasetablesAndCases/Casetable/Casesの数と一致すること
     - Eval/Cases/Case内のScanPlanesツリーにはScanPlaneが1個とする
-    - Eval/Cases/Case/ScanPlanes/ScanPlane内のUserFieldIdはTriOrb Menuに定義されたShapeの0始まりIndex（FieldsetのIndexではなく、Field=ShapeのIndex）。ただしデフォルトで3個のFieldが末尾Indexに用意されるため、Shapeが0個のときも1-3は設定できる。
+    - Eval/Cases/Case/ScanPlanes/ScanPlane内のUserFieldIdはTriOrb Menuに定義されたShapeの1始まりIndex（FieldsetのIndexではなく、Field=ShapeのIndex）。ただしデフォルトで3個のFieldが末尾Indexに用意されるため、Shapeが0個のときも1-3は設定できる。
 - FieldsConfigurationツリーの基本構成は[Agent_Export-CasetablesAndCases_Casetable_FieldsConfiguration.md](./Agent_Export-CasetablesAndCases_Casetable_FieldsConfiguration.md)を参照
     - (構造確認中)
