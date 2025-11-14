@@ -2,7 +2,6 @@ Flask>=3.0
 plotly>=5.20
 playwright>=1.44
 git+https://github.com/SimonSapin/Frozen-Flask.git
-wxPython
 mike
 mkdocs-material
 pytest
