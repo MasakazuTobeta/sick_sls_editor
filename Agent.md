@@ -25,17 +25,25 @@
 - `README.md` を常に最新化して、Playwright 実行手順や `pip install -r requirements.txt` などのセットアップを明文化する。これらが現場のドキュメントとなる。
 - +Field モーダル: Protective/Warning の Field 内で Type=Field/CutOut ごとの Shape 選択と Plotly プレビュー、OK/Cancel で Fieldset を保存/破棄できる UI を導入しました。
 
+## Structure Menu機能要件
+- リスト要素はツリーで閉じられること
+- リスト要素はAddとRemoveが出来ること（Removeは最低1個残すこと）
+- 数値であることが分かっているInputboxは数値入力のみを受け付けること（原則stepは1）
+- true/falseであることが分かっているInputboxはチェックボックスとすること
+- enumであることが分かっているInputboxはセレクタとすること（選択肢が4個以下の場合は横並びのトグルボタン）
+
+
 
 ## Export_CasetablesAndCases編集機能要件
 - Save (SICK) で出力されるXML構造はsample\20251111-105839_ScannerDTM-Export.sgexmlと一致すること
 - このアプリではCasetableはIndex="0"のみを取り扱う
 - Configurationツリーはsample\20251111-105839_ScannerDTM-Export.sgexmlの定義を参考に、Structure Menu/Export_CasetablesAndCases以下にConfigurationツリーを作って各種Inputboxを作成
 - Casesツリーは、監視ケースを最大128個Add出来る
-- 監視ケースはAddもRemoveも出来る
+    - 監視ケースはAddもRemoveも出来る
     - Case Idはツリー内リストのIndexとする
     - DisplayOrderはツリー内リストのIndexとする（Case Idと一致）
-    - StaticInputs/StaticInputはLow,Highの2択なので、横並びのトグルボタンとする
-    - SpeedActivationはOff/SpeedRangeのセレクタ
+    - StaticInputs/StaticInputはLow,Highのenum
+    - SpeedActivationはOff/SpeedRangeのenum
 - Evalsツリーの基本構成は[Agent_Export-CasetablesAndCases_Casetable_Evals.md](./Agent_Export-CasetablesAndCases_Casetable_Evals.md)を参照
     - Evalは1～5個の範囲でAdd/Remove出来る
     - Eval/Casesツリー内のCase数は、Export_CasetablesAndCases/Casetable/Casesの数と一致すること
