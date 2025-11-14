@@ -77,6 +77,157 @@ def load_fileinfo_fields() -> List[Dict[str, str]]:
     return fields
 
 
+def _convert_element_to_node(element: ET.Element) -> Dict[str, Any]:
+    """Recursively convert an Element into the generic node structure."""
+
+    children = [_convert_element_to_node(child) for child in list(element)]
+    text = (element.text or "").strip()
+    return {
+        "tag": element.tag,
+        "attributes": dict(element.attrib),
+        "text": text,
+        "children": children,
+    }
+
+
+def _resolve_static_input_value_key(attrs: Dict[str, str]) -> str:
+    for candidate in ("Value", "State", "Level", "Mode"):
+        if candidate in attrs:
+            return candidate
+    return "Value"
+
+
+def _resolve_speed_activation_key(attrs: Dict[str, str]) -> str:
+    for candidate in ("Mode", "Type", "State", "Value"):
+        if candidate in attrs:
+            return candidate
+    return "Mode"
+
+
+def _serialize_static_input_element(element: ET.Element) -> Dict[str, Any]:
+    attrs = dict(element.attrib)
+    return {
+        "attributes": attrs,
+        "value_key": _resolve_static_input_value_key(attrs),
+    }
+
+
+def _serialize_speed_activation_element(element: ET.Element) -> Dict[str, Any]:
+    attrs = dict(element.attrib)
+    return {
+        "attributes": attrs,
+        "mode_key": _resolve_speed_activation_key(attrs),
+    }
+
+
+def _serialize_case_element(case_element: ET.Element) -> Dict[str, Any]:
+    entry: Dict[str, Any] = {
+        "attributes": dict(case_element.attrib),
+        "static_inputs": [],
+        "speed_activation": None,
+        "layout": [],
+    }
+    for child in list(case_element):
+        if child.tag == "StaticInputs":
+            static_inputs = [
+                _serialize_static_input_element(static_node)
+                for static_node in child.findall("StaticInput")
+            ]
+            entry["static_inputs"] = static_inputs
+            entry["layout"].append({"kind": "static-inputs"})
+        elif child.tag == "SpeedActivation":
+            entry["speed_activation"] = _serialize_speed_activation_element(child)
+            entry["layout"].append({"kind": "speed-activation"})
+        else:
+            entry.setdefault("layout", []).append(
+                {"kind": "node", "node": _convert_element_to_node(child)}
+            )
+    return entry
+
+
+def load_casetable_payload() -> Dict[str, Any]:
+    """Extract Export_CasetablesAndCases content for the template."""
+
+    default_layout = [
+        {"kind": "configuration"},
+        {"kind": "cases"},
+        {"kind": "evals"},
+        {"kind": "fields_configuration"},
+    ]
+    fallback = {
+        "casetable_attributes": {"Index": "0"},
+        "configuration": None,
+        "cases": [],
+        "evals": None,
+        "fields_configuration": None,
+        "layout": default_layout,
+    }
+
+    if not SAMPLE_XML.exists():
+        return fallback
+
+    try:
+        tree = ET.parse(SAMPLE_XML)
+    except ET.ParseError:
+        return fallback
+
+    root = tree.getroot()
+    export = root.find("Export_CasetablesAndCases")
+    if export is None:
+        return fallback
+
+    casetables = export.findall("Casetable")
+    target: Optional[ET.Element] = None
+    for node in casetables:
+        if node.get("Index") == "0":
+            target = node
+            break
+    if target is None and casetables:
+        target = casetables[0]
+    if target is None:
+        return fallback
+
+    payload: Dict[str, Any] = {
+        "casetable_attributes": dict(target.attrib) or {"Index": "0"},
+        "configuration": None,
+        "cases": [],
+        "evals": None,
+        "fields_configuration": None,
+        "layout": [],
+    }
+
+    for child in list(target):
+        if child.tag == "Configuration":
+            payload["configuration"] = _convert_element_to_node(child)
+            payload["layout"].append({"kind": "configuration"})
+        elif child.tag == "Cases":
+            payload["cases"] = [
+                _serialize_case_element(case_el)
+                for case_el in child.findall("Case")
+            ]
+            payload["layout"].append({"kind": "cases"})
+        elif child.tag == "Evals":
+            payload["evals"] = _convert_element_to_node(child)
+            payload["layout"].append({"kind": "evals"})
+        elif child.tag == "FieldsConfiguration":
+            payload["fields_configuration"] = _convert_element_to_node(child)
+            payload["layout"].append({"kind": "fields_configuration"})
+        else:
+            payload["layout"].append(
+                {"kind": "node", "node": _convert_element_to_node(child)}
+            )
+
+    seen_kinds = {segment.get("kind") for segment in payload["layout"] if segment.get("kind")}
+    for kind in ("configuration", "cases", "evals", "fields_configuration"):
+        if kind not in seen_kinds:
+            payload["layout"].append({"kind": kind})
+
+    if not payload["casetable_attributes"].get("Index"):
+        payload["casetable_attributes"]["Index"] = "0"
+
+    return payload
+
+
 def load_scan_planes() -> List[Dict[str, Any]]:
     """Return structured data for Export_ScanPlanes."""
 
@@ -120,7 +271,7 @@ def _generate_shape_id() -> str:
 def _build_shape_key(shape_type: str, attrs: Dict[str, str], points: Optional[List[Dict[str, str]]] = None) -> str:
     # TriOrb 共有図形を同一性判定するためのキーを生成。
     # 図形タイプと属性値、必要に応じて座標列を連結して比較する。
-    attr_items = "/".join(f"{key}={attrs.get(key,"")}" for key in sorted(attrs))
+    attr_items = "/".join(f"{key}={attrs.get(key, '')}" for key in sorted(attrs))
     key_parts = [shape_type, attr_items]
     if shape_type == "Polygon" and points is not None:
         points_repr = ",".join(f"{point.get('X','')}:{point.get('Y','')}" for point in points)
@@ -394,6 +545,7 @@ def create_app() -> Flask:
             fieldsets=fieldsets_payload,
             triorb_shapes=triorb_shapes,
             triorb_source=triorb_source,
+            casetable_payload=load_casetable_payload(),
         )
 
     return app
