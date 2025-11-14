@@ -6011,6 +6011,25 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
           return layout;
         }
 
+        function extractCaseNodeText(caseData, tagName) {
+          if (!caseData || !Array.isArray(caseData.layout)) {
+            return null;
+          }
+          const targetTag = (tagName || "").trim();
+          for (const segment of caseData.layout) {
+            if (segment?.kind !== "node" || !segment.node) {
+              continue;
+            }
+            if (segment.node.tag === targetTag) {
+              if (typeof segment.node.text === "string") {
+                return segment.node.text;
+              }
+              return "";
+            }
+          }
+          return null;
+        }
+
         function buildCaseLines(caseData, caseIndex, indentLevel = 4) {
           const indent = "  ".repeat(indentLevel);
           const attrs = { ...(caseData.attributes || {}) };
@@ -6022,9 +6041,18 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
           const lines = [`${indent}<Case${attrText ? ` ${attrText}` : ""}>`];
           const childLines = [];
           const layout = deriveCaseLayout(caseData);
-          const caseNameValue = caseData.attributes?.Name ?? buildCaseName(caseIndex);
-          const latin9Value = caseData.attributes?.NameLatin9Key ?? "";
-          const displayOrderValue = caseData.attributes?.DisplayOrder ?? String(caseIndex);
+          const caseNameValue =
+            extractCaseNodeText(caseData, "Name") ??
+            caseData.attributes?.Name ??
+            buildCaseName(caseIndex);
+          const latin9Value =
+            extractCaseNodeText(caseData, "NameLatin9Key") ??
+            caseData.attributes?.NameLatin9Key ??
+            "";
+          const displayOrderValue =
+            extractCaseNodeText(caseData, "DisplayOrder") ??
+            caseData.attributes?.DisplayOrder ??
+            String(caseIndex);
           let hasNameNode = false;
           let hasLatinNode = false;
           let hasDisplayOrderNode = false;
@@ -6071,10 +6099,10 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
             }
           });
           const leadingNodes = [];
-          if (!hasNameNode && caseNameValue) {
+          if (!hasNameNode) {
             leadingNodes.push(...buildSimpleTextNodeLines("Name", caseNameValue, indentLevel + 1));
           }
-          if (!hasLatinNode && latin9Value) {
+          if (!hasLatinNode) {
             leadingNodes.push(
               ...buildSimpleTextNodeLines("NameLatin9Key", latin9Value, indentLevel + 1)
             );
