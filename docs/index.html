@@ -4768,21 +4768,53 @@ function buildCircleTrace(circle, color, label, fieldType, fieldsetIndex, fieldI
 
         function buildCaseLines(caseData, caseIndex, indentLevel = 4) {
           const indent = "  ".repeat(indentLevel);
+          const childIndent = "  ".repeat(indentLevel + 1);
           const attrs = { ...(caseData.attributes || {}) };
           attrs.Id = String(caseIndex);
-          attrs.DisplayOrder = String(caseIndex);
+          delete attrs.DisplayOrder;
+          delete attrs.Name;
+          delete attrs.NameLatin9Key;
           const attrText = buildRootAttributes(attrs, getAttributeOrder("Case"));
           const lines = [`${indent}<Case${attrText ? ` ${attrText}` : ""}>`];
           const layout = deriveCaseLayout(caseData);
+          const childLines = [];
+          const caseNameValue = caseData.attributes?.Name ?? buildCaseName(caseIndex);
+          const latin9Value = caseData.attributes?.NameLatin9Key ?? "";
+          const displayOrderValue = caseData.attributes?.DisplayOrder ?? String(caseIndex);
+          let hasNameNode = false;
+          let hasLatinNode = false;
+          let hasDisplayOrderNode = false;
           layout.forEach((segment) => {
             if (segment.kind === "static-inputs") {
-              lines.push(...buildStaticInputsLines(caseData.staticInputs, indentLevel + 1));
+              childLines.push(...buildStaticInputsLines(caseData.staticInputs, indentLevel + 1));
             } else if (segment.kind === "speed-activation") {
-              lines.push(...buildSpeedActivationLines(caseData.speedActivation, indentLevel + 1));
+              childLines.push(...buildSpeedActivationLines(caseData.speedActivation, indentLevel + 1));
             } else if (segment.kind === "node" && segment.node) {
-              lines.push(...buildGenericNodeLines(segment.node, indentLevel + 1));
+              if (segment.node.tag === "Name") {
+                hasNameNode = true;
+                childLines.push(`${childIndent}<Name>${escapeXml(caseNameValue)}</Name>`);
+              } else if (segment.node.tag === "NameLatin9Key") {
+                hasLatinNode = true;
+                childLines.push(`${childIndent}<NameLatin9Key>${escapeXml(latin9Value)}</NameLatin9Key>`);
+              } else if (segment.node.tag === "DisplayOrder") {
+                hasDisplayOrderNode = true;
+                childLines.push(`${childIndent}<DisplayOrder>${escapeXml(displayOrderValue)}</DisplayOrder>`);
+              } else {
+                childLines.push(...buildGenericNodeLines(segment.node, indentLevel + 1));
+              }
             }
           });
+          const leadingNodes = [];
+          if (!hasNameNode && caseNameValue) {
+            leadingNodes.push(`${childIndent}<Name>${escapeXml(caseNameValue)}</Name>`);
+          }
+          if (!hasLatinNode && latin9Value) {
+            leadingNodes.push(`${childIndent}<NameLatin9Key>${escapeXml(latin9Value)}</NameLatin9Key>`);
+          }
+          if (!hasDisplayOrderNode) {
+            leadingNodes.push(`${childIndent}<DisplayOrder>${escapeXml(displayOrderValue)}</DisplayOrder>`);
+          }
+          lines.push(...leadingNodes, ...childLines);
           lines.push(`${indent}</Case>`);
           return lines;
         }

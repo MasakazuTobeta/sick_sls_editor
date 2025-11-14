@@ -6017,6 +6017,7 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
           attrs.Id = String(caseIndex);
           delete attrs.DisplayOrder;
           delete attrs.Name;
+          delete attrs.NameLatin9Key;
           const attrText = buildRootAttributes(attrs, getAttributeOrder("Case"));
           const lines = [`${indent}<Case${attrText ? ` ${attrText}` : ""}>`];
           const childLines = [];
