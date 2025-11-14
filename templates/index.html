@@ -6056,11 +6056,15 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
           let hasNameNode = false;
           let hasLatinNode = false;
           let hasDisplayOrderNode = false;
+          let hasCaseStaticInputs = false;
+          let hasCaseSpeedActivation = false;
           layout.forEach((segment) => {
             if (segment.kind === "static-inputs") {
               childLines.push(...buildStaticInputsLines(caseData.staticInputs, indentLevel + 1));
+              hasCaseStaticInputs = true;
             } else if (segment.kind === "speed-activation") {
               childLines.push(...buildSpeedActivationLines(caseData.speedActivation, indentLevel + 1));
+              hasCaseSpeedActivation = true;
             } else if (segment.kind === "node" && segment.node) {
               if (segment.node.tag === "Name") {
                 hasNameNode = true;
@@ -6098,6 +6102,19 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
               }
             }
           });
+          if (
+            caseData.staticInputsPlacement !== "activation" &&
+            caseData.staticInputs?.length &&
+            !hasCaseStaticInputs
+          ) {
+            childLines.push(...buildStaticInputsLines(caseData.staticInputs, indentLevel + 1));
+          }
+          if (
+            caseData.speedActivationPlacement !== "activation" &&
+            !hasCaseSpeedActivation
+          ) {
+            childLines.push(...buildSpeedActivationLines(caseData.speedActivation, indentLevel + 1));
+          }
           const leadingNodes = [];
           if (!hasNameNode) {
             leadingNodes.push(...buildSimpleTextNodeLines("Name", caseNameValue, indentLevel + 1));
