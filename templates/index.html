@@ -764,6 +764,19 @@
         font-size: 0.85rem;
       }
 
+      .structure-checkbox {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-size: 0.8rem;
+        color: #475569;
+      }
+
+      .structure-checkbox input {
+        width: 1rem;
+        height: 1rem;
+      }
+
       .casetable-static-inputs {
         display: flex;
         flex-wrap: wrap;
@@ -787,6 +800,32 @@
         border: 1px solid rgba(15, 23, 42, 0.2);
         border-radius: 999px;
         overflow: hidden;
+      }
+
+      .toggle-radio-option {
+        display: inline-flex;
+        position: relative;
+      }
+
+      .toggle-radio-option input {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .toggle-radio-option span {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.35rem 0.9rem;
+        font-size: 0.8rem;
+        color: #475569;
+        cursor: pointer;
+      }
+
+      .toggle-radio-option input:checked + span {
+        background: #0b6fb8;
+        color: #fff;
       }
 
       .toggle-option {
@@ -1535,11 +1574,7 @@
       <aside class="side-menu">
         <h2>Structure Menu</h2>
         {% for item in menu_items %}
-        {% if item.tag == "FileInfo" %}
-        <details class="menu-section" open>
-        {% else %}
-        <details class="menu-section" {% if loop.first %}open{% endif %}>
-        {% endif %}
+        <details class="menu-section" {% if loop.first and item.tag != "FileInfo" %}open{% endif %}>
           <summary>{{ item.tag }}</summary>
           <div class="menu-content">
             {% if item.tag == "FileInfo" %}
@@ -1792,6 +1827,120 @@
             fillAlpha: 0.125,
           },
         };
+        const structureAttributeSchemas = {
+          scanPlane: {
+            Index: { type: "number", min: 0, step: 1 },
+            Name: { type: "text" },
+            ScanPlaneDirection: { type: "enum", options: ["Horizontal", "Vertical"], defaultValue: "Horizontal" },
+            UseReferenceContour: { type: "boolean", checkboxLabel: "Enabled" },
+            ObjectSize: { type: "number", min: 1, step: 1 },
+            MultipleSampling: { type: "number", min: 2, max: 16, step: 1 },
+            MultipleSamplingOff2OnActivated: { type: "boolean", checkboxLabel: "Enabled" },
+            SelectedCaseSwitching: { type: "enum", options: ["Fast", "Slow"], defaultValue: "Fast" },
+          },
+          scanPlaneDevice: {
+            Index: { type: "number", min: 0, step: 1 },
+            ResponseTime: { type: "number", min: 0, step: 1 },
+            ScanResolutionAddition: { type: "number", step: 1 },
+          },
+          fieldsetDevice: {
+            PositionX: { type: "number", step: 1 },
+            PositionY: { type: "number", step: 1 },
+            Rotation: { type: "number", step: 1 },
+            StandingUpsideDown: { type: "boolean", checkboxLabel: "Upside down" },
+          },
+          fieldsetGlobal: {
+            UseGlobalGeometry: { type: "boolean", checkboxLabel: "Enabled" },
+          },
+          casetableCase: {
+            SleepMode: { type: "boolean", checkboxLabel: "Enabled" },
+          },
+        };
+
+        function buildDatasetAttributes(dataset = {}) {
+          return Object.entries(dataset)
+            .map(([key, rawValue]) => {
+              if (rawValue === undefined || rawValue === null) {
+                return "";
+              }
+              return `data-${key}="${escapeHtml(String(rawValue))}"`;
+            })
+            .filter(Boolean)
+            .join(" ");
+        }
+
+        function isTrueValue(value) {
+          return String(value ?? "").toLowerCase() === "true";
+        }
+
+        function resolveStructuredInputValue(target) {
+          if (!target) {
+            return "";
+          }
+          const valueType = target.dataset.valueType;
+          if (valueType === "boolean") {
+            return target.checked ? "true" : "false";
+          }
+          return target.value;
+        }
+
+        function collectEnumOptions(schema, currentValue) {
+          const options = Array.isArray(schema?.options) ? [...schema.options] : [];
+          const normalized = String(currentValue ?? "");
+          if (normalized && !options.includes(normalized)) {
+            options.push(normalized);
+          }
+          if (!options.length && schema?.defaultValue) {
+            options.push(schema.defaultValue);
+          }
+          return options;
+        }
+
+        function renderStructureInput(scope, key, value, options = {}) {
+          const schema = structureAttributeSchemas[scope]?.[key];
+          const classAttr = options.className ? ` class="${options.className}"` : "";
+          const datasetAttrs = buildDatasetAttributes(options.dataset || {});
+          const datasetText = datasetAttrs ? ` ${datasetAttrs}` : "";
+          if (!schema) {
+            return `<input type="text"${classAttr}${datasetText} value="${escapeHtml(value ?? "")}" />`;
+          }
+          const inputValue = value ?? schema.defaultValue ?? "";
+          switch (schema.type) {
+            case "number": {
+              const minAttr = typeof schema.min === "number" ? ` min="${schema.min}"` : "";
+              const maxAttr = typeof schema.max === "number" ? ` max="${schema.max}"` : "";
+              const stepAttr = ` step="${schema.step ?? 1}"`;
+              const readOnlyAttr = schema.readOnly ? " readonly" : "";
+              return `<input type="number"${classAttr}${datasetText} data-value-type="number"${minAttr}${maxAttr}${stepAttr}${readOnlyAttr} value="${escapeHtml(inputValue)}" />`;
+            }
+            case "boolean": {
+              const checkedAttr = isTrueValue(inputValue) ? " checked" : "";
+              const disabledAttr = schema.readOnly ? " disabled" : "";
+              const labelText = schema.checkboxLabel || "Enabled";
+              return `<label class="structure-checkbox"><input type="checkbox"${classAttr}${datasetText} data-value-type="boolean"${checkedAttr}${disabledAttr} /><span>${escapeHtml(labelText)}</span></label>`;
+            }
+            case "enum": {
+              const enumOptions = collectEnumOptions(schema, inputValue);
+              if (!enumOptions.length) {
+                return `<input type="text"${classAttr}${datasetText} value="${escapeHtml(inputValue)}" />`;
+              }
+              const groupName = options.name || `${scope}-${key}-${options.groupIndex ?? 0}`;
+              const disabledAttr = schema.readOnly ? " disabled" : "";
+              const normalizedValue = inputValue || schema.defaultValue || enumOptions[0];
+              const radios = enumOptions
+                .map((option) => {
+                  const isChecked = option === normalizedValue;
+                  return `<label class="toggle-radio-option"><input type="radio"${classAttr}${datasetText} name="${escapeHtml(
+                    groupName
+                  )}" data-value-type="enum" value="${escapeHtml(option)}"${isChecked ? " checked" : ""}${disabledAttr} /><span>${escapeHtml(option)}</span></label>`;
+                })
+                .join("");
+              return `<div class="toggle-group">${radios}</div>`;
+            }
+            default:
+              return `<input type="text"${classAttr}${datasetText} value="${escapeHtml(inputValue)}" />`;
+          }
+        }
         function hashStringToUnit(value) {
           if (!value) {
             return 0;
@@ -2830,43 +2979,42 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           scanPlanesContainer.innerHTML = scanPlanes
             .map((plane, planeIndex) => {
               const planeFields = Object.entries(plane.attributes || {})
-                .map(
-                  ([key, value]) => `
+                .map(([key, value]) => {
+                  const control = renderStructureInput("scanPlane", key, value, {
+                    className: "scanplane-attr",
+                    dataset: { "plane-index": planeIndex, field: key },
+                    name: `scanplane-${planeIndex}-${key}`,
+                  });
+                  return `
               <div class="scanplane-field">
                 <label>${escapeHtml(key)}</label>
-                <input
-                  type="text"
-                  class="scanplane-attr"
-                  data-plane-index="${planeIndex}"
-                  data-field="${escapeHtml(key)}"
-                  value="${escapeHtml(value ?? "")}"
-                />
-              </div>`
-                )
+                ${control}
+              </div>`;
+                })
                 .join("");
 
               const deviceCards = (plane.devices || [])
                 .map((device, deviceIndex) => {
+                  const totalDevices = plane.devices?.length || 0;
                   const deviceFields = Object.entries(device.attributes || {})
-                    .map(
-                      ([key, value]) => `
+                    .map(([key, value]) => `
                   <div class="device-field">
                     <label>${escapeHtml(key)}</label>
-                    <input
-                      type="text"
-                      class="device-attr"
-                      data-plane-index="${planeIndex}"
-                      data-device-index="${deviceIndex}"
-                      data-field="${escapeHtml(key)}"
-                      value="${escapeHtml(value ?? "")}"
-                    />
-                  </div>`
-                    )
+                    ${renderStructureInput("scanPlaneDevice", key, value, {
+                      className: "device-attr",
+                      dataset: {
+                        "plane-index": planeIndex,
+                        "device-index": deviceIndex,
+                        field: key,
+                      },
+                      name: `scanplane-device-${planeIndex}-${deviceIndex}-${key}`,
+                    })}
+                  </div>`)
                     .join("");
 
                   return `
                 <div class="device-card" data-plane-index="${planeIndex}" data-device-index="${deviceIndex}">
-                  <details class="device-details" open>
+                  <details class="device-details">
                     <summary>
                       <span>Device #${deviceIndex + 1}</span>
                       <span class="device-summary">${device.attributes.DeviceName || ""}</span>
@@ -2876,6 +3024,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
                         data-action="remove-device"
                         data-plane-index="${planeIndex}"
                         data-device-index="${deviceIndex}"
+                        ${totalDevices > 1 ? "" : "disabled"}
                       >
                         Remove
                       </button>
@@ -2886,9 +3035,10 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
                 })
                 .join("");
 
+              const canRemovePlane = scanPlanes.length > 1;
               return `
             <div class="scanplane-card" data-plane-index="${planeIndex}">
-              <details class="scanplane-details" open>
+              <details class="scanplane-details">
                 <summary>
                   <span>ScanPlane #${planeIndex + 1}</span>
                   <span class="scanplane-summary">${plane.attributes.Name || ""}</span>
@@ -2897,6 +3047,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
                     class="inline-btn inline-danger"
                     data-action="remove-scanplane"
                     data-plane-index="${planeIndex}"
+                    ${canRemovePlane ? "" : "disabled"}
                   >
                     Remove
                   </button>
@@ -3272,11 +3423,18 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             fieldsetsContainer.innerHTML = "<p>No fieldsets defined.</p>";
             return;
           }
+          const totalFieldsets = fieldsets.length;
           fieldsetsContainer.innerHTML = fieldsets
             .map((fieldset, fieldsetIndex) => {
               const fieldsetFields = Object.entries(fieldset.attributes || {})
                 .map(([key, value]) => formatFieldsetAttribute(fieldsetIndex, key, value))
                 .join("");
+
+              const fieldCount = Array.isArray(fieldset.fields)
+                ? fieldset.fields.length
+                : 0;
+              const canRemoveField = fieldCount > 1;
+              const canRemoveFieldset = totalFieldsets > 1;
 
               const fieldCards = (fieldset.fields || [])
                 .map((field, fieldIndex) => {
@@ -3381,7 +3539,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               data-fieldset-index="${fieldsetIndex}"
               data-field-index="${fieldIndex}"
             >
-                  <details class="field-details" open>
+                  <details class="field-details">
                     <summary>
                       <span>Field #${fieldIndex + 1}</span>
                       <span class="field-summary">${field.attributes.Name || ""}</span>
@@ -3398,13 +3556,14 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
                         type="button"
                         class="inline-btn inline-danger"
                         data-action="remove-field"
-                    data-fieldset-index="${fieldsetIndex}"
-                    data-field-index="${fieldIndex}"
-                  >
-                    Remove
-                  </button>
-                </summary>
-                <div class="field-attributes">${fieldAttrs}</div>
+                        data-fieldset-index="${fieldsetIndex}"
+                        data-field-index="${fieldIndex}"
+                        ${canRemoveField ? "" : "disabled"}
+                      >
+                        Remove
+                      </button>
+                    </summary>
+                    <div class="field-attributes">${fieldAttrs}</div>
                 <div class="shape-section">
                   <h4>Assigned Shapes</h4>
                   <div class="shape-list">${shapeItems}</div>
@@ -3426,6 +3585,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
                   class="inline-btn inline-danger"
                   data-action="remove-fieldset"
                   data-fieldset-index="${fieldsetIndex}"
+                  ${canRemoveFieldset ? "" : "disabled"}
                 >
                   Remove
                 </button>
@@ -5341,6 +5501,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             return;
           }
           const deviceOptions = getScanPlaneDeviceOptions();
+          const canRemoveDevice = fieldsetDevices.length > 1;
           fieldsetDevicesContainer.innerHTML = fieldsetDevices
             .map((device, deviceIndex) => {
               const attributeEntries = Object.entries(device.attributes || {});
@@ -5396,20 +5557,18 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
                   return `
               <div class="device-field">
                 <label>${escapeHtml(key)}</label>
-                <input
-                  type="text"
-                  class="fieldset-device-attr"
-                  data-device-index="${deviceIndex}"
-                  data-field="${escapeHtml(key)}"
-                  value="${escapeHtml(value ?? "")}"
-                />
+                ${renderStructureInput("fieldsetDevice", key, value, {
+                  className: "fieldset-device-attr",
+                  dataset: { "device-index": deviceIndex, field: key },
+                  name: `fieldset-device-${deviceIndex}-${key}`,
+                })}
               </div>`;
                 })
                 .join("");
 
               return `
             <div class="device-card" data-fieldset-device-index="${deviceIndex}">
-              <details class="device-details" open>
+              <details class="device-details">
                 <summary>
                   <span>Device #${deviceIndex + 1}</span>
                   <span class="device-summary">${device.attributes.Typekey || ""}</span>
@@ -5418,6 +5577,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
                     class="inline-btn inline-danger"
                     data-action="remove-fieldset-device"
                     data-device-index="${deviceIndex}"
+                    ${canRemoveDevice ? "" : "disabled"}
                   >
                     Remove
                   </button>
@@ -5436,18 +5596,18 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               ? Object.entries(fieldsetGlobalGeometry)
               : [["UseGlobalGeometry", "false"]];
           fieldsetGlobalContainer.innerHTML = entries
-            .map(
-              ([key, value]) => `
+            .map(([key, value]) => {
+              const control = renderStructureInput("fieldsetGlobal", key, value, {
+                className: "fieldset-global-attr",
+                dataset: { field: key },
+                name: `fieldset-global-${key}`,
+              });
+              return `
           <div class="fieldset-field">
             <label>${escapeHtml(key)}</label>
-            <input
-              type="text"
-              class="fieldset-global-attr"
-              data-field="${escapeHtml(key)}"
-              value="${escapeHtml(value ?? "")}"
-            />
-          </div>`
-            )
+            ${control}
+          </div>`;
+            })
             .join("");
         }
 
@@ -6936,12 +7096,19 @@ function parsePolygonTrace(doc) {
 
             const removeDeviceTarget = event.target.closest("[data-action='remove-device']");
             if (removeDeviceTarget) {
+              if (removeDeviceTarget.disabled) {
+                return;
+              }
               event.preventDefault();
               event.stopPropagation();
               const planeIndex = Number(removeDeviceTarget.dataset.planeIndex);
               const deviceIndex = Number(removeDeviceTarget.dataset.deviceIndex);
               const plane = scanPlanes[planeIndex];
-              if (plane && plane.devices) {
+              if (!plane || !Array.isArray(plane.devices) || plane.devices.length <= 1) {
+                setStatus("Each ScanPlane requires at least one Device.", "warning");
+                return;
+              }
+              if (plane.devices) {
                 plane.devices.splice(deviceIndex, 1);
                 renderScanPlanes();
               }
@@ -6950,8 +7117,15 @@ function parsePolygonTrace(doc) {
 
             const removePlaneTarget = event.target.closest("[data-action='remove-scanplane']");
             if (removePlaneTarget) {
+              if (removePlaneTarget.disabled) {
+                return;
+              }
               event.preventDefault();
               event.stopPropagation();
+              if (scanPlanes.length <= 1) {
+                setStatus("At least one ScanPlane must remain.", "warning");
+                return;
+              }
               const planeIndex = Number(removePlaneTarget.dataset.planeIndex);
               scanPlanes.splice(planeIndex, 1);
               renderScanPlanes();
@@ -6963,12 +7137,21 @@ function parsePolygonTrace(doc) {
             if (target.classList.contains("scanplane-attr")) {
               const planeIndex = Number(target.dataset.planeIndex);
               const field = target.dataset.field;
-              updateScanPlaneAttribute(planeIndex, field, target.value);
+              updateScanPlaneAttribute(
+                planeIndex,
+                field,
+                resolveStructuredInputValue(target)
+              );
             } else if (target.classList.contains("device-attr")) {
               const planeIndex = Number(target.dataset.planeIndex);
               const deviceIndex = Number(target.dataset.deviceIndex);
               const field = target.dataset.field;
-              updateDeviceAttribute(planeIndex, deviceIndex, field, target.value);
+              updateDeviceAttribute(
+                planeIndex,
+                deviceIndex,
+                field,
+                resolveStructuredInputValue(target)
+              );
             }
           });
         }
@@ -7064,9 +7247,16 @@ function parsePolygonTrace(doc) {
           fieldsetDevicesContainer.addEventListener("click", (event) => {
             const removeDevice = event.target.closest("[data-action='remove-fieldset-device']");
             if (removeDevice) {
+              if (removeDevice.disabled) {
+                return;
+              }
               event.preventDefault();
               event.stopPropagation();
               const deviceIndex = Number(removeDevice.dataset.deviceIndex);
+              if (fieldsetDevices.length <= 1) {
+                setStatus("At least one Fieldset Device must remain.", "warning");
+                return;
+              }
               fieldsetDevices.splice(deviceIndex, 1);
               renderFieldsetDevices();
               renderFigure();
@@ -7087,7 +7277,11 @@ function parsePolygonTrace(doc) {
             } else if (target.classList.contains("fieldset-device-attr")) {
               const deviceIndex = Number(target.dataset.deviceIndex);
               const field = target.dataset.field;
-              updateFieldsetDeviceAttribute(deviceIndex, field, target.value);
+              updateFieldsetDeviceAttribute(
+                deviceIndex,
+                field,
+                resolveStructuredInputValue(target)
+              );
             }
           };
 
@@ -7100,7 +7294,7 @@ function parsePolygonTrace(doc) {
             const target = event.target;
             if (target.classList.contains("fieldset-global-attr")) {
               const field = target.dataset.field;
-              updateGlobalGeometryAttribute(field, target.value);
+              updateGlobalGeometryAttribute(field, resolveStructuredInputValue(target));
             }
           });
         }
@@ -7125,7 +7319,11 @@ function parsePolygonTrace(doc) {
             if (target.classList.contains("casetable-case-input")) {
               const caseIndex = Number(target.dataset.caseIndex);
               const field = target.dataset.caseField;
-              updateCaseAttribute(caseIndex, field, target.value);
+              updateCaseAttribute(
+                caseIndex,
+                field,
+                resolveStructuredInputValue(target)
+              );
             } else if (target.classList.contains("casetable-speed-select")) {
               const caseIndex = Number(target.dataset.caseIndex);
               updateSpeedActivationValue(caseIndex, target.value);
@@ -7135,7 +7333,14 @@ function parsePolygonTrace(doc) {
           casetableCasesContainer.addEventListener("click", (event) => {
             const removeBtn = event.target.closest("[data-action='remove-case']");
             if (removeBtn) {
+              if (removeBtn.disabled) {
+                return;
+              }
               event.preventDefault();
+              if (casetableCases.length <= 1) {
+                setStatus("At least one Case is required.", "warning");
+                return;
+              }
               const caseIndex = Number(removeBtn.dataset.caseIndex);
               casetableCases.splice(caseIndex, 1);
               renderCasetableCases();
@@ -7371,7 +7576,7 @@ function parsePolygonTrace(doc) {
             .join("");
           return `
             <div class="casetable-eval-card" data-eval-index="${evalIndex}">
-              <details open>
+              <details>
                 <summary>
                   <span>Eval #${evalIndex + 1}</span>
                   <span class="casetable-eval-summary">${escapeHtml(summaryName)}</span>
@@ -7573,7 +7778,7 @@ function parsePolygonTrace(doc) {
             : "";
           return `
             <div class="casetable-config-node" data-config-node="${path}">
-              <details open>
+              <details>
                 <summary>${escapeHtml(node.tag || "Node")}</summary>
                 ${attrHtml}
                 ${textField}
@@ -7670,19 +7875,15 @@ function parsePolygonTrace(doc) {
           const attrFields = attributes.length
             ? `<div class="casetable-case-grid">
                 ${attributes
-                  .map(
-                    ([key, value]) => `
+                  .map(([key, value]) => `
                   <div class="casetable-case-field">
                     <label>${escapeHtml(key)}</label>
-                    <input
-                      type="text"
-                      class="casetable-case-input"
-                      data-case-index="${caseIndex}"
-                      data-case-field="${escapeHtml(key)}"
-                      value="${escapeHtml(value ?? "")}" 
-                    />
-                  </div>`
-                  )
+                    ${renderStructureInput("casetableCase", key, value, {
+                      className: "casetable-case-input",
+                      dataset: { "case-index": caseIndex, "case-field": key },
+                      name: `casetable-case-${caseIndex}-${key}`,
+                    })}
+                  </div>`)
                   .join("")}
               </div>`
             : '<p class="casetable-help-text">No editable attributes.</p>';
@@ -7719,9 +7920,10 @@ function parsePolygonTrace(doc) {
             ? caseData.layout.some((segment) => segment.kind === "node")
             : false;
           const summaryName = caseData.attributes?.Name || buildCaseName(caseIndex);
+          const canRemoveCase = casetableCases.length > 1;
           return `
             <div class="casetable-case-card" data-case-index="${caseIndex}">
-              <details open>
+              <details>
                 <summary>
                   <span>Case #${caseIndex + 1}</span>
                   <span class="casetable-case-summary">${escapeHtml(summaryName)}</span>
@@ -7730,6 +7932,7 @@ function parsePolygonTrace(doc) {
                     class="inline-btn inline-danger"
                     data-action="remove-case"
                     data-case-index="${caseIndex}"
+                    ${canRemoveCase ? "" : "disabled"}
                   >
                     Remove
                   </button>
@@ -7952,12 +8155,19 @@ function parsePolygonTrace(doc) {
             if (!actionTarget) {
               return;
             }
+            if (actionTarget.disabled) {
+              return;
+            }
             event.preventDefault();
             event.stopPropagation();
             const action = actionTarget.dataset.action;
             switch (action) {
               case "remove-fieldset": {
                 const fieldsetIndex = Number(actionTarget.dataset.fieldsetIndex);
+                if (fieldsets.length <= 1) {
+                  setStatus("At least one Fieldset must remain.", "warning");
+                  break;
+                }
                 fieldsets.splice(fieldsetIndex, 1);
                 renderFieldsets();
                 break;
@@ -7971,7 +8181,11 @@ function parsePolygonTrace(doc) {
                 const fieldsetIndex = Number(actionTarget.dataset.fieldsetIndex);
                 const fieldIndex = Number(actionTarget.dataset.fieldIndex);
                 const fieldset = fieldsets[fieldsetIndex];
-                if (fieldset && fieldset.fields) {
+                if (!fieldset || !fieldset.fields || fieldset.fields.length <= 1) {
+                  setStatus("Each Fieldset requires at least one Field.", "warning");
+                  break;
+                }
+                if (fieldset.fields) {
                   fieldset.fields.splice(fieldIndex, 1);
                   renderFieldsets();
                 }
