@@ -425,6 +425,89 @@
         color: #0d4b91;
       }
 
+      .casetable-fields-configuration {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .fields-config-note {
+        font-size: 0.85rem;
+        color: #475569;
+        margin: 0 0 0.5rem;
+      }
+
+      .fields-config-node details {
+        border: 1px solid rgba(15, 23, 42, 0.08);
+        border-radius: 6px;
+        padding: 0.35rem 0.5rem;
+        background: #fff;
+      }
+
+      .fields-config-node summary {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        align-items: center;
+        font-weight: 600;
+        color: #0f172a;
+        cursor: pointer;
+      }
+
+      .fields-config-node summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .fields-config-tag {
+        font-size: 0.9rem;
+      }
+
+      .fields-config-attrs {
+        display: inline-flex;
+        flex-wrap: wrap;
+        gap: 0.3rem;
+        font-size: 0.75rem;
+        color: #475569;
+      }
+
+      .fields-config-attr {
+        background: #e2e8f0;
+        padding: 0.1rem 0.4rem;
+        border-radius: 999px;
+      }
+
+      .fields-config-leaf {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        align-items: center;
+        padding: 0.25rem 0.5rem;
+        background: #fff;
+        border: 1px dashed rgba(15, 23, 42, 0.1);
+        border-radius: 6px;
+      }
+
+      .fields-config-value {
+        font-size: 0.85rem;
+        color: #0f172a;
+      }
+
+      .fields-config-children {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        margin-top: 0.4rem;
+        margin-left: 0.5rem;
+        padding-left: 0.5rem;
+        border-left: 2px solid rgba(15, 23, 42, 0.08);
+      }
+
+      .fields-config-text {
+        font-size: 0.85rem;
+        color: #475569;
+        margin: 0.3rem 0;
+      }
+
       .casetable-configuration details {
         border: 1px solid rgba(15, 23, 42, 0.08);
         border-radius: 6px;
@@ -1529,6 +1612,13 @@
                 </p>
                 <p class="casetable-warning" id="casetable-evals-warning"></p>
               </div>
+              <div class="casetable-section">
+                <h3>FieldsConfiguration</h3>
+                <p class="fields-config-note">
+                  ScanPlanes / Fieldsets から自動生成されるため、編集はできません。
+                </p>
+                <div class="casetable-fields-configuration" id="casetable-fields-configuration"></div>
+              </div>
             {% else %}
               <p>{{ item.summary }}</p>
             {% endif %}
@@ -1805,6 +1895,9 @@
         const fieldsetGlobalContainer = document.getElementById("fieldset-global");
         const addFieldsetBtn = document.getElementById("btn-add-fieldset");
         const casetableConfigurationContainer = document.getElementById("casetable-configuration");
+        const casetableFieldsConfigurationContainer = document.getElementById(
+          "casetable-fields-configuration"
+        );
         const casetableCasesContainer = document.getElementById("casetable-cases");
         const casetableCaseCountLabel = document.getElementById("casetable-case-count");
         const addCasetableCaseBtn = document.getElementById("btn-add-case");
@@ -1934,9 +2027,7 @@
           casetablePayload?.evals,
           casetableCases.length
         );
-        let casetableFieldsConfiguration = cloneGenericNode(
-          casetablePayload?.fields_configuration
-        );
+        let casetableFieldsConfiguration = null;
         globalMultipleSampling = deriveInitialMultipleSampling(fieldsets);
         let legendVisible = true;
         let fieldOfViewDegrees = parseNumeric(fieldOfViewInput?.value, 270);
@@ -1989,6 +2080,7 @@
         renderTriOrbShapeCheckboxes();
         renderCasetableConfiguration();
         renderCasetableCases();
+        renderCasetableFieldsConfiguration();
 
         function initializeScanPlanes(data) {
           let planes;
@@ -2827,6 +2919,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             </div>`;
             })
             .join("");
+          regenerateFieldsConfiguration();
         }
 
         function ensureDefaultScanDevices(plane) {
@@ -3355,10 +3448,11 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           </div>`;
           })
           .join("");
-        renderFieldsetCheckboxes();
-        renderFigure();
-        restoreFieldsetDetailState(detailState);
-      }
+          renderFieldsetCheckboxes();
+          renderFigure();
+          regenerateFieldsConfiguration();
+          restoreFieldsetDetailState(detailState);
+        }
 
         function renderFieldShapeControls(fieldsetIndex, fieldIndex, field) {
           const currentIds = new Set((field.shapeRefs || []).map((ref) => ref.shapeId));
@@ -5822,7 +5916,139 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
           return lines;
         }
 
+        function regenerateFieldsConfiguration({ rerender = true } = {}) {
+          casetableFieldsConfiguration = buildFieldsConfigurationNode();
+          if (rerender) {
+            renderCasetableFieldsConfiguration();
+          }
+        }
+
+        function buildFieldsConfigurationNode() {
+          return {
+            tag: "FieldsConfiguration",
+            attributes: {},
+            text: "",
+            children: [
+              {
+                tag: "ScanPlanes",
+                attributes: {},
+                text: "",
+                children: buildFieldsConfigurationScanPlanes(),
+              },
+              {
+                tag: "StatFields",
+                attributes: {},
+                text: "",
+                children: buildFieldsConfigurationStatFields(),
+              },
+            ],
+          };
+        }
+
+        function buildFieldsConfigurationScanPlanes() {
+          const planes =
+            Array.isArray(scanPlanes) && scanPlanes.length
+              ? scanPlanes
+              : [createDefaultScanPlane(0)];
+          const counter = { value: 1 };
+          let fieldsetsAssigned = false;
+          return planes.map((plane, planeIndex) => {
+            const attrs = plane?.attributes || {};
+            const indexValue = attrs.Index ?? String(planeIndex);
+            const numericIndex = Number.parseInt(indexValue, 10);
+            const planeId = attrs.Id || (Number.isFinite(numericIndex) ? String(numericIndex + 1) : String(planeIndex + 1));
+            const nameValue = attrs.Name || `ScanPlane ${planeIndex + 1}`;
+            const userFieldsetsNode = fieldsetsAssigned
+              ? { tag: "UserFieldsets", attributes: {}, text: "", children: [] }
+              : buildFieldsConfigurationUserFieldsets(counter);
+            if (!fieldsetsAssigned) {
+              fieldsetsAssigned = true;
+            }
+            return {
+              tag: "ScanPlane",
+              attributes: { Id: String(planeId) },
+              text: "",
+              children: [
+                { tag: "Index", attributes: {}, text: String(indexValue), children: [] },
+                { tag: "Name", attributes: {}, text: nameValue, children: [] },
+                userFieldsetsNode,
+              ],
+            };
+          });
+        }
+
+        function buildFieldsConfigurationUserFieldsets(counter) {
+          const fieldsetNodes = Array.isArray(fieldsets)
+            ? fieldsets.map((fieldset, fieldsetIndex) => {
+                const attrs = fieldset?.attributes || {};
+                const latinKey = attrs.NameLatin9Key || "";
+                return {
+                  tag: "UserFieldset",
+                  attributes: { Id: String(fieldsetIndex + 1) },
+                  text: "",
+                  children: [
+                    { tag: "Index", attributes: {}, text: String(fieldsetIndex), children: [] },
+                    { tag: "Name", attributes: {}, text: attrs.Name || `Fieldset ${fieldsetIndex + 1}`, children: [] },
+                    { tag: "NameLatin9Key", attributes: {}, text: latinKey, children: [] },
+                    {
+                      tag: "UserFields",
+                      attributes: {},
+                      text: "",
+                      children: buildFieldsConfigurationUserFields(fieldset, fieldsetIndex, counter),
+                    },
+                  ],
+                };
+              })
+            : [];
+          return { tag: "UserFieldsets", attributes: {}, text: "", children: fieldsetNodes };
+        }
+
+        function buildFieldsConfigurationUserFields(fieldset, fieldsetIndex, counter) {
+          const fields = Array.isArray(fieldset?.fields) ? fieldset.fields : [];
+          return fields.map((field, fieldIndex) => {
+            const attrs = field?.attributes || {};
+            const id = counter.value;
+            counter.value += 1;
+            const fieldName = attrs.Name || `Field ${fieldIndex + 1}`;
+            const fieldType = attrs.Fieldtype || "ProtectiveSafeBlanking";
+            const multipleSampling = attrs.MultipleSampling || String(globalMultipleSampling || "2");
+            const resolutionValue =
+              attrs.Resolution || (typeof globalResolution !== "undefined" ? String(globalResolution) : "70");
+            const contourNegative =
+              attrs.ToleranceNegative ??
+              attrs.ContourNegative ??
+              (typeof globalToleranceNegative !== "undefined" ? String(globalToleranceNegative) : "0");
+            const contourPositive =
+              attrs.TolerancePositive ??
+              attrs.ContourPositive ??
+              (typeof globalTolerancePositive !== "undefined" ? String(globalTolerancePositive) : "0");
+            return {
+              tag: "UserField",
+              attributes: { Id: String(id) },
+              text: "",
+              children: [
+                { tag: "Index", attributes: {}, text: String(fieldIndex), children: [] },
+                { tag: "Name", attributes: {}, text: fieldName, children: [] },
+                { tag: "FieldType", attributes: {}, text: fieldType, children: [] },
+                { tag: "MultipleSampling", attributes: {}, text: String(multipleSampling), children: [] },
+                { tag: "ObjectResolution", attributes: {}, text: String(resolutionValue), children: [] },
+                { tag: "ContourNegative", attributes: {}, text: String(contourNegative), children: [] },
+                { tag: "ContourPositive", attributes: {}, text: String(contourPositive), children: [] },
+              ],
+            };
+          });
+        }
+
+        function buildFieldsConfigurationStatFields() {
+          return [
+            { tag: "PermRed", attributes: { Id: "59" }, text: "", children: [] },
+            { tag: "PermGreen", attributes: { Id: "60" }, text: "", children: [] },
+            { tag: "PermGreenWf", attributes: { Id: "61" }, text: "", children: [] },
+          ];
+        }
+
         function buildCasetablesXml() {
+          regenerateFieldsConfiguration({ rerender: false });
           const lines = [];
           lines.push("  <Export_CasetablesAndCases>");
           const attrs = { ...(casetableAttributes || {}) };
@@ -6624,6 +6850,7 @@ function parsePolygonTrace(doc) {
             casetableFieldsConfiguration = null;
             renderCasetableConfiguration();
             renderCasetableCases();
+            renderCasetableFieldsConfiguration();
             return;
           }
           casetableAttributes = Array.from(casetableNode.attributes || []).reduce(
@@ -6652,7 +6879,6 @@ function parsePolygonTrace(doc) {
               );
               layout.push({ kind: "evals" });
             } else if (child.tagName === "FieldsConfiguration") {
-              casetableFieldsConfiguration = convertElementToGenericNode(child);
               layout.push({ kind: "fields_configuration" });
             } else {
               layout.push({ kind: "node", node: convertElementToGenericNode(child) });
@@ -6667,6 +6893,7 @@ function parsePolygonTrace(doc) {
           }
           renderCasetableConfiguration();
           renderCasetableCases();
+          renderCasetableFieldsConfiguration();
         }
 
         function findOriginTrace(figure) {
@@ -7351,6 +7578,64 @@ function parsePolygonTrace(doc) {
                 ${attrHtml}
                 ${textField}
                 ${childrenHtml ? `<div class="casetable-config-children">${childrenHtml}</div>` : ""}
+              </details>
+            </div>`;
+        }
+
+        function renderCasetableFieldsConfiguration() {
+          if (!casetableFieldsConfigurationContainer) {
+            return;
+          }
+          if (!casetableFieldsConfiguration) {
+            casetableFieldsConfigurationContainer.innerHTML =
+              '<p class="casetable-help-text">FieldsConfiguration は Fieldsets / ScanPlanes から自動生成されます。</p>';
+            return;
+          }
+          casetableFieldsConfigurationContainer.innerHTML = renderFieldsConfigurationNode(
+            casetableFieldsConfiguration
+          );
+        }
+
+        function renderFieldsConfigurationNode(node, level = 0) {
+          if (!node) {
+            return "";
+          }
+          const attributes = Object.entries(node.attributes || {});
+          const attrBadges = attributes
+            .map(
+              ([key, value]) =>
+                `<span class="fields-config-attr">${escapeHtml(key)}=${escapeHtml(value ?? "")}</span>`
+            )
+            .join("");
+          const attrSummary = attrBadges ? `<span class="fields-config-attrs">${attrBadges}</span>` : "";
+          const children = Array.isArray(node.children) ? node.children : [];
+          const textValue = typeof node.text === "string" ? node.text : "";
+
+          if (!children.length) {
+            return `
+              <div class="fields-config-node level-${level}">
+                <div class="fields-config-leaf">
+                  <span class="fields-config-tag">${escapeHtml(node.tag || "Node")}</span>
+                  ${attrSummary}
+                  ${textValue ? `<span class="fields-config-value">${escapeHtml(textValue)}</span>` : ""}
+                </div>
+              </div>`;
+          }
+
+          const childHtml = children
+            .map((child) => renderFieldsConfigurationNode(child, level + 1))
+            .join("");
+          return `
+            <div class="fields-config-node level-${level}">
+              <details open>
+                <summary>
+                  <span class="fields-config-tag">${escapeHtml(node.tag || "Node")}</span>
+                  ${attrSummary}
+                </summary>
+                ${textValue ? `<div class="fields-config-text">${escapeHtml(textValue)}</div>` : ""}
+                <div class="fields-config-children">
+                  ${childHtml}
+                </div>
               </details>
             </div>`;
         }

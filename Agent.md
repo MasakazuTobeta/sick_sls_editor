@@ -49,3 +49,10 @@
     - Eval/Cases/Case/ScanPlanes/ScanPlane内のUserFieldIdはTriOrb Menuに定義されたShapeの1始まりIndex（FieldsetのIndexではなく、Field=ShapeのIndex）。ただしデフォルトで3個のFieldが末尾Indexに用意されるため、Shapeが0個のときも1-3は設定できる。
 - FieldsConfigurationツリーの基本構成は[Agent_Export-CasetablesAndCases_Casetable_FieldsConfiguration.md](./Agent_Export-CasetablesAndCases_Casetable_FieldsConfiguration.md)を参照
     - 他ツリーの設定値から機械的に自動生成される項目は編集不可とする
+
+### FieldsConfigurationツリー仕様
+- FieldsConfiguration は Export_ScanPlanes と Export_FieldsetsAndFields の情報（および固定の StatFields 定義）から機械的に再構成できるため、UI では常に自動生成された内容を読み取り専用で表示する。
+- ScanPlanes セクションでは ScanPlane の Index / Name / Id を Export_ScanPlanes から転記し、Id は Index+1 を基本としつつ既存属性があればそれを優先する。
+- UserFieldsets / UserFields は Fieldsets の並び順と Field 属性（Name / NameLatin9Key / Fieldtype / MultipleSampling / Resolution / Tolerance±）を写し、UserField の Id を 1 始まりの連番、Index を Fieldset 内の順序とする。Resolution → ObjectResolution、Tolerance± → Contour± に変換する。
+- StatFields は仕様固定値（PermRed=59, PermGreen=60, PermGreenWf=61）を常時出力し、Evals/PermanentPreset の FieldMode と整合させる。
+- Fieldsets や ScanPlanes の追加・削除・属性更新時には FieldsConfiguration ツリーを再生成し、Structure Menu では折りたたみ可能なツリーで参照のみ提供する（Add/Remove 不可、入力系は配置しない）。
