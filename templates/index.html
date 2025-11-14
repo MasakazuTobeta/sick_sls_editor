@@ -3014,7 +3014,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
 
                   return `
                 <div class="device-card" data-plane-index="${planeIndex}" data-device-index="${deviceIndex}">
-                  <details class="device-details" open>
+                  <details class="device-details">
                     <summary>
                       <span>Device #${deviceIndex + 1}</span>
                       <span class="device-summary">${device.attributes.DeviceName || ""}</span>
@@ -3038,7 +3038,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               const canRemovePlane = scanPlanes.length > 1;
               return `
             <div class="scanplane-card" data-plane-index="${planeIndex}">
-              <details class="scanplane-details" open>
+              <details class="scanplane-details">
                 <summary>
                   <span>ScanPlane #${planeIndex + 1}</span>
                   <span class="scanplane-summary">${plane.attributes.Name || ""}</span>
@@ -3539,7 +3539,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               data-fieldset-index="${fieldsetIndex}"
               data-field-index="${fieldIndex}"
             >
-                  <details class="field-details" open>
+                  <details class="field-details">
                     <summary>
                       <span>Field #${fieldIndex + 1}</span>
                       <span class="field-summary">${field.attributes.Name || ""}</span>
@@ -5568,7 +5568,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
 
               return `
             <div class="device-card" data-fieldset-device-index="${deviceIndex}">
-              <details class="device-details" open>
+              <details class="device-details">
                 <summary>
                   <span>Device #${deviceIndex + 1}</span>
                   <span class="device-summary">${device.attributes.Typekey || ""}</span>
@@ -7576,7 +7576,7 @@ function parsePolygonTrace(doc) {
             .join("");
           return `
             <div class="casetable-eval-card" data-eval-index="${evalIndex}">
-              <details open>
+              <details>
                 <summary>
                   <span>Eval #${evalIndex + 1}</span>
                   <span class="casetable-eval-summary">${escapeHtml(summaryName)}</span>
@@ -7778,7 +7778,7 @@ function parsePolygonTrace(doc) {
             : "";
           return `
             <div class="casetable-config-node" data-config-node="${path}">
-              <details open>
+              <details>
                 <summary>${escapeHtml(node.tag || "Node")}</summary>
                 ${attrHtml}
                 ${textField}
@@ -7923,7 +7923,7 @@ function parsePolygonTrace(doc) {
           const canRemoveCase = casetableCases.length > 1;
           return `
             <div class="casetable-case-card" data-case-index="${caseIndex}">
-              <details open>
+              <details>
                 <summary>
                   <span>Case #${caseIndex + 1}</span>
                   <span class="casetable-case-summary">${escapeHtml(summaryName)}</span>
