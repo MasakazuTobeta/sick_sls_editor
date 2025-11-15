@@ -30,6 +30,14 @@ TriOrb 登録済みの Shape 情報は `TriOrb_SICK_SLS_Editor/Shapes` 配下で
 
 XML 生成・読み込み時には `<SdImportExport xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">` を維持し、TriOrb データは `<TriOrb_SICK_SLS_Editor>` 内だけに保存します。`Save (TriOrb)` と `Save (SICK)` で TriOrb 形式／SICK 形式を切り替え、ファイル名には `{DeviceName}_` プレフィクスを付与して複数 Device のファイルを分割します。
 
+## フロントエンド構成
+- Flask 側から渡される Plotly 図・TriOrb・Casetable 等の初期データは `templates/index.html` で `window.appBootstrapData` にまとめ、`static/js/app.js` から参照します。
+- `static/js/app.js` は UI 全体のイベントと状態管理を担うエントリーポイントで、機能別に `static/js/modules/` 以下のモジュールを読み込みます。
+  - `modules/colors.js`: Field/CutOut/TriOrb 用の HSVA ベースのカラープロファイル、alpha 付きカラー変換、線種の算出ロジック。
+  - `modules/geometry.js`: Plotly 描画や Fieldset 測定で再利用する数値正規化・角度計算・矩形座標算出などのジオメトリユーティリティ。
+  - `modules/triorbData.js`: TriOrb Shape の初期化・ID 発番・デフォルト図形生成・Polygon 文字列変換などデータモデル周りの処理。
+- 詳細な依存関係やディレクトリ構成は `Architecture.md` にまとめています。UI を拡張する際は同ドキュメントを参照し、既存モジュールを再利用してコードを分割してください。
+
 ## テスト
 - 単体: `pytest` をプロジェクトルートで実行すると Flask レイヤーの基本的なパスを確認できます。
 - E2E: `pip install playwright` で Playwright を追加し、`playwright install` でブラウザをインストールしたうえで `python tests/playwright/test_shapes.py` を実行してください。Playwright は現在 `console` にエラーが出ないことや TriOrb Shape 編集との同期をあわせて確認します。PowerShell ユーザーは `run_playwright.ps1` でサーバー起動からテスト実行までを一気通貫で行えます（起動済みサーバーにアクセスする場合は Query パラメータ `?debug=1` を付加して詳細 UI を開いてください）。
