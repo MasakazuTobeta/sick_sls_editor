@@ -124,3 +124,6 @@ Thumbs.db
 
 # Sample files
 sample/
+
+# Temp files
+tests/evidence_*.sgexml

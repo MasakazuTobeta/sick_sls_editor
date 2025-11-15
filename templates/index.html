@@ -2153,6 +2153,7 @@
         let currentFigure = cloneFigure(defaultFigure);
         let scanPlanes = initializeScanPlanes(initialScanPlanes);
         let triorbShapes = initializeTriOrbShapes(initialTriOrbShapes);
+        const triOrbShapeRegistry = new Map();
         let triorbSource = {{ triorb_source|tojson }} || "";
         let fieldsets = initializeFieldsets(initialFieldsets);
         let fieldsetDevices = initializeFieldsetDevices(initialFieldsetDevices);
@@ -2180,6 +2181,7 @@
         globalMultipleSampling = deriveInitialMultipleSampling(fieldsets);
         let legendVisible = true;
         let fieldOfViewDegrees = parseNumeric(fieldOfViewInput?.value, 270);
+        rebuildTriOrbShapeRegistry();
         const debugMode = Boolean(new URLSearchParams(window.location.search).get("debug"));
         if (debugMode) {
           document.body.classList.add("debug-mode");
@@ -4077,6 +4079,108 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           }
         }
 
+        function buildShapeKey(shapeType, attrs = {}, points = []) {
+          const attrEntries = Object.keys(attrs || {})
+            .sort()
+            .map((key) => `${key}=${attrs[key] ?? ""}`)
+            .join("|");
+          let key = `${shapeType}|${attrEntries}`;
+          if (shapeType === "Polygon") {
+            const pointEntries = (points || [])
+              .map((point) => `${String(point.X ?? point.x ?? "")}:${String(point.Y ?? point.y ?? "")}`)
+              .join(";");
+            key += `|${pointEntries}`;
+          }
+          return key;
+        }
+
+        function registerTriOrbShapeInRegistry(shape) {
+          if (!shape) {
+            return;
+          }
+          let attrs = {};
+          let points = [];
+          if (shape.type === "Polygon" && shape.polygon) {
+            attrs = { Type: getPolygonTypeValue(shape.polygon) || shape.polygon.Type || "Field" };
+            points = (shape.polygon.points || []).map((point) => ({
+              X: String(point.X ?? "0"),
+              Y: String(point.Y ?? "0"),
+            }));
+          } else if (shape.type === "Rectangle" && shape.rectangle) {
+            attrs = { ...shape.rectangle };
+          } else if (shape.type === "Circle" && shape.circle) {
+            attrs = { ...shape.circle };
+          } else {
+            return;
+          }
+          const key = buildShapeKey(shape.type, attrs, points);
+          if (key) {
+            triOrbShapeRegistry.set(key, shape.id);
+          }
+        }
+
+        function rebuildTriOrbShapeRegistry() {
+          triOrbShapeRegistry.clear();
+          triorbShapes.forEach((shape) => registerTriOrbShapeInRegistry(shape));
+        }
+
+        function ensureTriOrbShapeFromGeometry(shapeType, attrs = {}, points = [], context = {}) {
+          const normalizedAttrs = { ...(attrs || {}) };
+          let keyAttrs = normalizedAttrs;
+          let normalizedPoints = points;
+          if (shapeType === "Polygon") {
+            const polygonType =
+              normalizedAttrs.Type ||
+              normalizedAttrs.type ||
+              context.kind ||
+              "Field";
+            keyAttrs = { Type: polygonType };
+            normalizedPoints = (points || []).map((point) => ({
+              X: String(point.X ?? point.x ?? "0"),
+              Y: String(point.Y ?? point.y ?? "0"),
+            }));
+          }
+          const shapeKey = buildShapeKey(shapeType, keyAttrs, normalizedPoints);
+          if (shapeKey && triOrbShapeRegistry.has(shapeKey)) {
+            return triOrbShapeRegistry.get(shapeKey);
+          }
+          const nameParts = [];
+          if (context.fieldsetName) {
+            nameParts.push(context.fieldsetName);
+          }
+          if (context.fieldName) {
+            nameParts.push(context.fieldName);
+          }
+          nameParts.push(shapeType);
+          const shapeName =
+            nameParts.filter(Boolean).join(" ").trim() ||
+            `${shapeType} Shape ${triorbShapes.length + 1}`;
+          const shape = createDefaultTriOrbShape(triorbShapes.length, shapeType);
+          shape.id = normalizedAttrs.ID || createShapeId();
+          shape.name = shapeName;
+          shape.fieldtype = context.fieldtype || shape.fieldtype;
+          if (shapeType === "Polygon") {
+            shape.polygon = {
+              Type: keyAttrs.Type || "Field",
+              points: normalizedPoints,
+            };
+          } else if (shapeType === "Rectangle") {
+            shape.rectangle = { ...shape.rectangle, ...normalizedAttrs };
+          } else if (shapeType === "Circle") {
+            shape.circle = { ...shape.circle, ...normalizedAttrs };
+          }
+          shape.type = shapeType;
+          const inferredKind =
+            keyAttrs.Type ||
+            normalizedAttrs.Type ||
+            (shapeType === "Polygon" ? getPolygonTypeValue(shape.polygon) : undefined) ||
+            "Field";
+          applyShapeKind(shape, inferredKind);
+          triorbShapes.push(shape);
+          registerTriOrbShapeInRegistry(shape);
+          return shape.id;
+        }
+
         function renderTriOrbShapes() {
           if (!triorbShapesContainer) {
             return;
@@ -5247,8 +5351,8 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
 
         function createDefaultStaticInput(name) {
           return {
-            attributes: { Name: name || "StaticInput", State: "Low" },
-            valueKey: "State",
+            attributes: { Name: name || "StaticInput", Match: "Low" },
+            valueKey: "Match",
           };
         }
 
@@ -5836,6 +5940,51 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
           );
 
           lines.push("      <Fieldsets>");
+          const writeInlineGeometry = (field) => {
+            let wrote = false;
+            (field.polygons || []).forEach((polygon) => {
+              const polygonAttr = buildAttributeString(
+                polygon.attributes || { Type: polygon.Type || "Field" },
+                getAttributeOrder("Polygon")
+              );
+              lines.push(
+                `          <Polygon${polygonAttr ? " " + polygonAttr : ""}>`
+              );
+              (polygon.points || []).forEach((point) => {
+                const pointAttrs = buildAttributeString(
+                  point,
+                  getAttributeOrder("Point")
+                );
+                lines.push(
+                  `            <Point${pointAttrs ? " " + pointAttrs : ""} />`
+                );
+              });
+              lines.push("          </Polygon>");
+              wrote = true;
+            });
+            (field.rectangles || []).forEach((rectangle) => {
+              const rectAttrs = buildAttributeString(
+                rectangle,
+                getAttributeOrder("Rectangle")
+              );
+              lines.push(
+                `          <Rectangle${rectAttrs ? " " + rectAttrs : ""} />`
+              );
+              wrote = true;
+            });
+            (field.circles || []).forEach((circle) => {
+              const circleAttrs = buildAttributeString(
+                circle,
+                getAttributeOrder("Circle")
+              );
+              lines.push(
+                `          <Circle${circleAttrs ? " " + circleAttrs : ""} />`
+              );
+              wrote = true;
+            });
+            return wrote;
+          };
+
           if (fieldsets.length) {
             fieldsets.forEach((fieldset) => {
               const attrText = buildAttributeString(
@@ -5850,7 +5999,8 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
                     getAttributeOrder("Field")
                   );
                   lines.push(`          <Field${fieldAttrs ? " " + fieldAttrs : ""}>`);
-                  if (field.shapeRefs && field.shapeRefs.length) {
+                  let wroteShape = writeInlineGeometry(field);
+                  if (!wroteShape && field.shapeRefs && field.shapeRefs.length) {
                     field.shapeRefs.forEach((shapeRef) => {
                       const shape = findTriOrbShapeById(shapeRef.shapeId);
                       if (!shape) {
@@ -5874,6 +6024,7 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
                           );
                         });
                         lines.push("            </Polygon>");
+                        wroteShape = true;
                       } else if (shape.type === "Rectangle" && shape.rectangle) {
                         const rectAttrs = buildAttributeString(
                           shape.rectangle,
@@ -5882,6 +6033,7 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
                         lines.push(
                           `            <Rectangle${rectAttrs ? " " + rectAttrs : ""} />`
                         );
+                        wroteShape = true;
                       } else if (shape.type === "Circle" && shape.circle) {
                         const circleAttrs = buildAttributeString(
                           shape.circle,
@@ -5890,9 +6042,11 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
                         lines.push(
                           `            <Circle${circleAttrs ? " " + circleAttrs : ""} />`
                         );
+                        wroteShape = true;
                       }
                     });
-                  } else {
+                  }
+                  if (!wroteShape) {
                     lines.push("            <!-- No shapes assigned -->");
                   }
                   lines.push("          </Field>");
@@ -5948,11 +6102,29 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
           const lines = [`${indent}<StaticInputs>`];
           if (staticInputs && staticInputs.length) {
             staticInputs.forEach((input) => {
-              const attrs = buildRootAttributes(
-                input.attributes,
-                getAttributeOrder("StaticInput")
-              );
-              lines.push(`${indent}  <StaticInput${attrs ? ` ${attrs}` : ""} />`);
+              lines.push(`${indent}  <StaticInput>`);
+              const attrs = { ...(input.attributes || {}) };
+              delete attrs.Name;
+              delete attrs.NameLatin9Key;
+              const attributeOrder = getAttributeOrder("StaticInput");
+              const orderedKeys = [
+                ...attributeOrder,
+                ...Object.keys(attrs)
+                  .filter((key) => !attributeOrder.includes(key))
+                  .sort(),
+              ];
+              orderedKeys
+                .filter(
+                  (key) =>
+                    typeof attrs[key] !== "undefined" &&
+                    attrs[key] !== null &&
+                    attrs[key] !== ""
+                )
+                .forEach((key) => {
+                  const tag = sanitizeTagName(key);
+                  lines.push(`${indent}    <${tag}>${escapeXml(attrs[key])}</${tag}>`);
+                });
+              lines.push(`${indent}  </StaticInput>`);
             });
           } else {
             lines.push(`${indent}  <!-- No StaticInput -->`);
@@ -5966,11 +6138,30 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
           if (!speedActivation) {
             return [`${indent}<SpeedActivation Mode="Off" />`];
           }
-          const attrs = buildRootAttributes(
-            speedActivation.attributes,
-            getAttributeOrder("SpeedActivation")
-          );
-          return [`${indent}<SpeedActivation${attrs ? ` ${attrs}` : ""} />`];
+          const attrs = speedActivation.attributes || {};
+          const attributeOrder = getAttributeOrder("SpeedActivation");
+          const orderedKeys = [
+            ...attributeOrder.filter((key) => Object.prototype.hasOwnProperty.call(attrs, key)),
+            ...Object.keys(attrs).filter((key) => !attributeOrder.includes(key)).sort(),
+          ];
+          const hasSimpleText =
+            orderedKeys.length === 1 &&
+            orderedKeys[0] &&
+            (speedActivation.mode_key === orderedKeys[0] ||
+              orderedKeys[0] === "Mode");
+          if (hasSimpleText) {
+            const value = attrs[orderedKeys[0]] ?? "";
+            return [`${indent}<SpeedActivation>${escapeXml(value)}</SpeedActivation>`];
+          }
+          const lines = [`${indent}<SpeedActivation>`];
+          orderedKeys
+            .filter((key) => typeof attrs[key] !== "undefined" && attrs[key] !== null && attrs[key] !== "")
+            .forEach((key) => {
+              const tag = sanitizeTagName(key);
+              lines.push(`${indent}  <${tag}>${escapeXml(attrs[key])}</${tag}>`);
+            });
+          lines.push(`${indent}</SpeedActivation>`);
+          return lines;
         }
 
         function deriveCaseLayout(caseData) {
@@ -6673,6 +6864,10 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
           }
           console.log("parseXmlToFigure TriOrb root exists", Boolean(doc.querySelector("TriOrb_SICK_SLS_Editor")));
 
+          triorbShapes = [];
+          triorbSource = "";
+          rebuildTriOrbShapeRegistry();
+
           populateFileInfoFromDoc(doc);
           populateScanPlanesFromDoc(doc);
           populateTriOrbShapesFromDoc(triOrbDoc);
@@ -6861,10 +7056,20 @@ function parsePolygonTrace(doc) {
           const triOrbNode = doc.querySelector("TriOrb_SICK_SLS_Editor");
           console.log("populateTriOrbShapesFromDoc triOrbNode", triOrbNode);
           if (!triOrbNode) {
+            triorbSource = "";
+            triorbShapes = [];
+            rebuildTriOrbShapeRegistry();
+            renderTriOrbShapes();
+            renderTriOrbShapeCheckboxes();
             return;
           }
+          triorbSource = triOrbNode.getAttribute("Source") || triorbSource || "";
           const shapesParent = triOrbNode.querySelector("Shapes");
           if (!shapesParent) {
+            triorbShapes = [];
+            rebuildTriOrbShapeRegistry();
+            renderTriOrbShapes();
+            renderTriOrbShapeCheckboxes();
             return;
           }
           const nodes = Array.from(shapesParent.querySelectorAll("Shape"));
@@ -6875,22 +7080,118 @@ function parsePolygonTrace(doc) {
             nodes.length
           );
           if (!nodes.length) {
+            triorbShapes = [];
+            rebuildTriOrbShapeRegistry();
+            renderTriOrbShapes();
+            renderTriOrbShapeCheckboxes();
             return;
           }
           triorbShapes = nodes.map((shapeNode, index) => {
             const detail = collectTriOrbShapeDetails(shapeNode);
-            return {
+            const shapeEntry = {
               id: detail.id,
               name: detail.name || `Shape ${index + 1}`,
               type: detail.type || "Polygon",
+              fieldtype: shapeNode.getAttribute("Fieldtype") || "ProtectiveSafeBlanking",
+              kind: shapeNode.getAttribute("Kind") || undefined,
               polygon: detail.polygon || createDefaultPolygonDetails(),
               rectangle: detail.rectangle || createDefaultRectangleDetails(),
               circle: detail.circle || createDefaultCircleDetails(),
               visible: true,
             };
+            applyShapeKind(
+              shapeEntry,
+              shapeEntry.kind ||
+                getPolygonTypeValue(shapeEntry.polygon) ||
+                shapeEntry.rectangle?.Type ||
+                shapeEntry.circle?.Type ||
+                "Field"
+            );
+            return shapeEntry;
           });
+          rebuildTriOrbShapeRegistry();
           renderTriOrbShapes();
           renderTriOrbShapeCheckboxes();
+        }
+
+        function elementAttributesToObject(element) {
+          if (!element) {
+            return {};
+          }
+          return Array.from(element.attributes || []).reduce((acc, attr) => {
+            acc[attr.name] = attr.value;
+            return acc;
+          }, {});
+        }
+
+        function collectPolygonPointsFromNode(polygonNode) {
+          if (!polygonNode) {
+            return [];
+          }
+          return Array.from(polygonNode.querySelectorAll("Point")).map((pointNode) => ({
+            X: pointNode.getAttribute("X") || "0",
+            Y: pointNode.getAttribute("Y") || "0",
+          }));
+        }
+
+        function collectShapeRefsFromFieldNode(fieldNode, inlineGeometry, context) {
+          const refs = [];
+          if (fieldNode) {
+            const shapeNodes = Array.from(fieldNode.querySelectorAll(":scope > Shapes > Shape"));
+            shapeNodes.forEach((shapeNode) => {
+              const referencedId = shapeNode.getAttribute("ID") || shapeNode.getAttribute("ShapeId");
+              if (referencedId) {
+                refs.push({ shapeId: referencedId });
+                return;
+              }
+              const nodeType =
+                shapeNode.getAttribute("Type") ||
+                shapeNode.getAttribute("Kind") ||
+                "Polygon";
+              if (nodeType === "Rectangle") {
+                const rectangleNode = shapeNode.querySelector("Rectangle");
+                const rectAttrs = elementAttributesToObject(rectangleNode || shapeNode);
+                const shapeId = ensureTriOrbShapeFromGeometry("Rectangle", rectAttrs, null, context);
+                refs.push({ shapeId });
+              } else if (nodeType === "Circle") {
+                const circleNode = shapeNode.querySelector("Circle");
+                const circleAttrs = elementAttributesToObject(circleNode || shapeNode);
+                const shapeId = ensureTriOrbShapeFromGeometry("Circle", circleAttrs, null, context);
+                refs.push({ shapeId });
+              } else {
+                const polygonNode = shapeNode.querySelector("Polygon") || shapeNode;
+                const polygonAttrs = elementAttributesToObject(polygonNode);
+                const points = collectPolygonPointsFromNode(polygonNode);
+                const shapeId = ensureTriOrbShapeFromGeometry("Polygon", polygonAttrs, points, context);
+                refs.push({ shapeId });
+              }
+            });
+          }
+          if (refs.length) {
+            return refs;
+          }
+          const fallbackRefs = [];
+          (inlineGeometry.polygons || []).forEach((polygon) => {
+            const polygonAttrs = { ...(polygon.attributes || {}) };
+            if (!polygonAttrs.Type && polygon.Type) {
+              polygonAttrs.Type = polygon.Type;
+            }
+            const points = (polygon.points || []).map((point) => ({
+              X: String(point.X ?? "0"),
+              Y: String(point.Y ?? "0"),
+            }));
+            const shapeId = ensureTriOrbShapeFromGeometry("Polygon", polygonAttrs, points, context);
+            fallbackRefs.push({ shapeId });
+          });
+          (inlineGeometry.rectangles || []).forEach((rectangle) => {
+            const shapeId = ensureTriOrbShapeFromGeometry("Rectangle", rectangle, null, context);
+            fallbackRefs.push({ shapeId });
+          });
+          (inlineGeometry.circles || []).forEach((circle) => {
+            const shapeId = ensureTriOrbShapeFromGeometry("Circle", circle, null, context);
+            fallbackRefs.push({ shapeId });
+          });
+          return fallbackRefs;
         }
 
         function populateFieldsetsFromDoc(doc) {
@@ -6985,35 +7286,47 @@ function parsePolygonTrace(doc) {
                   return { attributes: polygonAttrs, points };
                 });
 
-              const circleNodes = Array.from(
-                fieldNode.querySelectorAll("Circle")
-              );
-              const circles = circleNodes.map((circleNode) => {
-                const circleAttrs = {};
-                Array.from(circleNode.attributes).forEach((attr) => {
-                  circleAttrs[attr.name] = attr.value;
+                const circleNodes = Array.from(
+                  fieldNode.querySelectorAll("Circle")
+                );
+                const circles = circleNodes.map((circleNode) => {
+                  const circleAttrs = {};
+                  Array.from(circleNode.attributes).forEach((attr) => {
+                    circleAttrs[attr.name] = attr.value;
+                  });
+                  return circleAttrs;
                 });
-                return circleAttrs;
-              });
 
-              const rectangleNodes = Array.from(
-                fieldNode.querySelectorAll("Rectangle")
-              );
-              const rectangles = rectangleNodes.map((rectangleNode) => {
-                const rectangleAttrs = {};
-                Array.from(rectangleNode.attributes).forEach((attr) => {
-                  rectangleAttrs[attr.name] = attr.value;
+                const rectangleNodes = Array.from(
+                  fieldNode.querySelectorAll("Rectangle")
+                );
+                const rectangles = rectangleNodes.map((rectangleNode) => {
+                  const rectangleAttrs = {};
+                  Array.from(rectangleNode.attributes).forEach((attr) => {
+                    rectangleAttrs[attr.name] = attr.value;
+                  });
+                  return rectangleAttrs;
                 });
-                return rectangleAttrs;
-              });
 
-              return {
-                attributes: fieldAttrs,
-                polygons,
-                circles,
-                rectangles,
-              };
-            });
+                const shapeContext = {
+                  fieldsetName: attributes.Name,
+                  fieldName: fieldAttrs.Name,
+                  fieldtype: fieldAttrs.Fieldtype,
+                };
+                const shapeRefs = collectShapeRefsFromFieldNode(
+                  fieldNode,
+                  { polygons, rectangles, circles },
+                  shapeContext
+                );
+
+                return {
+                  attributes: fieldAttrs,
+                  polygons,
+                  circles,
+                  rectangles,
+                  shapeRefs,
+                };
+              });
 
               return {
                 attributes,
@@ -7031,6 +7344,8 @@ function parsePolygonTrace(doc) {
           renderFieldsets();
           renderFieldsetDevices();
           renderFieldsetGlobal();
+          renderTriOrbShapes();
+          renderTriOrbShapeCheckboxes();
         }
 
         function convertElementToGenericNode(element) {
@@ -7041,7 +7356,11 @@ function parsePolygonTrace(doc) {
           Array.from(element.attributes || []).forEach((attr) => {
             attrs[attr.name] = attr.value;
           });
-          const textContent = (element.textContent || "").trim();
+          const textContent = Array.from(element.childNodes || [])
+            .filter((node) => node.nodeType === Node.TEXT_NODE)
+            .map((text) => text.textContent || "")
+            .join("")
+            .trim();
           const children = Array.from(element.children || [])
             .map((child) => convertElementToGenericNode(child))
             .filter(Boolean);

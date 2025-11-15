@@ -1,0 +1,1730 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<SdImportExport xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Timestamp="2025-11-14T07:23:27.6673057Z" Commentary="" Hash="5A62EFD1C9ED848B6C3E729150708EF94817ADA2858F95F079485B660D65ED34057F673633D7DC664328710C776B4AAB59704940894DA304EE6E4CA3245AEAE7">
+  <FileInfo>
+    <ContentId>Scanner Complete Export</ContentId>
+    <ContentVersion>1.6</ContentVersion>
+    <Company>SICK AG</Company>
+    <CreationToolName>SAFETY DESIGNER ENGINEERING TOOL</CreationToolName>
+    <CreationToolVersion>2025.02</CreationToolVersion>
+    <CreationComponentName>nanoScan3</CreationComponentName>
+    <CreationComponentVersion>1.19.23369.0</CreationComponentVersion>
+  </FileInfo>
+  <Export_ScanPlanes>
+    <ScanPlane Index="0" Name="Monitoring plane 1" ScanPlaneDirection="Horizontal" UseReferenceContour="false" ObjectSize="70" MultipleSampling="2" MultipleSamplingOff2OnActivated="false" SelectedCaseSwitching="Fast">
+      <Devices>
+        <Device Index="0" Typekey="NANS3-CAAZ30ZA1P02" TypekeyVersion="1.0" TypekeyDisplayVersion="V 1.0.0" DeviceName="Right" ResponseTime="30" ScanResolutionAddition="0" />
+      </Devices>
+    </ScanPlane>
+  </Export_ScanPlanes>
+  <Export_FieldsetsAndFields>
+    <ScanPlane Index="0">
+      <Devices>
+        <Device Typekey="NANS3-CAAZ30ZA1P02" TypekeyVersion="1.0" TypekeyDisplayVersion="V 1.0.0" PositionX="170" PositionY="156" Rotation="290" StandingUpsideDown="true" />
+      </Devices>
+      <GlobalGeometry UseGlobalGeometry="false" />
+      <Fieldsets>
+        <Fieldset Name="右0.65" NameLatin9Key="_FSN000_9516">
+          <Field Name="Protective" Fieldtype="ProtectiveSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="-200" OriginY="464" Height="924" Width="950" Rotation="0" />
+          </Field>
+          <Field Name="Speed down" Fieldtype="WarningSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="-200" OriginY="512" Height="1024" Width="1600" Rotation="0" />
+          </Field>
+        </Fieldset>
+        <Fieldset Name="右前0.65" NameLatin9Key="_FSN001_2740">
+          <Field Name="Protective" Fieldtype="ProtectiveSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="-325" OriginY="329" Height="924" Width="826" Rotation="45" />
+          </Field>
+          <Field Name="Speed down" Fieldtype="WarningSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="-361" OriginY="363" Height="1024" Width="1474" Rotation="45" />
+          </Field>
+        </Fieldset>
+        <Fieldset Name="前0.65" NameLatin9Key="_FSN002_363F">
+          <Field Name="Protective" Fieldtype="ProtectiveSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="-462" OriginY="750" Height="950" Width="924" Rotation="0" />
+          </Field>
+          <Field Name="Speed down" Fieldtype="WarningSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="-512" OriginY="1400" Height="1600" Width="1024" Rotation="0" />
+          </Field>
+        </Fieldset>
+        <Fieldset Name="左前0.65" NameLatin9Key="_FSN003_D5B2">
+          <Field Name="Protective" Fieldtype="ProtectiveSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="-268" OriginY="916" Height="924" Width="839" Rotation="315" />
+          </Field>
+          <Field Name="Speed down" Fieldtype="WarningSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="-682" OriginY="1404" Height="1024" Width="1477" Rotation="315" />
+          </Field>
+        </Fieldset>
+        <Fieldset Name="左0.65" NameLatin9Key="_FSN004_EE1F">
+          <Field Name="Protective" Fieldtype="ProtectiveSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="-750" OriginY="462" Height="924" Width="950" Rotation="0" />
+          </Field>
+          <Field Name="Speed down" Fieldtype="WarningSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="-1400" OriginY="512" Height="1024" Width="1600" Rotation="0" />
+          </Field>
+        </Fieldset>
+        <Fieldset Name="左後0.65" NameLatin9Key="_FSN005_528B">
+          <Field Name="Protective" Fieldtype="ProtectiveSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="-916" OriginY="-262" Height="924" Width="833" Rotation="45" />
+          </Field>
+          <Field Name="Speed down" Fieldtype="WarningSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="-1407" OriginY="-687" Height="1024" Width="1481" Rotation="45" />
+          </Field>
+        </Fieldset>
+        <Fieldset Name="後0.65" NameLatin9Key="_FSN006_B106">
+          <Field Name="Protective" Fieldtype="ProtectiveSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="-462" OriginY="200" Height="950" Width="924" Rotation="0" />
+          </Field>
+          <Field Name="Speed down" Fieldtype="WarningSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="-512" OriginY="200" Height="1600" Width="1024" Rotation="0" />
+          </Field>
+        </Fieldset>
+        <Fieldset Name="右後0.65" NameLatin9Key="_FSN007_A079">
+          <Field Name="Protective" Fieldtype="ProtectiveSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="325" OriginY="325" Height="924" Width="830" Rotation="315" />
+          </Field>
+          <Field Name="Speed down" Fieldtype="WarningSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="361" OriginY="361" Height="1024" Width="1486" Rotation="315" />
+          </Field>
+        </Fieldset>
+        <Fieldset Name="右0.3" NameLatin9Key="_FSN008_D438">
+          <Field Name="Protective" Fieldtype="ProtectiveSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="-200" OriginY="362" Height="724" Width="750" Rotation="0" />
+          </Field>
+          <Field Name="Speed down" Fieldtype="WarningSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="-200" OriginY="412" Height="824" Width="1200" Rotation="0" />
+          </Field>
+          <Field Name="Speed up" Fieldtype="WarningSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="-200" OriginY="562" Height="1124" Width="1700" Rotation="0" />
+          </Field>
+        </Fieldset>
+        <Fieldset Name="右前0.3" NameLatin9Key="_FSN009_4381">
+          <Field Name="Protective" Fieldtype="ProtectiveSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="-257" OriginY="257" Height="724" Width="634" Rotation="45" />
+          </Field>
+          <Field Name="Speed down" Fieldtype="WarningSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="-291" OriginY="291" Height="824" Width="1078" Rotation="45" />
+          </Field>
+          <Field Name="Speed up" Fieldtype="WarningSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="-396" OriginY="396" Height="1124" Width="1579" Rotation="45" />
+          </Field>
+        </Fieldset>
+        <Fieldset Name="前0.3" NameLatin9Key="_FSN010_3CBD">
+          <Field Name="Protective" Fieldtype="ProtectiveSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="-362" OriginY="550" Height="750" Width="724" Rotation="0" />
+          </Field>
+          <Field Name="Speed down" Fieldtype="WarningSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="-412" OriginY="1000" Height="1200" Width="824" Rotation="0" />
+          </Field>
+          <Field Name="Speed up" Fieldtype="WarningSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="-562" OriginY="1500" Height="1700" Width="1124" Rotation="0" />
+          </Field>
+        </Fieldset>
+        <Fieldset Name="左前0.3" NameLatin9Key="_FSN011_30C7">
+          <Field Name="Protective" Fieldtype="ProtectiveSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="-195" OriginY="705" Height="724" Width="635" Rotation="315" />
+          </Field>
+          <Field Name="Speed down" Fieldtype="WarningSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="-456" OriginY="1040" Height="824" Width="1058" Rotation="315" />
+          </Field>
+          <Field Name="Speed up" Fieldtype="WarningSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="-629" OriginY="1421" Height="1124" Width="1451" Rotation="315" />
+          </Field>
+        </Fieldset>
+        <Fieldset Name="左0.3" NameLatin9Key="_FSN012_1D9D">
+          <Field Name="Protective" Fieldtype="ProtectiveSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="-550" OriginY="362" Height="724" Width="750" Rotation="0" />
+          </Field>
+          <Field Name="Speed down" Fieldtype="WarningSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="-1000" OriginY="412" Height="824" Width="1200" Rotation="0" />
+          </Field>
+          <Field Name="Speed up" Fieldtype="WarningSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="-1500" OriginY="562" Height="1124" Width="1700" Rotation="0" />
+          </Field>
+        </Fieldset>
+        <Fieldset Name="左後0.3" NameLatin9Key="_FSN013_0833">
+          <Field Name="Protective" Fieldtype="ProtectiveSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="-699" OriginY="-191" Height="724" Width="629" Rotation="45" />
+          </Field>
+          <Field Name="Speed down" Fieldtype="WarningSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="-1058" OriginY="-474" Height="824" Width="1084" Rotation="45" />
+          </Field>
+          <Field Name="Speed up" Fieldtype="WarningSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="-1519" OriginY="-721" Height="1124" Width="1585" Rotation="45" />
+          </Field>
+        </Fieldset>
+        <Fieldset Name="後0.3" NameLatin9Key="_FSN014_0449">
+          <Field Name="Protective" Fieldtype="ProtectiveSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="-362" OriginY="200" Height="750" Width="724" Rotation="0" />
+          </Field>
+          <Field Name="Speed down" Fieldtype="WarningSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="-412" OriginY="200" Height="1200" Width="824" Rotation="0" />
+          </Field>
+          <Field Name="Speed up" Fieldtype="WarningSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="-562" OriginY="200" Height="1700" Width="1124" Rotation="0" />
+          </Field>
+        </Fieldset>
+        <Fieldset Name="右後0.3" NameLatin9Key="_FSN015_7B75">
+          <Field Name="Protective" Fieldtype="ProtectiveSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="259" OriginY="255" Height="724" Width="634" Rotation="315" />
+          </Field>
+          <Field Name="Speed down" Fieldtype="WarningSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="294" OriginY="290" Height="824" Width="1072" Rotation="315" />
+          </Field>
+          <Field Name="Speed up" Fieldtype="WarningSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="361" OriginY="361" Height="1024" Width="1575" Rotation="315" />
+          </Field>
+        </Fieldset>
+        <Fieldset Name="右0.15" NameLatin9Key="_FSN016_A514">
+          <Field Name="Protective" Fieldtype="ProtectiveSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="-200" OriginY="362" Height="724" Width="700" Rotation="0" />
+          </Field>
+          <Field Name="Speed up" Fieldtype="WarningSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="-200" OriginY="462" Height="924" Width="1300" Rotation="0" />
+          </Field>
+        </Fieldset>
+        <Fieldset Name="右前0.15" NameLatin9Key="_FSN017_1742">
+          <Field Name="Protective" Fieldtype="ProtectiveSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="-255" OriginY="259" Height="724" Width="585" Rotation="45" />
+          </Field>
+          <Field Name="Speed up" Fieldtype="WarningSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="-324" OriginY="324" Height="924" Width="1183" Rotation="45" />
+          </Field>
+        </Fieldset>
+        <Fieldset Name="前0.15" NameLatin9Key="_FSN018_063D">
+          <Field Name="Protective" Fieldtype="ProtectiveSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="-362" OriginY="500" Height="700" Width="724" Rotation="0" />
+          </Field>
+          <Field Name="Speed up" Fieldtype="WarningSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="-462" OriginY="1100" Height="1300" Width="924" Rotation="0" />
+          </Field>
+        </Fieldset>
+        <Fieldset Name="左前0.15" NameLatin9Key="_FSN019_E5B0">
+          <Field Name="Protective" Fieldtype="ProtectiveSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="-158" OriginY="668" Height="724" Width="585" Rotation="315" />
+          </Field>
+          <Field Name="Speed up" Fieldtype="WarningSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="-509" OriginY="1167" Height="924" Width="1187" Rotation="315" />
+          </Field>
+        </Fieldset>
+        <Fieldset Name="左0.15" NameLatin9Key="_FSN020_DE1D">
+          <Field Name="Protective" Fieldtype="ProtectiveSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="-500" OriginY="362" Height="724" Width="700" Rotation="0" />
+          </Field>
+          <Field Name="Speed up" Fieldtype="WarningSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="-1100" OriginY="462" Height="924" Width="1300" Rotation="0" />
+          </Field>
+        </Fieldset>
+        <Fieldset Name="左後0.15" NameLatin9Key="_FSN021_6289">
+          <Field Name="Protective" Fieldtype="ProtectiveSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="-666" OriginY="-158" Height="724" Width="587" Rotation="45" />
+          </Field>
+          <Field Name="Speed up" Fieldtype="WarningSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="-1159" OriginY="-503" Height="924" Width="1177" Rotation="45" />
+          </Field>
+        </Fieldset>
+        <Fieldset Name="後0.15" NameLatin9Key="_FSN022_8104">
+          <Field Name="Protective" Fieldtype="ProtectiveSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="-362" OriginY="200" Height="700" Width="724" Rotation="0" />
+          </Field>
+          <Field Name="Speed up" Fieldtype="WarningSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="-462" OriginY="200" Height="1300" Width="924" Rotation="0" />
+          </Field>
+        </Fieldset>
+        <Fieldset Name="右後0.15" NameLatin9Key="_FSN023_907B">
+          <Field Name="Protective" Fieldtype="ProtectiveSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="257" OriginY="257" Height="724" Width="586" Rotation="315" />
+          </Field>
+          <Field Name="Speed up" Fieldtype="WarningSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Rectangle Type="Field" OriginX="362" OriginY="360" Height="1024" Width="1180" Rotation="315" />
+          </Field>
+        </Fieldset>
+        <Fieldset Name="回転" NameLatin9Key="_FSN024_7C2F">
+          <Field Name="Protective" Fieldtype="ProtectiveSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="CutOut">
+              <Point X="0" Y="245" />
+              <Point X="170" Y="156" />
+              <Point X="0" Y="-299" />
+              <Point X="-170" Y="156" />
+            </Polygon>
+            <Circle Type="Field" CenterX="0" CenterY="0" Radius="542" />
+          </Field>
+        </Fieldset>
+        <Fieldset Name="Stop(minimum)">
+          <Field Name="Protective" Fieldtype="ProtectiveSafeBlanking" MultipleSampling="4" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+            <Polygon Type="Field">
+              <Point X="-245" Y="86" />
+              <Point X="-98" Y="-161" />
+              <Point X="98" Y="-163" />
+              <Point X="240" Y="79" />
+              <Point X="139" Y="250" />
+              <Point X="-137" Y="247" />
+            </Polygon>
+            <Polygon Type="CutOut">
+              <Point X="-173" Y="160" />
+              <Point X="-1" Y="227" />
+              <Point X="165" Y="157" />
+              <Point X="0" Y="-242" />
+            </Polygon>
+            <Circle Type="Field" CenterX="-1" CenterY="-163" Radius="1" />
+            <Circle Type="Field" CenterX="0" CenterY="-167" Radius="99" />
+            <Circle Type="Field" CenterX="-190" CenterY="166" Radius="99" />
+            <Circle Type="Field" CenterX="188" CenterY="164" Radius="99" />
+          </Field>
+        </Fieldset>
+      </Fieldsets>
+    </ScanPlane>
+  </Export_FieldsetsAndFields>
+  <Export_CasetablesAndCases>
+    <Casetable Index="0">
+      <Configuration>
+        <Name>Monitoring case table 1</Name>
+        <StaticInputSource>
+          <Source>Assembly_EIPEPRGWRX_105_with_StopAlarmDetection_and_Speed</Source>
+          <StaticActivation>Antivalent</StaticActivation>
+        </StaticInputSource>
+        <StaticInputs>
+          <StaticInput>
+            <Ranking>1</Ranking>
+            <Evaluate>true</Evaluate>
+          </StaticInput>
+          <StaticInput>
+            <Ranking>2</Ranking>
+            <Evaluate>true</Evaluate>
+          </StaticInput>
+          <StaticInput>
+            <Ranking>3</Ranking>
+            <Evaluate>true</Evaluate>
+          </StaticInput>
+          <StaticInput>
+            <Ranking>4</Ranking>
+            <Evaluate>true</Evaluate>
+          </StaticInput>
+          <StaticInput>
+            <Ranking>5</Ranking>
+            <Evaluate>true</Evaluate>
+          </StaticInput>
+          <StaticInput>
+            <Ranking>6</Ranking>
+            <Evaluate>true</Evaluate>
+          </StaticInput>
+          <StaticInput>
+            <Ranking>7</Ranking>
+            <Evaluate>true</Evaluate>
+          </StaticInput>
+          <StaticInput>
+            <Ranking>8</Ranking>
+            <Evaluate>true</Evaluate>
+          </StaticInput>
+        </StaticInputs>
+        <UseSpeed>true</UseSpeed>
+        <InputDelay>12</InputDelay>
+        <CaseSequenceEnabled>false</CaseSequenceEnabled>
+        <ShowPermanentPreset>false</ShowPermanentPreset>
+      </Configuration>
+      <Cases>
+        <Case Id="0">
+          <Name>監視ケース 1</Name>
+          <NameLatin9Key>_MCN0000_275D</NameLatin9Key>
+          <SleepMode>false</SleepMode>
+          <DisplayOrder>0</DisplayOrder>
+          <Activation>
+            <StaticInputs>
+              <StaticInput>
+                <Match>Low</Match>
+              </StaticInput>
+              <StaticInput>
+                <Match>Low</Match>
+              </StaticInput>
+              <StaticInput>
+                <Match>Low</Match>
+              </StaticInput>
+              <StaticInput>
+                <Match>High</Match>
+              </StaticInput>
+              <StaticInput>
+                <Match>Low</Match>
+              </StaticInput>
+              <StaticInput>
+                <Match>Low</Match>
+              </StaticInput>
+              <StaticInput>
+                <Match>Low</Match>
+              </StaticInput>
+              <StaticInput>
+                <Match>High</Match>
+              </StaticInput>
+            </StaticInputs>
+            <StaticInputs1ofNIndex>-1</StaticInputs1ofNIndex>
+            <SpeedActivation>SpeedRange</SpeedActivation>
+            <MinSpeed>-3333</MinSpeed>
+            <MaxSpeed>3333</MaxSpeed>
+            <CaseNumber>1</CaseNumber>
+            <FollowingCases>
+              <FollowingCase>
+                <CaseIndex>-1</CaseIndex>
+              </FollowingCase>
+              <FollowingCase>
+                <CaseIndex>-1</CaseIndex>
+              </FollowingCase>
+            </FollowingCases>
+            <SingleStepSequencePos>-1</SingleStepSequencePos>
+          </Activation>
+        </Case>
+        <Case Id="1">
+          <Name>監視ケース 2</Name>
+          <NameLatin9Key>_MCN0001_261D</NameLatin9Key>
+          <SleepMode>false</SleepMode>
+          <DisplayOrder>1</DisplayOrder>
+          <Activation>
+            <StaticInputs>
+              <StaticInput>
+                <Match>Low</Match>
+              </StaticInput>
+              <StaticInput>
+                <Match>Low</Match>
+              </StaticInput>
+              <StaticInput>
+                <Match>Low</Match>
+              </StaticInput>
+              <StaticInput>
+                <Match>High</Match>
+              </StaticInput>
+              <StaticInput>
+                <Match>Low</Match>
+              </StaticInput>
+              <StaticInput>
+                <Match>Low</Match>
+              </StaticInput>
+              <StaticInput>
+                <Match>High</Match>
+              </StaticInput>
+              <StaticInput>
+                <Match>Low</Match>
+              </StaticInput>
+            </StaticInputs>
+            <StaticInputs1ofNIndex>-1</StaticInputs1ofNIndex>
+            <SpeedActivation>Off</SpeedActivation>
+            <MinSpeed>0</MinSpeed>
+            <MaxSpeed>0</MaxSpeed>
+            <CaseNumber>2</CaseNumber>
+            <FollowingCases>
+              <FollowingCase>
+                <CaseIndex>-1</CaseIndex>
+              </FollowingCase>
+              <FollowingCase>
+                <CaseIndex>-1</CaseIndex>
+              </FollowingCase>
+            </FollowingCases>
+            <SingleStepSequencePos>-1</SingleStepSequencePos>
+          </Activation>
+        </Case>
+        <Case Id="2">
+          <Name>停止</Name>
+          <NameLatin9Key>_MCN0002_A518</NameLatin9Key>
+          <SleepMode>false</SleepMode>
+          <DisplayOrder>2</DisplayOrder>
+          <Activation>
+            <StaticInputs>
+              <StaticInput>
+                <Match>High</Match>
+              </StaticInput>
+              <StaticInput>
+                <Match>High</Match>
+              </StaticInput>
+              <StaticInput>
+                <Match>High</Match>
+              </StaticInput>
+              <StaticInput>
+                <Match>High</Match>
+              </StaticInput>
+              <StaticInput>
+                <Match>High</Match>
+              </StaticInput>
+              <StaticInput>
+                <Match>High</Match>
+              </StaticInput>
+              <StaticInput>
+                <Match>High</Match>
+              </StaticInput>
+              <StaticInput>
+                <Match>High</Match>
+              </StaticInput>
+            </StaticInputs>
+            <StaticInputs1ofNIndex>-1</StaticInputs1ofNIndex>
+            <SpeedActivation>Off</SpeedActivation>
+            <MinSpeed>0</MinSpeed>
+            <MaxSpeed>0</MaxSpeed>
+            <CaseNumber>26</CaseNumber>
+            <FollowingCases>
+              <FollowingCase>
+                <CaseIndex>-1</CaseIndex>
+              </FollowingCase>
+              <FollowingCase>
+                <CaseIndex>-1</CaseIndex>
+              </FollowingCase>
+            </FollowingCases>
+            <SingleStepSequencePos>-1</SingleStepSequencePos>
+          </Activation>
+        </Case>
+        <Case Id="3">
+          <Name>All0 (未使用)</Name>
+          <NameLatin9Key>_MCN0003_3845</NameLatin9Key>
+          <SleepMode>false</SleepMode>
+          <DisplayOrder>3</DisplayOrder>
+          <Activation>
+            <StaticInputs>
+              <StaticInput>
+                <Match>Low</Match>
+              </StaticInput>
+              <StaticInput>
+                <Match>Low</Match>
+              </StaticInput>
+              <StaticInput>
+                <Match>Low</Match>
+              </StaticInput>
+              <StaticInput>
+                <Match>Low</Match>
+              </StaticInput>
+              <StaticInput>
+                <Match>Low</Match>
+              </StaticInput>
+              <StaticInput>
+                <Match>Low</Match>
+              </StaticInput>
+              <StaticInput>
+                <Match>Low</Match>
+              </StaticInput>
+              <StaticInput>
+                <Match>Low</Match>
+              </StaticInput>
+            </StaticInputs>
+            <StaticInputs1ofNIndex>-1</StaticInputs1ofNIndex>
+            <SpeedActivation>Off</SpeedActivation>
+            <MinSpeed>0</MinSpeed>
+            <MaxSpeed>0</MaxSpeed>
+            <CaseNumber>27</CaseNumber>
+            <FollowingCases>
+              <FollowingCase>
+                <CaseIndex>-1</CaseIndex>
+              </FollowingCase>
+              <FollowingCase>
+                <CaseIndex>-1</CaseIndex>
+              </FollowingCase>
+            </FollowingCases>
+            <SingleStepSequencePos>-1</SingleStepSequencePos>
+          </Activation>
+        </Case>
+      </Cases>
+      <Evals>
+        <Eval Id="1">
+          <Name>遮断パス 1</Name>
+          <NameLatin9Key>_COPN01_8A74</NameLatin9Key>
+          <Q>1</Q>
+          <Reset>
+            <ResetType>NoReset</ResetType>
+            <AutoResetTime>2</AutoResetTime>
+            <EvalResetSource>Assembly_EIPEPRGWRX_105_with_StopAlarmDetection_and_Speed</EvalResetSource>
+          </Reset>
+          <Cases>
+            <Case Id="0">
+              <ScanPlanes>
+                <ScanPlane Id="1">
+                  <UserFieldId>41</UserFieldId>
+                  <IsSplitted>true</IsSplitted>
+                </ScanPlane>
+              </ScanPlanes>
+            </Case>
+            <Case Id="1">
+              <ScanPlanes>
+                <ScanPlane Id="1">
+                  <UserFieldId>43</UserFieldId>
+                  <IsSplitted>true</IsSplitted>
+                </ScanPlane>
+              </ScanPlanes>
+            </Case>
+            <Case Id="2">
+              <ScanPlanes>
+                <ScanPlane Id="1">
+                  <UserFieldId>60</UserFieldId>
+                  <IsSplitted>false</IsSplitted>
+                </ScanPlane>
+              </ScanPlanes>
+            </Case>
+            <Case Id="3">
+              <ScanPlanes>
+                <ScanPlane Id="1">
+                  <UserFieldId>59</UserFieldId>
+                  <IsSplitted>false</IsSplitted>
+                </ScanPlane>
+              </ScanPlanes>
+            </Case>
+          </Cases>
+          <PermanentPreset>
+            <ScanPlanes>
+              <ScanPlane Id="1">
+                <FieldMode>59</FieldMode>
+              </ScanPlane>
+            </ScanPlanes>
+          </PermanentPreset>
+        </Eval>
+        <Eval Id="2">
+          <Name>遮断パス 2</Name>
+          <NameLatin9Key>_COPN02_8B34</NameLatin9Key>
+          <Q>2</Q>
+          <Reset>
+            <ResetType>NoReset</ResetType>
+            <AutoResetTime>2</AutoResetTime>
+            <EvalResetSource>Assembly_EIPEPRGWRX_105_with_StopAlarmDetection_and_Speed</EvalResetSource>
+          </Reset>
+          <Cases>
+            <Case Id="0">
+              <ScanPlanes>
+                <ScanPlane Id="1">
+                  <UserFieldId>59</UserFieldId>
+                  <IsSplitted>false</IsSplitted>
+                </ScanPlane>
+              </ScanPlanes>
+            </Case>
+            <Case Id="1">
+              <ScanPlanes>
+                <ScanPlane Id="1">
+                  <UserFieldId>59</UserFieldId>
+                  <IsSplitted>false</IsSplitted>
+                </ScanPlane>
+              </ScanPlanes>
+            </Case>
+            <Case Id="2">
+              <ScanPlanes>
+                <ScanPlane Id="1">
+                  <UserFieldId>60</UserFieldId>
+                  <IsSplitted>false</IsSplitted>
+                </ScanPlane>
+              </ScanPlanes>
+            </Case>
+            <Case Id="3">
+              <ScanPlanes>
+                <ScanPlane Id="1">
+                  <UserFieldId>59</UserFieldId>
+                  <IsSplitted>false</IsSplitted>
+                </ScanPlane>
+              </ScanPlanes>
+            </Case>
+          </Cases>
+          <PermanentPreset>
+            <ScanPlanes>
+              <ScanPlane Id="1">
+                <FieldMode>59</FieldMode>
+              </ScanPlane>
+            </ScanPlanes>
+          </PermanentPreset>
+        </Eval>
+        <Eval Id="3">
+          <Name>遮断パス 3</Name>
+          <NameLatin9Key>_COPN03_4BF5</NameLatin9Key>
+          <Q>3</Q>
+          <Reset>
+            <ResetType>NoReset</ResetType>
+            <AutoResetTime>2</AutoResetTime>
+            <EvalResetSource>Assembly_EIPEPRGWRX_105_with_StopAlarmDetection_and_Speed</EvalResetSource>
+          </Reset>
+          <Cases>
+            <Case Id="0">
+              <ScanPlanes>
+                <ScanPlane Id="1">
+                  <UserFieldId>42</UserFieldId>
+                  <IsSplitted>true</IsSplitted>
+                </ScanPlane>
+              </ScanPlanes>
+            </Case>
+            <Case Id="1">
+              <ScanPlanes>
+                <ScanPlane Id="1">
+                  <UserFieldId>44</UserFieldId>
+                  <IsSplitted>true</IsSplitted>
+                </ScanPlane>
+              </ScanPlanes>
+            </Case>
+            <Case Id="2">
+              <ScanPlanes>
+                <ScanPlane Id="1">
+                  <UserFieldId>60</UserFieldId>
+                  <IsSplitted>false</IsSplitted>
+                </ScanPlane>
+              </ScanPlanes>
+            </Case>
+            <Case Id="3">
+              <ScanPlanes>
+                <ScanPlane Id="1">
+                  <UserFieldId>59</UserFieldId>
+                  <IsSplitted>false</IsSplitted>
+                </ScanPlane>
+              </ScanPlanes>
+            </Case>
+          </Cases>
+          <PermanentPreset>
+            <ScanPlanes>
+              <ScanPlane Id="1">
+                <FieldMode>59</FieldMode>
+              </ScanPlane>
+            </ScanPlanes>
+          </PermanentPreset>
+        </Eval>
+      </Evals>
+      <FieldsConfiguration>
+        <ScanPlanes>
+          <ScanPlane Id="1">
+            <Index>0</Index>
+            <Name>Monitoring plane 1</Name>
+            <UserFieldsets>
+              <UserFieldset Id="1">
+                <Index>0</Index>
+                <Name>右0.65</Name>
+                <NameLatin9Key>_FSN000_9516</NameLatin9Key>
+                <UserFields>
+                  <UserField Id="1">
+                    <Index>0</Index>
+                    <Name>Protective</Name>
+                    <FieldType>ProtectiveSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                  <UserField Id="2">
+                    <Index>1</Index>
+                    <Name>Speed down</Name>
+                    <FieldType>WarningSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                </UserFields>
+              </UserFieldset>
+              <UserFieldset Id="2">
+                <Index>1</Index>
+                <Name>右前0.65</Name>
+                <NameLatin9Key>_FSN001_2740</NameLatin9Key>
+                <UserFields>
+                  <UserField Id="3">
+                    <Index>0</Index>
+                    <Name>Protective</Name>
+                    <FieldType>ProtectiveSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                  <UserField Id="4">
+                    <Index>1</Index>
+                    <Name>Speed down</Name>
+                    <FieldType>WarningSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                </UserFields>
+              </UserFieldset>
+              <UserFieldset Id="3">
+                <Index>2</Index>
+                <Name>前0.65</Name>
+                <NameLatin9Key>_FSN002_363F</NameLatin9Key>
+                <UserFields>
+                  <UserField Id="5">
+                    <Index>0</Index>
+                    <Name>Protective</Name>
+                    <FieldType>ProtectiveSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                  <UserField Id="6">
+                    <Index>1</Index>
+                    <Name>Speed down</Name>
+                    <FieldType>WarningSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                </UserFields>
+              </UserFieldset>
+              <UserFieldset Id="4">
+                <Index>3</Index>
+                <Name>左前0.65</Name>
+                <NameLatin9Key>_FSN003_D5B2</NameLatin9Key>
+                <UserFields>
+                  <UserField Id="7">
+                    <Index>0</Index>
+                    <Name>Protective</Name>
+                    <FieldType>ProtectiveSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                  <UserField Id="8">
+                    <Index>1</Index>
+                    <Name>Speed down</Name>
+                    <FieldType>WarningSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                </UserFields>
+              </UserFieldset>
+              <UserFieldset Id="5">
+                <Index>4</Index>
+                <Name>左0.65</Name>
+                <NameLatin9Key>_FSN004_EE1F</NameLatin9Key>
+                <UserFields>
+                  <UserField Id="9">
+                    <Index>0</Index>
+                    <Name>Protective</Name>
+                    <FieldType>ProtectiveSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                  <UserField Id="10">
+                    <Index>1</Index>
+                    <Name>Speed down</Name>
+                    <FieldType>WarningSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                </UserFields>
+              </UserFieldset>
+              <UserFieldset Id="6">
+                <Index>5</Index>
+                <Name>左後0.65</Name>
+                <NameLatin9Key>_FSN005_528B</NameLatin9Key>
+                <UserFields>
+                  <UserField Id="11">
+                    <Index>0</Index>
+                    <Name>Protective</Name>
+                    <FieldType>ProtectiveSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                  <UserField Id="12">
+                    <Index>1</Index>
+                    <Name>Speed down</Name>
+                    <FieldType>WarningSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                </UserFields>
+              </UserFieldset>
+              <UserFieldset Id="7">
+                <Index>6</Index>
+                <Name>後0.65</Name>
+                <NameLatin9Key>_FSN006_B106</NameLatin9Key>
+                <UserFields>
+                  <UserField Id="13">
+                    <Index>0</Index>
+                    <Name>Protective</Name>
+                    <FieldType>ProtectiveSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                  <UserField Id="14">
+                    <Index>1</Index>
+                    <Name>Speed down</Name>
+                    <FieldType>WarningSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                </UserFields>
+              </UserFieldset>
+              <UserFieldset Id="8">
+                <Index>7</Index>
+                <Name>右後0.65</Name>
+                <NameLatin9Key>_FSN007_A079</NameLatin9Key>
+                <UserFields>
+                  <UserField Id="15">
+                    <Index>0</Index>
+                    <Name>Protective</Name>
+                    <FieldType>ProtectiveSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                  <UserField Id="16">
+                    <Index>1</Index>
+                    <Name>Speed down</Name>
+                    <FieldType>WarningSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                </UserFields>
+              </UserFieldset>
+              <UserFieldset Id="9">
+                <Index>8</Index>
+                <Name>右0.3</Name>
+                <NameLatin9Key>_FSN008_D438</NameLatin9Key>
+                <UserFields>
+                  <UserField Id="17">
+                    <Index>0</Index>
+                    <Name>Protective</Name>
+                    <FieldType>ProtectiveSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                  <UserField Id="18">
+                    <Index>1</Index>
+                    <Name>Speed down</Name>
+                    <FieldType>WarningSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                  <UserField Id="19">
+                    <Index>2</Index>
+                    <Name>Speed up</Name>
+                    <FieldType>WarningSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                </UserFields>
+              </UserFieldset>
+              <UserFieldset Id="10">
+                <Index>9</Index>
+                <Name>右前0.3</Name>
+                <NameLatin9Key>_FSN009_4381</NameLatin9Key>
+                <UserFields>
+                  <UserField Id="20">
+                    <Index>0</Index>
+                    <Name>Protective</Name>
+                    <FieldType>ProtectiveSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                  <UserField Id="21">
+                    <Index>1</Index>
+                    <Name>Speed down</Name>
+                    <FieldType>WarningSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                  <UserField Id="22">
+                    <Index>2</Index>
+                    <Name>Speed up</Name>
+                    <FieldType>WarningSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                </UserFields>
+              </UserFieldset>
+              <UserFieldset Id="11">
+                <Index>10</Index>
+                <Name>前0.3</Name>
+                <NameLatin9Key>_FSN010_3CBD</NameLatin9Key>
+                <UserFields>
+                  <UserField Id="23">
+                    <Index>0</Index>
+                    <Name>Protective</Name>
+                    <FieldType>ProtectiveSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                  <UserField Id="24">
+                    <Index>1</Index>
+                    <Name>Speed down</Name>
+                    <FieldType>WarningSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                  <UserField Id="25">
+                    <Index>2</Index>
+                    <Name>Speed up</Name>
+                    <FieldType>WarningSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                </UserFields>
+              </UserFieldset>
+              <UserFieldset Id="12">
+                <Index>11</Index>
+                <Name>左前0.3</Name>
+                <NameLatin9Key>_FSN011_30C7</NameLatin9Key>
+                <UserFields>
+                  <UserField Id="26">
+                    <Index>0</Index>
+                    <Name>Protective</Name>
+                    <FieldType>ProtectiveSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                  <UserField Id="27">
+                    <Index>1</Index>
+                    <Name>Speed down</Name>
+                    <FieldType>WarningSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                  <UserField Id="28">
+                    <Index>2</Index>
+                    <Name>Speed up</Name>
+                    <FieldType>WarningSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                </UserFields>
+              </UserFieldset>
+              <UserFieldset Id="13">
+                <Index>12</Index>
+                <Name>左0.3</Name>
+                <NameLatin9Key>_FSN012_1D9D</NameLatin9Key>
+                <UserFields>
+                  <UserField Id="29">
+                    <Index>0</Index>
+                    <Name>Protective</Name>
+                    <FieldType>ProtectiveSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                  <UserField Id="30">
+                    <Index>1</Index>
+                    <Name>Speed down</Name>
+                    <FieldType>WarningSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                  <UserField Id="31">
+                    <Index>2</Index>
+                    <Name>Speed up</Name>
+                    <FieldType>WarningSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                </UserFields>
+              </UserFieldset>
+              <UserFieldset Id="14">
+                <Index>13</Index>
+                <Name>左後0.3</Name>
+                <NameLatin9Key>_FSN013_0833</NameLatin9Key>
+                <UserFields>
+                  <UserField Id="32">
+                    <Index>0</Index>
+                    <Name>Protective</Name>
+                    <FieldType>ProtectiveSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                  <UserField Id="33">
+                    <Index>1</Index>
+                    <Name>Speed down</Name>
+                    <FieldType>WarningSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                  <UserField Id="34">
+                    <Index>2</Index>
+                    <Name>Speed up</Name>
+                    <FieldType>WarningSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                </UserFields>
+              </UserFieldset>
+              <UserFieldset Id="15">
+                <Index>14</Index>
+                <Name>後0.3</Name>
+                <NameLatin9Key>_FSN014_0449</NameLatin9Key>
+                <UserFields>
+                  <UserField Id="35">
+                    <Index>0</Index>
+                    <Name>Protective</Name>
+                    <FieldType>ProtectiveSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                  <UserField Id="36">
+                    <Index>1</Index>
+                    <Name>Speed down</Name>
+                    <FieldType>WarningSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                  <UserField Id="37">
+                    <Index>2</Index>
+                    <Name>Speed up</Name>
+                    <FieldType>WarningSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                </UserFields>
+              </UserFieldset>
+              <UserFieldset Id="16">
+                <Index>15</Index>
+                <Name>右後0.3</Name>
+                <NameLatin9Key>_FSN015_7B75</NameLatin9Key>
+                <UserFields>
+                  <UserField Id="38">
+                    <Index>0</Index>
+                    <Name>Protective</Name>
+                    <FieldType>ProtectiveSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                  <UserField Id="39">
+                    <Index>1</Index>
+                    <Name>Speed down</Name>
+                    <FieldType>WarningSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                  <UserField Id="40">
+                    <Index>2</Index>
+                    <Name>Speed up</Name>
+                    <FieldType>WarningSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                </UserFields>
+              </UserFieldset>
+              <UserFieldset Id="17">
+                <Index>16</Index>
+                <Name>右0.15</Name>
+                <NameLatin9Key>_FSN016_A514</NameLatin9Key>
+                <UserFields>
+                  <UserField Id="41">
+                    <Index>0</Index>
+                    <Name>Protective</Name>
+                    <FieldType>ProtectiveSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                  <UserField Id="42">
+                    <Index>1</Index>
+                    <Name>Speed up</Name>
+                    <FieldType>WarningSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                </UserFields>
+              </UserFieldset>
+              <UserFieldset Id="18">
+                <Index>17</Index>
+                <Name>右前0.15</Name>
+                <NameLatin9Key>_FSN017_1742</NameLatin9Key>
+                <UserFields>
+                  <UserField Id="43">
+                    <Index>0</Index>
+                    <Name>Protective</Name>
+                    <FieldType>ProtectiveSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                  <UserField Id="44">
+                    <Index>1</Index>
+                    <Name>Speed up</Name>
+                    <FieldType>WarningSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                </UserFields>
+              </UserFieldset>
+              <UserFieldset Id="19">
+                <Index>18</Index>
+                <Name>前0.15</Name>
+                <NameLatin9Key>_FSN018_063D</NameLatin9Key>
+                <UserFields>
+                  <UserField Id="45">
+                    <Index>0</Index>
+                    <Name>Protective</Name>
+                    <FieldType>ProtectiveSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                  <UserField Id="46">
+                    <Index>1</Index>
+                    <Name>Speed up</Name>
+                    <FieldType>WarningSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                </UserFields>
+              </UserFieldset>
+              <UserFieldset Id="20">
+                <Index>19</Index>
+                <Name>左前0.15</Name>
+                <NameLatin9Key>_FSN019_E5B0</NameLatin9Key>
+                <UserFields>
+                  <UserField Id="47">
+                    <Index>0</Index>
+                    <Name>Protective</Name>
+                    <FieldType>ProtectiveSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                  <UserField Id="48">
+                    <Index>1</Index>
+                    <Name>Speed up</Name>
+                    <FieldType>WarningSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                </UserFields>
+              </UserFieldset>
+              <UserFieldset Id="21">
+                <Index>20</Index>
+                <Name>左0.15</Name>
+                <NameLatin9Key>_FSN020_DE1D</NameLatin9Key>
+                <UserFields>
+                  <UserField Id="49">
+                    <Index>0</Index>
+                    <Name>Protective</Name>
+                    <FieldType>ProtectiveSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                  <UserField Id="50">
+                    <Index>1</Index>
+                    <Name>Speed up</Name>
+                    <FieldType>WarningSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                </UserFields>
+              </UserFieldset>
+              <UserFieldset Id="22">
+                <Index>21</Index>
+                <Name>左後0.15</Name>
+                <NameLatin9Key>_FSN021_6289</NameLatin9Key>
+                <UserFields>
+                  <UserField Id="51">
+                    <Index>0</Index>
+                    <Name>Protective</Name>
+                    <FieldType>ProtectiveSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                  <UserField Id="52">
+                    <Index>1</Index>
+                    <Name>Speed up</Name>
+                    <FieldType>WarningSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                </UserFields>
+              </UserFieldset>
+              <UserFieldset Id="23">
+                <Index>22</Index>
+                <Name>後0.15</Name>
+                <NameLatin9Key>_FSN022_8104</NameLatin9Key>
+                <UserFields>
+                  <UserField Id="53">
+                    <Index>0</Index>
+                    <Name>Protective</Name>
+                    <FieldType>ProtectiveSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                  <UserField Id="54">
+                    <Index>1</Index>
+                    <Name>Speed up</Name>
+                    <FieldType>WarningSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                </UserFields>
+              </UserFieldset>
+              <UserFieldset Id="24">
+                <Index>23</Index>
+                <Name>右後0.15</Name>
+                <NameLatin9Key>_FSN023_907B</NameLatin9Key>
+                <UserFields>
+                  <UserField Id="55">
+                    <Index>0</Index>
+                    <Name>Protective</Name>
+                    <FieldType>ProtectiveSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                  <UserField Id="56">
+                    <Index>1</Index>
+                    <Name>Speed up</Name>
+                    <FieldType>WarningSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                </UserFields>
+              </UserFieldset>
+              <UserFieldset Id="25">
+                <Index>24</Index>
+                <Name>回転</Name>
+                <NameLatin9Key>_FSN024_7C2F</NameLatin9Key>
+                <UserFields>
+                  <UserField Id="57">
+                    <Index>0</Index>
+                    <Name>Protective</Name>
+                    <FieldType>ProtectiveSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                </UserFields>
+              </UserFieldset>
+              <UserFieldset Id="26">
+                <Index>25</Index>
+                <Name>Stop(minimum)</Name>
+                <UserFields>
+                  <UserField Id="58">
+                    <Index>0</Index>
+                    <Name>Protective</Name>
+                    <FieldType>ProtectiveSafeBlanking</FieldType>
+                    <MultipleSampling>4</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                </UserFields>
+              </UserFieldset>
+            </UserFieldsets>
+          </ScanPlane>
+        </ScanPlanes>
+        <StatFields>
+          <PermRed Id="59" />
+          <PermGreen Id="60" />
+          <PermGreenWf Id="61" />
+        </StatFields>
+      </FieldsConfiguration>
+    </Casetable>
+  </Export_CasetablesAndCases>
+</SdImportExport>
