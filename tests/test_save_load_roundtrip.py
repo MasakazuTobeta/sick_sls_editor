@@ -9,6 +9,7 @@ from pathlib import Path
 
 import pytest
 from playwright.sync_api import sync_playwright
+from playwright._impl._errors import Error as PlaywrightError
 
 
 FLASK_PORT = 5001
@@ -83,7 +84,16 @@ def test_save_load_roundtrip(flask_server, tmp_path: Path):
     shutil.copy(sample_path, first_path)
     normalized_path = tmp_path / "normalized.sgexml"
     with sync_playwright() as playwright:
-        browser = playwright.chromium.launch(headless=True)
+        try:
+            browser = playwright.chromium.launch(headless=True)
+        except PlaywrightError as exc:  # pragma: no cover - depends on env setup
+            message = str(exc)
+            if "Executable doesn't exist" in message or "playwright install" in message:
+                pytest.skip(
+                    "Playwright Chromium がインストールされていないためスキップ。"
+                    "CI で実行する場合は 'playwright install --with-deps chromium' を事前に実行してください。"
+                )
+            raise
         try:
             page = browser.new_page()
             page.goto(SERVER_URL, wait_until="networkidle")

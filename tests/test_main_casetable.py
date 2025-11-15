@@ -38,7 +38,9 @@ def test_load_casetable_payload_serializes_cases_and_evals(
                 <Cases>
                     <Case Name="CaseA" Index="1">
                         <StaticInputs>
-                            <StaticInput Value="True" />
+                            <StaticInput>
+                                <Match>High</Match>
+                            </StaticInput>
                         </StaticInputs>
                         <SpeedActivation Mode="Auto" />
                         <ExtraNode Flag="1" />
@@ -93,7 +95,8 @@ def test_load_casetable_payload_serializes_cases_and_evals(
 
     case_entry = payload["cases"][0]
     assert case_entry["attributes"]["Name"] == "CaseA"
-    assert case_entry["static_inputs"][0]["value_key"] == "Value"
+    assert case_entry["static_inputs"][0]["value_key"] == "Match"
+    assert case_entry["static_inputs"][0]["attributes"]["Match"] == "High"
     assert case_entry["speed_activation"]["mode_key"] == "Mode"
     assert any(segment["kind"] == "node" for segment in case_entry["layout"])
 

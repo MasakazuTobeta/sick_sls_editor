@@ -106,9 +106,24 @@ def _resolve_speed_activation_key(attrs: Dict[str, str]) -> str:
 
 def _serialize_static_input_element(element: ET.Element) -> Dict[str, Any]:
     attrs = dict(element.attrib)
+    child_value_key: Optional[str] = None
+    for child in list(element):
+        text = (child.text or "").strip()
+        if not text:
+            continue
+        attrs[child.tag] = text
+        if child_value_key is None:
+            child_value_key = child.tag
+
+    value_key = child_value_key or _resolve_static_input_value_key(attrs)
+    if child_value_key is None:
+        text_value = (element.text or "").strip()
+        if text_value:
+            attrs.setdefault(value_key, text_value)
+
     return {
         "attributes": attrs,
-        "value_key": _resolve_static_input_value_key(attrs),
+        "value_key": value_key,
     }
 
 

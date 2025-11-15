@@ -5324,8 +5324,8 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
 
         function createDefaultStaticInput(name) {
           return {
-            attributes: { Name: name || "StaticInput", State: "Low" },
-            valueKey: "State",
+            attributes: { Name: name || "StaticInput", Match: "Low" },
+            valueKey: "Match",
           };
         }
 
@@ -6025,11 +6025,29 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
           const lines = [`${indent}<StaticInputs>`];
           if (staticInputs && staticInputs.length) {
             staticInputs.forEach((input) => {
-              const attrs = buildRootAttributes(
-                input.attributes,
-                getAttributeOrder("StaticInput")
-              );
-              lines.push(`${indent}  <StaticInput${attrs ? ` ${attrs}` : ""} />`);
+              lines.push(`${indent}  <StaticInput>`);
+              const attrs = { ...(input.attributes || {}) };
+              delete attrs.Name;
+              delete attrs.NameLatin9Key;
+              const attributeOrder = getAttributeOrder("StaticInput");
+              const orderedKeys = [
+                ...attributeOrder,
+                ...Object.keys(attrs)
+                  .filter((key) => !attributeOrder.includes(key))
+                  .sort(),
+              ];
+              orderedKeys
+                .filter(
+                  (key) =>
+                    typeof attrs[key] !== "undefined" &&
+                    attrs[key] !== null &&
+                    attrs[key] !== ""
+                )
+                .forEach((key) => {
+                  const tag = sanitizeTagName(key);
+                  lines.push(`${indent}    <${tag}>${escapeXml(attrs[key])}</${tag}>`);
+                });
+              lines.push(`${indent}  </StaticInput>`);
             });
           } else {
             lines.push(`${indent}  <!-- No StaticInput -->`);
