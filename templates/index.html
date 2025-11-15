@@ -6141,7 +6141,7 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
           const attrs = speedActivation.attributes || {};
           const attributeOrder = getAttributeOrder("SpeedActivation");
           const orderedKeys = [
-            ...attributeOrder,
+            ...attributeOrder.filter((key) => Object.prototype.hasOwnProperty.call(attrs, key)),
             ...Object.keys(attrs).filter((key) => !attributeOrder.includes(key)).sort(),
           ];
           const hasSimpleText =
