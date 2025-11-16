@@ -5764,9 +5764,6 @@ function parsePolygonTrace(doc) {
                 field,
                 resolveStructuredInputValue(target)
               );
-            } else if (target.classList.contains("casetable-speed-select")) {
-              const caseIndex = Number(target.dataset.caseIndex);
-              updateSpeedActivationValue(caseIndex, target.value);
             }
           });
 
@@ -5793,6 +5790,17 @@ function parsePolygonTrace(doc) {
               const staticIndex = Number(toggleBtn.dataset.staticIndex);
               const value = toggleBtn.dataset.staticValue;
               updateStaticInputValue(caseIndex, staticIndex, value);
+              renderCasetableCases();
+              return;
+            }
+            const speedToggleBtn = event.target.closest(
+              "[data-action='toggle-speed-activation']"
+            );
+            if (speedToggleBtn) {
+              event.preventDefault();
+              const caseIndex = Number(speedToggleBtn.dataset.caseIndex);
+              const value = speedToggleBtn.dataset.speedValue;
+              updateSpeedActivationValue(caseIndex, value);
               renderCasetableCases();
             }
           });
@@ -6337,24 +6345,7 @@ function parsePolygonTrace(doc) {
               </div>`
             : '<p class="casetable-help-text">No static inputs defined.</p>';
           const speedActivationSection = caseData.speedActivation
-            ? `<div class="casetable-speed-activation">
-                <label>SpeedActivation</label>
-                <select class="casetable-speed-select" data-case-index="${caseIndex}">
-                  ${["Off", "SpeedRange"]
-                    .map((option) => {
-                      const currentValue = String(
-                        caseData.speedActivation.attributes?.[
-                          caseData.speedActivation.modeKey
-                        ] ?? ""
-                      ).toLowerCase();
-                      const isSelected = currentValue === option.toLowerCase();
-                      return `<option value="${option}"${
-                        isSelected ? " selected" : ""
-                      }>${option}</option>`;
-                    })
-                    .join("")}
-                </select>
-              </div>`
+            ? renderSpeedActivationToggle(caseIndex, caseData.speedActivation)
             : "";
           const hasReadonlyNodes = Array.isArray(caseData.layout)
             ? caseData.layout.some((segment) => segment.kind === "node")
@@ -6413,6 +6404,31 @@ function parsePolygonTrace(doc) {
           return `
             <div class="casetable-static-group">
               <span class="casetable-static-label">${escapeHtml(label)}</span>
+              <div class="toggle-group">${buttons}</div>
+            </div>`;
+        }
+
+        function renderSpeedActivationToggle(caseIndex, speedActivation) {
+          const attributes = speedActivation?.attributes || {};
+          const modeKey =
+            speedActivation?.modeKey || resolveSpeedActivationKey(attributes);
+          const currentValue = String(attributes[modeKey] || "Off").toLowerCase();
+          const options = ["Off", "SpeedRange"];
+          const buttons = options
+            .map((option) => {
+              const isActive = currentValue === option.toLowerCase();
+              return `<button
+                type="button"
+                class="toggle-option${isActive ? " is-active" : ""}"
+                data-action="toggle-speed-activation"
+                data-case-index="${caseIndex}"
+                data-speed-value="${option}"
+              >${option}</button>`;
+            })
+            .join("");
+          return `
+            <div class="casetable-speed-activation">
+              <span class="casetable-speed-label">SpeedActivation</span>
               <div class="toggle-group">${buttons}</div>
             </div>`;
         }
