@@ -437,6 +437,88 @@
         margin: 0 0 0.5rem;
       }
 
+      .casetable-config-form {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        padding: 0.75rem;
+        border: 1px solid rgba(15, 23, 42, 0.08);
+        border-radius: 8px;
+        background: #fff;
+      }
+
+      .casetable-config-field {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+      }
+
+      .casetable-config-field label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #475569;
+      }
+
+      .casetable-config-field-input {
+        border-radius: 6px;
+        border: 1px solid rgba(15, 23, 42, 0.15);
+        padding: 0.4rem 0.6rem;
+        background: #fff;
+        font-size: 0.9rem;
+      }
+
+      .casetable-config-static-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(44px, 1fr));
+        gap: 0.4rem;
+      }
+
+      .casetable-config-static-btn {
+        border-radius: 999px;
+        border: 1px solid rgba(15, 23, 42, 0.2);
+        padding: 0.35rem 0;
+        font-weight: 600;
+        font-size: 0.9rem;
+        background: #f1f5f9;
+        color: #0f172a;
+        cursor: pointer;
+        transition: background 0.15s ease, color 0.15s ease;
+      }
+
+      .casetable-config-static-btn.is-active {
+        background: #0b6fb8;
+        color: #fff;
+        border-color: #0b6fb8;
+      }
+
+      .casetable-config-toggle-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+
+      .casetable-config-toggle {
+        border-radius: 999px;
+        border: 1px solid rgba(15, 23, 42, 0.2);
+        padding: 0.35rem 0.9rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        background: #f1f5f9;
+        color: #0f172a;
+        cursor: pointer;
+        transition: background 0.15s ease, color 0.15s ease;
+      }
+
+      .casetable-config-toggle.is-active {
+        background: #0b6fb8;
+        border-color: #0b6fb8;
+        color: #fff;
+      }
+
+      .casetable-config-tree {
+        margin-top: 0.75rem;
+      }
+
       .fields-config-node details {
         border: 1px solid rgba(15, 23, 42, 0.08);
         border-radius: 6px;
@@ -835,6 +917,11 @@
         font-size: 0.8rem;
         color: #475569;
         cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        gap: 0;
       }
 
       .toggle-option.is-active {

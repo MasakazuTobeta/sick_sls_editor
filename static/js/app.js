@@ -327,6 +327,15 @@ document.addEventListener("DOMContentLoaded", () => {
         let fieldsetGlobalGeometry = initializeGlobalGeometry(initialFieldsetGlobal);
         const casetableCasesLimit = 128;
         const casetableEvalsLimit = 5;
+        const casetableConfigurationStaticInputsCount = 8;
+        const casetableConfigurationSpecialTags = new Set([
+          "Name",
+          "StaticInputs",
+          "UseSpeed",
+          "InputDelay",
+          "CaseSequenceEnabled",
+          "ShowPermanentPreset",
+        ]);
         let casetableAttributes = cloneAttributes(
           casetablePayload?.casetable_attributes || { Index: "0" }
         );
@@ -3308,6 +3317,187 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           return node;
         }
 
+        function ensureCasetableConfigurationRoot() {
+          if (!casetableConfiguration || casetableConfiguration.tag !== "Configuration") {
+            casetableConfiguration = createDefaultCasetableConfiguration();
+          }
+          casetableConfiguration.attributes = casetableConfiguration.attributes || {};
+          if (typeof casetableConfiguration.text !== "string") {
+            casetableConfiguration.text = "";
+          }
+          casetableConfiguration.children = Array.isArray(casetableConfiguration.children)
+            ? casetableConfiguration.children
+            : [];
+          return casetableConfiguration;
+        }
+
+        function findCasetableConfigChildByTag(tag) {
+          if (!tag) {
+            return null;
+          }
+          const rootNode = ensureCasetableConfigurationRoot();
+          return rootNode.children.find((child) => child?.tag === tag) || null;
+        }
+
+        function ensureCasetableConfigChildByTag(tag) {
+          if (!tag) {
+            return null;
+          }
+          const rootNode = ensureCasetableConfigurationRoot();
+          let child = rootNode.children.find((entry) => entry?.tag === tag);
+          if (!child) {
+            child = { tag, attributes: {}, text: "", children: [] };
+            rootNode.children.push(child);
+          }
+          child.attributes = child.attributes || {};
+          if (typeof child.text !== "string") {
+            child.text = "";
+          }
+          child.children = Array.isArray(child.children) ? child.children : [];
+          return child;
+        }
+
+        function getCasetableConfigTextValue(tag, fallback = "") {
+          const child = findCasetableConfigChildByTag(tag);
+          if (!child) {
+            return fallback;
+          }
+          if (typeof child.text !== "string" || !child.text.length) {
+            return fallback;
+          }
+          return child.text;
+        }
+
+        function setCasetableConfigTextValue(tag, value) {
+          const child = ensureCasetableConfigChildByTag(tag);
+          if (child) {
+            child.text = value ?? "";
+          }
+        }
+
+        function getCasetableConfigBoolean(tag, fallback = false) {
+          const child = findCasetableConfigChildByTag(tag);
+          if (!child) {
+            return fallback;
+          }
+          return isTrueValue(child.text);
+        }
+
+        function setCasetableConfigBoolean(tag, enabled) {
+          const child = ensureCasetableConfigChildByTag(tag);
+          if (child) {
+            child.text = enabled ? "true" : "false";
+          }
+        }
+
+        function createConfigurationStaticInputNode(ranking) {
+          return {
+            tag: "StaticInput",
+            attributes: {},
+            text: "",
+            children: [
+              { tag: "Ranking", attributes: {}, text: String(ranking), children: [] },
+              { tag: "Evaluate", attributes: {}, text: "true", children: [] },
+            ],
+          };
+        }
+
+        function ensureConfigurationStaticInputChildNode(node, tag) {
+          if (!node) {
+            return null;
+          }
+          node.children = Array.isArray(node.children) ? node.children : [];
+          let child = node.children.find((entry) => entry?.tag === tag);
+          if (!child) {
+            child = { tag, attributes: {}, text: "", children: [] };
+            node.children.push(child);
+          }
+          child.attributes = child.attributes || {};
+          child.children = Array.isArray(child.children) ? child.children : [];
+          if (typeof child.text !== "string") {
+            child.text = "";
+          }
+          return child;
+        }
+
+        function ensureConfigurationStaticInputStructure(node, ranking) {
+          node.tag = "StaticInput";
+          node.attributes = node.attributes || {};
+          node.children = Array.isArray(node.children) ? node.children : [];
+          node.text = typeof node.text === "string" ? node.text : "";
+          const rankingChild = ensureConfigurationStaticInputChildNode(node, "Ranking");
+          rankingChild.text = String(ranking);
+          const evaluateChild = ensureConfigurationStaticInputChildNode(node, "Evaluate");
+          if (!evaluateChild.text) {
+            evaluateChild.text = "true";
+          }
+          return node;
+        }
+
+        function ensureCasetableConfigStaticInputs() {
+          const staticInputsNode = ensureCasetableConfigChildByTag("StaticInputs");
+          staticInputsNode.children = Array.isArray(staticInputsNode.children)
+            ? staticInputsNode.children
+            : [];
+          const rankingMap = new Map();
+          const extras = [];
+          staticInputsNode.children.forEach((child) => {
+            if (!child || child.tag !== "StaticInput") {
+              extras.push(child);
+              return;
+            }
+            const rankingChild = child.children?.find((entry) => entry.tag === "Ranking");
+            const rankingValue = parseInt(rankingChild?.text ?? "", 10);
+            if (
+              Number.isFinite(rankingValue) &&
+              rankingValue >= 1 &&
+              rankingValue <= casetableConfigurationStaticInputsCount &&
+              !rankingMap.has(rankingValue)
+            ) {
+              rankingMap.set(rankingValue, child);
+            } else {
+              extras.push(child);
+            }
+          });
+          const normalized = [];
+          for (let ranking = 1; ranking <= casetableConfigurationStaticInputsCount; ranking += 1) {
+            let node = rankingMap.get(ranking);
+            if (!node) {
+              node = createConfigurationStaticInputNode(ranking);
+            }
+            normalized.push(ensureConfigurationStaticInputStructure(node, ranking));
+          }
+          staticInputsNode.children = [...normalized, ...extras];
+          return normalized;
+        }
+
+        function readConfigurationStaticInputEvaluate(node) {
+          if (!node) {
+            return true;
+          }
+          const evaluateChild = node.children?.find((entry) => entry.tag === "Evaluate");
+          return isTrueValue(evaluateChild?.text ?? "");
+        }
+
+        function setConfigurationStaticInputEvaluate(node, enabled) {
+          if (!node) {
+            return;
+          }
+          const evaluateChild = ensureConfigurationStaticInputChildNode(node, "Evaluate");
+          if (evaluateChild) {
+            evaluateChild.text = enabled ? "true" : "false";
+          }
+        }
+
+        function updateConfigurationStaticInputEvaluate(index, enabled) {
+          const staticInputs = ensureCasetableConfigStaticInputs();
+          const target = staticInputs[index];
+          if (!target) {
+            return;
+          }
+          setConfigurationStaticInputEvaluate(target, enabled);
+        }
+
         function updateCasetableConfigAttribute(path, field, value) {
           if (!field) {
             return;
@@ -5742,6 +5932,13 @@ function parsePolygonTrace(doc) {
         if (casetableConfigurationContainer) {
           casetableConfigurationContainer.addEventListener("input", (event) => {
             const target = event.target;
+            if (target.classList.contains("casetable-config-field-input")) {
+              const tag = target.dataset.configTag;
+              if (tag) {
+                setCasetableConfigTextValue(tag, target.value);
+              }
+              return;
+            }
             if (target.classList.contains("casetable-config-input")) {
               const path = target.dataset.configPath;
               const field = target.dataset.configField;
@@ -5749,6 +5946,32 @@ function parsePolygonTrace(doc) {
             } else if (target.classList.contains("casetable-config-text")) {
               const path = target.dataset.configPath;
               updateCasetableConfigText(path, target.value);
+            }
+          });
+
+          casetableConfigurationContainer.addEventListener("click", (event) => {
+            const staticToggle = event.target.closest("[data-action='toggle-config-static']");
+            if (staticToggle) {
+              event.preventDefault();
+              const staticIndex = Number(staticToggle.dataset.staticIndex);
+              if (!Number.isNaN(staticIndex)) {
+                const staticInputs = ensureCasetableConfigStaticInputs();
+                const targetNode = staticInputs[staticIndex];
+                const currentValue = readConfigurationStaticInputEvaluate(targetNode);
+                updateConfigurationStaticInputEvaluate(staticIndex, !currentValue);
+                renderCasetableConfiguration();
+              }
+              return;
+            }
+            const booleanToggle = event.target.closest("[data-action='toggle-config-boolean']");
+            if (booleanToggle) {
+              event.preventDefault();
+              const tag = booleanToggle.dataset.configTag;
+              if (tag) {
+                const nextValue = !getCasetableConfigBoolean(tag, false);
+                setCasetableConfigBoolean(tag, nextValue);
+                renderCasetableConfiguration();
+              }
             }
           });
         }
@@ -6161,15 +6384,92 @@ function parsePolygonTrace(doc) {
           if (!casetableConfigurationContainer) {
             return;
           }
+          ensureCasetableConfigurationRoot();
           if (!casetableConfiguration) {
             casetableConfigurationContainer.innerHTML =
               '<p class="casetable-help-text">No configuration nodes.</p>';
             return;
           }
-          casetableConfigurationContainer.innerHTML = renderCasetableConfigNode(
-            casetableConfiguration,
-            "root"
-          );
+          const nameValue = getCasetableConfigTextValue("Name", "");
+          const inputDelayValue = getCasetableConfigTextValue("InputDelay", "");
+          const staticInputs = ensureCasetableConfigStaticInputs();
+          const staticButtons = staticInputs
+            .slice(0, casetableConfigurationStaticInputsCount)
+            .map((inputNode, index) => {
+              const isActive = readConfigurationStaticInputEvaluate(inputNode);
+              return `<button
+                type="button"
+                class="casetable-config-static-btn${isActive ? " is-active" : ""}"
+                data-action="toggle-config-static"
+                data-static-index="${index}"
+                aria-pressed="${isActive ? "true" : "false"}"
+              >${index + 1}</button>`;
+            })
+            .join("");
+          const booleanConfigs = [
+            { tag: "UseSpeed", label: "UseSpeed" },
+            { tag: "CaseSequenceEnabled", label: "CaseSequenceEnabled" },
+            { tag: "ShowPermanentPreset", label: "ShowPermanentPreset" },
+          ];
+          const booleanButtons = booleanConfigs
+            .map((entry) => {
+              const isEnabled = getCasetableConfigBoolean(entry.tag, false);
+              return `<button
+                type="button"
+                class="casetable-config-toggle${isEnabled ? " is-active" : ""}"
+                data-action="toggle-config-boolean"
+                data-config-tag="${escapeHtml(entry.tag)}"
+                aria-pressed="${isEnabled ? "true" : "false"}"
+              >${escapeHtml(entry.label)}</button>`;
+            })
+            .join("");
+          const formHtml = `
+            <div class="casetable-config-form">
+              <div class="casetable-config-field">
+                <label for="casetable-config-name">Name</label>
+                <input
+                  id="casetable-config-name"
+                  type="text"
+                  class="casetable-config-field-input"
+                  data-config-tag="Name"
+                  value="${escapeHtml(nameValue)}"
+                />
+              </div>
+              <div class="casetable-config-field">
+                <label>StaticInputs Evaluate</label>
+                <div class="casetable-config-static-grid">${staticButtons}</div>
+              </div>
+              <div class="casetable-config-field">
+                <label for="casetable-config-input-delay">InputDelay</label>
+                <input
+                  id="casetable-config-input-delay"
+                  type="number"
+                  step="1"
+                  class="casetable-config-field-input"
+                  data-config-tag="InputDelay"
+                  value="${escapeHtml(inputDelayValue)}"
+                />
+              </div>
+              <div class="casetable-config-field">
+                <label>Flags</label>
+                <div class="casetable-config-toggle-list">${booleanButtons}</div>
+              </div>
+            </div>`;
+          const children = Array.isArray(casetableConfiguration.children)
+            ? casetableConfiguration.children
+            : [];
+          const remainingNodes = children
+            .map((child, index) => {
+              if (casetableConfigurationSpecialTags.has(child?.tag)) {
+                return "";
+              }
+              return renderCasetableConfigNode(child, `root.${index}`);
+            })
+            .filter(Boolean);
+          const treeHtml = remainingNodes.length
+            ? `<div class="casetable-config-tree">${remainingNodes.join("")}</div>`
+            : "";
+          casetableConfigurationContainer.innerHTML = `${formHtml}${treeHtml}`;
         }
 
         function renderCasetableConfigNode(node, path) {
