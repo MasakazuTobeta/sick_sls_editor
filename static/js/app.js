@@ -6311,6 +6311,19 @@ function parsePolygonTrace(doc) {
             renderCasetableEvals();
             return;
           }
+          const caseExpansionState = Array.from(
+            casetableCasesContainer.querySelectorAll(".casetable-case-card")
+          ).reduce((acc, card) => {
+            const caseIndex = Number(card.dataset.caseIndex);
+            if (Number.isNaN(caseIndex)) {
+              return acc;
+            }
+            const details = card.querySelector("details");
+            if (details) {
+              acc[caseIndex] = details.open;
+            }
+            return acc;
+          }, {});
           if (!casetableCases.length) {
             casetableCasesContainer.innerHTML =
               '<p class="casetable-help-text">No cases defined.</p>';
@@ -6319,6 +6332,17 @@ function parsePolygonTrace(doc) {
               .map((caseData, caseIndex) => renderCasetableCase(caseData, caseIndex))
               .join("");
           }
+          Object.entries(caseExpansionState).forEach(([caseIndex, isOpen]) => {
+            if (!isOpen) {
+              return;
+            }
+            const details = casetableCasesContainer.querySelector(
+              `.casetable-case-card[data-case-index="${caseIndex}"] details`
+            );
+            if (details) {
+              details.open = true;
+            }
+          });
           if (addCasetableCaseBtn) {
             addCasetableCaseBtn.disabled = casetableCases.length >= casetableCasesLimit;
           }
