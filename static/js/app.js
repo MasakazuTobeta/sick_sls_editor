@@ -3282,11 +3282,11 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
 
         function normalizeSpeedActivation(entry) {
           const attributes = { ...(entry?.attributes || {}) };
-          const modeKey = entry?.mode_key || resolveSpeedActivationKey(attributes);
+          const modeKey = entry?.mode_key || entry?.modeKey || resolveSpeedActivationKey(attributes);
           if (!(modeKey in attributes)) {
             attributes[modeKey] = "Off";
           }
-          return { attributes, modeKey };
+          return { attributes, modeKey, mode_key: modeKey };
         }
 
         function findCasetableConfigNode(path) {
@@ -3459,6 +3459,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             caseData.speedActivation.modeKey ||
             resolveSpeedActivationKey(caseData.speedActivation.attributes || {});
           caseData.speedActivation.modeKey = key;
+          caseData.speedActivation.mode_key = key;
           caseData.speedActivation.attributes[key] = value;
         }
 
@@ -6411,7 +6412,9 @@ function parsePolygonTrace(doc) {
         function renderSpeedActivationToggle(caseIndex, speedActivation) {
           const attributes = speedActivation?.attributes || {};
           const modeKey =
-            speedActivation?.modeKey || resolveSpeedActivationKey(attributes);
+            speedActivation?.modeKey ||
+            speedActivation?.mode_key ||
+            resolveSpeedActivationKey(attributes);
           const currentValue = String(attributes[modeKey] || "Off").toLowerCase();
           const options = ["Off", "SpeedRange"];
           const buttons = options
