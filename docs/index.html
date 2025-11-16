@@ -7697,6 +7697,7 @@ function parsePolygonTrace(doc) {
             const toggleBtn = event.target.closest("[data-action='toggle-static-input']");
             if (toggleBtn) {
               event.preventDefault();
+              event.stopPropagation();
               const caseIndex = Number(toggleBtn.dataset.caseIndex);
               const staticIndex = Number(toggleBtn.dataset.staticIndex);
               const value = toggleBtn.dataset.staticValue;
