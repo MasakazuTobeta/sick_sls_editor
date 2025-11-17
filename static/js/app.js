@@ -4416,7 +4416,15 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
                 segment.node.tag === "Activation" &&
                 (caseData.staticInputsPlacement === "activation" ||
                   caseData.speedActivationPlacement === "activation")
-              ) {
+            ) {
+                childLines.push(
+                  ...buildActivationNodeLines(
+                    segment.node,
+                    caseData,
+                    indentLevel + 1
+                  )
+                );
+              } else if (segment.node.tag === "Activation") {
                 childLines.push(
                   ...buildActivationNodeLines(
                     segment.node,
