@@ -3027,6 +3027,8 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           const staticInputsPlacement = entry?.static_inputs_placement || entry?.staticInputsPlacement || "case";
           const speedActivationPlacement =
             entry?.speed_activation_placement || entry?.speedActivationPlacement || "case";
+          const activationMinSpeed = normalizeSpeedRangeValue(entry?.activationMinSpeed);
+          const activationMaxSpeed = normalizeSpeedRangeValue(entry?.activationMaxSpeed);
           const layout = normalizeCaseLayout(entry?.layout, staticInputs, speedActivation, {
             staticInputs: staticInputsPlacement,
             speedActivation: speedActivationPlacement,
@@ -3037,6 +3039,8 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             staticInputsPlacement,
             speedActivation,
             speedActivationPlacement,
+            activationMinSpeed,
+            activationMaxSpeed,
             layout,
           };
         }
@@ -3066,6 +3070,8 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             staticInputsPlacement: "case",
             speedActivation,
             speedActivationPlacement: "case",
+            activationMinSpeed: "0",
+            activationMaxSpeed: "0",
             layout,
           };
         }
@@ -3302,6 +3308,15 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             attributes[modeKey] = "Off";
           }
           return { attributes, modeKey };
+        }
+
+        function normalizeSpeedRangeValue(value) {
+          const numeric = Number(value);
+          if (Number.isFinite(numeric)) {
+            const clamped = Math.min(20000, Math.max(-20000, numeric));
+            return String(clamped);
+          }
+          return "0";
         }
 
         function findCasetableConfigNode(path) {
@@ -3659,13 +3674,49 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
         function updateSpeedActivationValue(caseIndex, value) {
           const caseData = casetableCases[caseIndex];
           if (!caseData || !caseData.speedActivation) {
-            return;
+            return null;
           }
+          const normalizedValue = typeof value === "string" ? value.trim() : "";
+          const allowedValues = {
+            off: "Off",
+            speedrange: "SpeedRange",
+          };
+          const resolvedValue = allowedValues[normalizedValue.toLowerCase()] || "Off";
           const key =
             caseData.speedActivation.modeKey ||
             resolveSpeedActivationKey(caseData.speedActivation.attributes || {});
           caseData.speedActivation.modeKey = key;
-          caseData.speedActivation.attributes[key] = value;
+          caseData.speedActivation.attributes[key] = resolvedValue;
+          return resolvedValue;
+        }
+
+        function getCaseSpeedRangeValue(caseData, field) {
+          if (!caseData) {
+            return "0";
+          }
+          const key = field === "max" ? "activationMaxSpeed" : "activationMinSpeed";
+          const rawValue = caseData[key];
+          if (typeof rawValue === "number") {
+            return String(rawValue);
+          }
+          if (typeof rawValue === "string" && rawValue.length) {
+            return rawValue;
+          }
+          return "0";
+        }
+
+        function updateCaseSpeedRange(caseIndex, field, value) {
+          const caseData = casetableCases[caseIndex];
+          if (!caseData) {
+            return null;
+          }
+          const normalizedValue = normalizeSpeedRangeValue(value);
+          if (field === "max") {
+            caseData.activationMaxSpeed = normalizedValue;
+          } else {
+            caseData.activationMinSpeed = normalizedValue;
+          }
+          return normalizedValue;
         }
 
         function createDefaultFieldsetDevice(index = 0, overrides = {}) {
@@ -4404,6 +4455,10 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
           const childNodes = Array.isArray(node.children) ? node.children : [];
           let staticInserted = false;
           let speedInserted = false;
+          let minSpeedInserted = false;
+          let maxSpeedInserted = false;
+          const minSpeedValue = getCaseSpeedRangeValue(caseData, "min");
+          const maxSpeedValue = getCaseSpeedRangeValue(caseData, "max");
           childNodes.forEach((child) => {
             if (child.tag === "StaticInputs" && caseData.staticInputsPlacement === "activation") {
               lines.push(...buildStaticInputsLines(caseData.staticInputs, indentLevel + 1));
@@ -4414,6 +4469,16 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
             ) {
               lines.push(...buildSpeedActivationLines(caseData.speedActivation, indentLevel + 1));
               speedInserted = true;
+            } else if (child.tag === "MinSpeed") {
+              lines.push(
+                ...buildSimpleTextNodeLines("MinSpeed", minSpeedValue, indentLevel + 1)
+              );
+              minSpeedInserted = true;
+            } else if (child.tag === "MaxSpeed") {
+              lines.push(
+                ...buildSimpleTextNodeLines("MaxSpeed", maxSpeedValue, indentLevel + 1)
+              );
+              maxSpeedInserted = true;
             } else {
               lines.push(...buildGenericNodeLines(child, indentLevel + 1));
             }
@@ -4423,6 +4488,12 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
           }
           if (!speedInserted && caseData.speedActivationPlacement === "activation") {
             lines.push(...buildSpeedActivationLines(caseData.speedActivation, indentLevel + 1));
+          }
+          if (!minSpeedInserted) {
+            lines.push(...buildSimpleTextNodeLines("MinSpeed", minSpeedValue, indentLevel + 1));
+          }
+          if (!maxSpeedInserted) {
+            lines.push(...buildSimpleTextNodeLines("MaxSpeed", maxSpeedValue, indentLevel + 1));
           }
           lines.push(`${indent}</${sanitizeTagName(node.tag)}>`);
           return lines;
@@ -5544,6 +5615,20 @@ function parsePolygonTrace(doc) {
                   entry.speed_activation_placement = "activation";
                 }
               }
+              if (child.tagName === "Activation") {
+                if (typeof entry.activationMinSpeed === "undefined") {
+                  const minSpeedNode = child.querySelector(":scope > MinSpeed");
+                  if (minSpeedNode && typeof minSpeedNode.textContent === "string") {
+                    entry.activationMinSpeed = minSpeedNode.textContent.trim();
+                  }
+                }
+                if (typeof entry.activationMaxSpeed === "undefined") {
+                  const maxSpeedNode = child.querySelector(":scope > MaxSpeed");
+                  if (maxSpeedNode && typeof maxSpeedNode.textContent === "string") {
+                    entry.activationMaxSpeed = maxSpeedNode.textContent.trim();
+                  }
+                }
+              }
               entry.layout.push({ kind: "node", node: convertElementToGenericNode(child) });
             }
           });
@@ -6003,9 +6088,17 @@ function parsePolygonTrace(doc) {
                 field,
                 resolveStructuredInputValue(target)
               );
-            } else if (target.classList.contains("casetable-speed-select")) {
+            } else if (target.classList.contains("casetable-speed-range-input")) {
               const caseIndex = Number(target.dataset.caseIndex);
-              updateSpeedActivationValue(caseIndex, target.value);
+              const field = target.dataset.speedField === "max" ? "max" : "min";
+              const normalizedValue = updateCaseSpeedRange(
+                caseIndex,
+                field,
+                target.value
+              );
+              if (typeof normalizedValue === "string" && normalizedValue !== target.value) {
+                target.value = normalizedValue;
+              }
             }
           });
 
@@ -6033,6 +6126,16 @@ function parsePolygonTrace(doc) {
               const staticIndex = Number(toggleBtn.dataset.staticIndex);
               const value = toggleBtn.dataset.staticValue;
               updateStaticInputValue(caseIndex, staticIndex, value);
+              renderCasetableCases();
+              return;
+            }
+            const speedToggle = event.target.closest("[data-action='toggle-speed-activation']");
+            if (speedToggle) {
+              event.preventDefault();
+              event.stopPropagation();
+              const caseIndex = Number(speedToggle.dataset.caseIndex);
+              const value = speedToggle.dataset.speedMode;
+              updateSpeedActivationValue(caseIndex, value);
               renderCasetableCases();
             }
           });
@@ -6677,26 +6780,62 @@ function parsePolygonTrace(doc) {
                   .join("")}
               </div>`
             : '<p class="casetable-help-text">No static inputs defined.</p>';
-          const speedActivationSection = caseData.speedActivation
-            ? `<div class="casetable-speed-activation">
-                <label>SpeedActivation</label>
-                <select class="casetable-speed-select" data-case-index="${caseIndex}">
-                  ${["Off", "SpeedRange"]
-                    .map((option) => {
-                      const currentValue = String(
-                        caseData.speedActivation.attributes?.[
-                          caseData.speedActivation.modeKey
-                        ] ?? ""
-                      ).toLowerCase();
-                      const isSelected = currentValue === option.toLowerCase();
-                      return `<option value="${option}"${
-                        isSelected ? " selected" : ""
-                      }>${option}</option>`;
-                    })
-                    .join("")}
-                </select>
-              </div>`
-            : "";
+          let speedActivationSection = "";
+          if (caseData.speedActivation) {
+            const currentValue = String(
+              caseData.speedActivation.attributes?.[
+                caseData.speedActivation.modeKey
+              ] ?? ""
+            ).toLowerCase();
+            const toggleButtons = ["Off", "SpeedRange"]
+              .map((option) => {
+                const isActive = currentValue === option.toLowerCase();
+                return `<button
+                  type="button"
+                  class="toggle-option${isActive ? " is-active" : ""}"
+                  data-action="toggle-speed-activation"
+                  data-case-index="${caseIndex}"
+                  data-speed-mode="${option}"
+                >${option}</button>`;
+              })
+              .join("");
+            const minSpeedValue = escapeHtml(getCaseSpeedRangeValue(caseData, "min"));
+            const maxSpeedValue = escapeHtml(getCaseSpeedRangeValue(caseData, "max"));
+            speedActivationSection = `<div class="casetable-speed-activation">
+                <div class="casetable-speed-toggle">
+                  <label>SpeedActivation</label>
+                  <div class="toggle-group">${toggleButtons}</div>
+                </div>
+                <div class="casetable-speed-range-fields">
+                  <div class="casetable-case-field">
+                    <label>MinSpeed</label>
+                    <input
+                      type="number"
+                      class="casetable-speed-range-input"
+                      data-case-index="${caseIndex}"
+                      data-speed-field="min"
+                      min="-20000"
+                      max="20000"
+                      step="10"
+                      value="${minSpeedValue}"
+                    />
+                  </div>
+                  <div class="casetable-case-field">
+                    <label>MaxSpeed</label>
+                    <input
+                      type="number"
+                      class="casetable-speed-range-input"
+                      data-case-index="${caseIndex}"
+                      data-speed-field="max"
+                      min="-20000"
+                      max="20000"
+                      step="10"
+                      value="${maxSpeedValue}"
+                    />
+                  </div>
+                </div>
+              </div>`;
+          }
           const hasReadonlyNodes = Array.isArray(caseData.layout)
             ? caseData.layout.some((segment) => segment.kind === "node")
             : false;
