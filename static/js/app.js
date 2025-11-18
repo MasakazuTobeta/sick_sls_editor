@@ -1608,33 +1608,40 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           const hasScale = scaleFactor !== 1;
           const hasRotation = rotation !== 0;
           const radians = hasRotation ? degreesToRadians(rotation) : 0;
-          const transformedPoints = numericPoints.map((point) => {
+          let transformedPoints = numericPoints.map((point) => {
             let x = point.x;
             let y = point.y;
             if (hasScale) {
               x *= scaleFactor;
               y *= scaleFactor;
             }
-            if (hasRotation) {
-              const rotated = rotatePoint(x, y, radians, 0, 0);
-              x = rotated.x;
-              y = rotated.y;
-            }
-            x += offsetX;
-            y += offsetY;
             return { x, y };
           });
-          let finalPoints = transformedPoints;
-          if (preserveOrientation && hasRotation && transformedPoints.length) {
+          if (hasRotation && preserveOrientation) {
             const centroid = computePointCentroid(transformedPoints);
             if (centroid) {
-              finalPoints = transformedPoints.map((point) => {
-                const rotated = rotatePoint(point.x, point.y, -radians, centroid.x, centroid.y);
-                return { x: rotated.x, y: rotated.y };
-              });
+              const rotatedCentroid = rotatePoint(centroid.x, centroid.y, radians, 0, 0);
+              const deltaX = rotatedCentroid.x - centroid.x;
+              const deltaY = rotatedCentroid.y - centroid.y;
+              transformedPoints = transformedPoints.map((point) => ({
+                x: point.x + deltaX,
+                y: point.y + deltaY,
+              }));
+            } else {
+              transformedPoints = transformedPoints.map((point) =>
+                rotatePoint(point.x, point.y, radians, 0, 0)
+              );
             }
+          } else if (hasRotation) {
+            transformedPoints = transformedPoints.map((point) =>
+              rotatePoint(point.x, point.y, radians, 0, 0)
+            );
           }
-          return finalPoints.map((point) => ({
+          transformedPoints = transformedPoints.map((point) => ({
+            x: point.x + offsetX,
+            y: point.y + offsetY,
+          }));
+          return transformedPoints.map((point) => ({
             X: formatReplicateNumber(point.x),
             Y: formatReplicateNumber(point.y),
           }));
