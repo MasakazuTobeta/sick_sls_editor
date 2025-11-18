@@ -1573,24 +1573,14 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           if (!numericPoints.length) {
             return [];
           }
-          const center = numericPoints.reduce(
-            (acc, point) => {
-              acc.x += point.x;
-              acc.y += point.y;
-              return acc;
-            },
-            { x: 0, y: 0 }
-          );
-          center.x /= numericPoints.length;
-          center.y /= numericPoints.length;
           const radians = rotation ? degreesToRadians(rotation) : 0;
           return numericPoints.map((point) => {
             let x = point.x;
             let y = point.y;
             if (rotation) {
-              const rotated = rotatePoint(x - center.x, y - center.y, radians, 0, 0);
-              x = rotated.x + center.x;
-              y = rotated.y + center.y;
+              const rotated = rotatePoint(x, y, radians, 0, 0);
+              x = rotated.x;
+              y = rotated.y;
             }
             x += offsetX;
             y += offsetY;
@@ -1605,7 +1595,9 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           const offsetX = Number(transform.offsetX) || 0;
           const offsetY = Number(transform.offsetY) || 0;
           const rotation = Number(transform.rotation) || 0;
-          if (!offsetX && !offsetY && !rotation) {
+          const hasRotation = rotation !== 0;
+          const rotationRadians = hasRotation ? degreesToRadians(rotation) : 0;
+          if (!offsetX && !offsetY && !hasRotation) {
             return;
           }
           if (shape.type === "Polygon" && shape.polygon) {
@@ -1615,17 +1607,33 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               rotation,
             });
           } else if (shape.type === "Rectangle" && shape.rectangle) {
-            const originX = parseNumeric(shape.rectangle.OriginX, 0) + offsetX;
-            const originY = parseNumeric(shape.rectangle.OriginY, 0) + offsetY;
+            let originX = parseNumeric(shape.rectangle.OriginX, 0);
+            let originY = parseNumeric(shape.rectangle.OriginY, 0);
+            if (hasRotation) {
+              const rotated = rotatePoint(originX, originY, rotationRadians, 0, 0);
+              originX = rotated.x;
+              originY = rotated.y;
+            }
+            originX += offsetX;
+            originY += offsetY;
             shape.rectangle.OriginX = formatReplicateNumber(originX);
             shape.rectangle.OriginY = formatReplicateNumber(originY);
-            if (rotation) {
+            if (hasRotation) {
               const baseRotation = parseNumeric(shape.rectangle.Rotation, 0);
-              shape.rectangle.Rotation = formatReplicateNumber(normalizeDegrees(baseRotation + rotation));
+              shape.rectangle.Rotation = formatReplicateNumber(
+                normalizeDegrees(baseRotation + rotation)
+              );
             }
           } else if (shape.type === "Circle" && shape.circle) {
-            const centerX = parseNumeric(shape.circle.CenterX, 0) + offsetX;
-            const centerY = parseNumeric(shape.circle.CenterY, 0) + offsetY;
+            let centerX = parseNumeric(shape.circle.CenterX, 0);
+            let centerY = parseNumeric(shape.circle.CenterY, 0);
+            if (hasRotation) {
+              const rotated = rotatePoint(centerX, centerY, rotationRadians, 0, 0);
+              centerX = rotated.x;
+              centerY = rotated.y;
+            }
+            centerX += offsetX;
+            centerY += offsetY;
             shape.circle.CenterX = formatReplicateNumber(centerX);
             shape.circle.CenterY = formatReplicateNumber(centerY);
           }
