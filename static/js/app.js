@@ -327,6 +327,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const replicateRotationInput = document.getElementById("replicate-rotation");
         const replicateScalePercentInput = document.getElementById("replicate-scale-percent");
         const replicateIncludeCutoutsInput = document.getElementById("replicate-include-cutouts");
+        const replicateStaticInputsAutoInput = document.getElementById("replicate-static-inputs-auto");
         const replicateCasePrefixInput = document.getElementById("replicate-case-prefix");
         const replicateTargetToggle = document.getElementById("replicate-target-toggle");
         const replicateCaseSelect = document.getElementById("replicate-case-select");
@@ -437,6 +438,7 @@ document.addEventListener("DOMContentLoaded", () => {
           scalePercent: 0,
           casePrefix: "",
           includeCutouts: false,
+          autoStaticInputs: false,
         };
         let replicatePreviewState = null;
 
@@ -1862,7 +1864,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           };
         }
 
-        function buildReplicatedCase(baseCase, { caseIndex, prefix }) {
+        function buildReplicatedCase(baseCase, { caseIndex, prefix, staticInputs: staticInputsOverride }) {
           if (!baseCase) {
             return null;
           }
@@ -1876,15 +1878,18 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           } else {
             attributes.NameLatin9Key = `_CASE_${String(displayIndex).padStart(3, "0")}`;
           }
-          const staticInputs = Array.isArray(baseCase.staticInputs)
-            ? baseCase.staticInputs.map((entry) => {
-                const valueKey = entry?.valueKey || resolveStaticInputValueKey(entry?.attributes || {});
-                return {
-                  attributes: { ...(entry?.attributes || {}) },
-                  valueKey,
-                };
-              })
-            : [];
+          const staticInputSource = Array.isArray(staticInputsOverride)
+            ? staticInputsOverride
+            : Array.isArray(baseCase.staticInputs)
+              ? baseCase.staticInputs
+              : [];
+          const staticInputs = staticInputSource.map((entry) => {
+            const valueKey = entry?.valueKey || resolveStaticInputValueKey(entry?.attributes || {});
+            return {
+              attributes: { ...(entry?.attributes || {}) },
+              valueKey,
+            };
+          });
           const speedActivation = {
             attributes: { ...(baseCase.speedActivation?.attributes || {}) },
             modeKey: baseCase.speedActivation?.modeKey || "Mode",
@@ -1911,6 +1916,71 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             activationMinSpeed: baseCase.activationMinSpeed ?? "0",
             activationMaxSpeed: baseCase.activationMaxSpeed ?? "0",
             layout,
+          };
+        }
+
+        function normalizeStaticInputStateValue(value) {
+          const normalized = String(value ?? "").toLowerCase();
+          if (normalized === "high") {
+            return "high";
+          }
+          if (normalized === "low") {
+            return "low";
+          }
+          return "dontcare";
+        }
+
+        function createStaticInputsAutoIncrementer(baseCase) {
+          const desiredCount = casetableConfigurationStaticInputsCount;
+          const sourceList = Array.isArray(baseCase?.staticInputs) ? baseCase.staticInputs : [];
+          const preparedList = [];
+          for (let index = 0; index < desiredCount; index += 1) {
+            const sourceEntry = sourceList[index] || createDefaultStaticInput(`StaticInput ${index + 1}`);
+            const template = { ...(sourceEntry?.attributes || {}) };
+            if (!template.Name) {
+              template.Name = `StaticInput ${index + 1}`;
+            }
+            const valueKey = sourceEntry?.valueKey || resolveStaticInputValueKey(template);
+            if (!(valueKey in template)) {
+              template[valueKey] = "DontCare";
+            }
+            preparedList.push({ template, valueKey });
+          }
+          const dontCareFlags = preparedList.map((entry) =>
+            normalizeStaticInputStateValue(entry.template?.[entry.valueKey]) === "dontcare"
+          );
+          const activationFlags = new Array(preparedList.length).fill(false);
+          const modulus = Math.max(1, 2 ** preparedList.length);
+          const baseValue = preparedList.reduce((sum, entry, index) => {
+            const shift = preparedList.length - 1 - index;
+            const state = normalizeStaticInputStateValue(entry.template?.[entry.valueKey]);
+            if (state === "high") {
+              return sum + 2 ** shift;
+            }
+            return sum;
+          }, 0);
+          let step = 0;
+          return {
+            next() {
+              step += 1;
+              const value = (baseValue + step) % modulus;
+              return preparedList.map((entry, index) => {
+                const shift = preparedList.length - 1 - index;
+                const bit = preparedList.length ? (value >> shift) & 1 : 0;
+                const shouldKeepDontCare =
+                  dontCareFlags[index] && !activationFlags[index] && bit === 0;
+                const attributes = { ...(entry.template || {}) };
+                if (shouldKeepDontCare) {
+                  attributes[entry.valueKey] = "DontCare";
+                } else {
+                  attributes[entry.valueKey] = bit ? "High" : "Low";
+                  if (dontCareFlags[index]) {
+                    activationFlags[index] = true;
+                  }
+                }
+                return { attributes, valueKey: entry.valueKey };
+              });
+            },
           };
         }
 
@@ -2819,6 +2889,11 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               replicateFormState.includeCutouts
             );
           }
+          if (replicateStaticInputsAutoInput) {
+            replicateStaticInputsAutoInput.checked = Boolean(
+              replicateFormState.autoStaticInputs
+            );
+          }
           if (replicateCasePrefixInput) {
             replicateCasePrefixInput.value = fallbackPrefix;
           }
@@ -2975,6 +3050,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           const rotation = parseNumeric(replicateRotationInput?.value, 0) || 0;
           const scalePercent = parseNumeric(replicateScalePercentInput?.value, 0) || 0;
           const includeCutouts = Boolean(replicateIncludeCutoutsInput?.checked);
+          const autoStaticInputs = Boolean(replicateStaticInputsAutoInput?.checked);
           replicateFormState.copyCount = copyCount;
           replicateFormState.casePrefix = casePrefix;
           replicateFormState.selectedCaseIndexes = selectedCaseIndexes;
@@ -2984,6 +3060,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           replicateFormState.rotation = rotation;
           replicateFormState.scalePercent = scalePercent;
           replicateFormState.includeCutouts = includeCutouts;
+          replicateFormState.autoStaticInputs = autoStaticInputs;
           const availableSlots = casetableCasesLimit - casetableCases.length;
           const desiredCount = selectedCaseIndexes.length * copyCount;
           if (availableSlots <= 0) {
@@ -2999,6 +3076,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           const createdFieldsets = [];
           const caseAssignments = [];
           const baseFieldsetCount = fieldsets.length;
+          const staticInputGenerators = autoStaticInputs ? new Map() : null;
           let casesMissingFieldsets = 0;
           for (let idx = 0; idx < selectedCaseIndexes.length; idx += 1) {
             const sourceCaseIndex = selectedCaseIndexes[idx];
@@ -3040,9 +3118,19 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
                 }
               });
               const targetCaseIndex = casetableCases.length;
+              let staticInputsOverride = null;
+              if (staticInputGenerators) {
+                let generator = staticInputGenerators.get(sourceCaseIndex);
+                if (!generator) {
+                  generator = createStaticInputsAutoIncrementer(baseCase);
+                  staticInputGenerators.set(sourceCaseIndex, generator);
+                }
+                staticInputsOverride = generator?.next() || null;
+              }
               const newCase = buildReplicatedCase(baseCase, {
                 caseIndex: targetCaseIndex,
                 prefix: casePrefix,
+                staticInputs: staticInputsOverride,
               });
               if (!newCase) {
                 continue;
@@ -3150,6 +3238,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               rotation,
               scalePercent,
               includeCutouts,
+              autoStaticInputs: Boolean(replicateStaticInputsAutoInput?.checked),
             };
           }
           if (!replicateFieldsetSelect || !fieldsets.length) {
@@ -9400,6 +9489,9 @@ function parsePolygonTrace(doc) {
         }
         if (replicateIncludeCutoutsInput) {
           replicateIncludeCutoutsInput.addEventListener("change", updateReplicatePreview);
+        }
+        if (replicateStaticInputsAutoInput) {
+          replicateStaticInputsAutoInput.addEventListener("change", updateReplicatePreview);
         }
         function startCreateShapeDrag(event) {
           if (!createShapeModalWindow) return;
