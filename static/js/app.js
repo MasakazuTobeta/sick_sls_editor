@@ -1765,6 +1765,19 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           return String(index + 1);
         }
 
+        function getFieldsetIndexesForCase(caseIndex) {
+          const assignments = caseFieldAssignments[caseIndex];
+          if (!assignments || !assignments.size) {
+            return [];
+          }
+          return Array.from(assignments)
+            .map((value) => Number(value))
+            .filter((value) =>
+              Number.isFinite(value) && value >= 0 && value < fieldsets.length
+            )
+            .sort((a, b) => a - b);
+        }
+
         function assignCasesToFieldsets(assignments = []) {
           if (!assignments.length) {
             return;
@@ -2336,12 +2349,156 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           return traces;
         }
 
+        function collectFieldsetPreviewTraces(fieldset, options = {}) {
+          const {
+            colorSet,
+            labelPrefix,
+            transform,
+            includeCutouts,
+            fieldsetIndex,
+          } = options;
+          if (!fieldset || !Array.isArray(fieldset.fields) || !fieldset.fields.length) {
+            return [];
+          }
+          const traces = [];
+          fieldset.fields.forEach((field, fieldIndex) => {
+            const fieldType = field.attributes?.Fieldtype || "ProtectiveSafeBlanking";
+            const fieldName = field.attributes?.Name || `Field ${fieldIndex + 1}`;
+            (field.shapeRefs || []).forEach((shapeRef, shapeRefIndex) => {
+              const baseShape = findTriOrbShapeById(shapeRef?.shapeId);
+              if (!baseShape) {
+                return;
+              }
+              if (!includeCutouts && isCutOutShape(baseShape)) {
+                return;
+              }
+              const previewShape = cloneShape(baseShape);
+              if (!previewShape) {
+                return;
+              }
+              applyReplicationTransform(previewShape, transform);
+              const shapeName = baseShape.name || baseShape.type;
+              const label = `${labelPrefix} / ${fieldName} / ${shapeName}`;
+              let trace = null;
+              switch (previewShape.type) {
+                case "Rectangle":
+                  if (previewShape.rectangle) {
+                    trace = buildRectangleTrace(
+                      previewShape.rectangle,
+                      colorSet,
+                      label,
+                      fieldType,
+                      fieldsetIndex,
+                      fieldIndex,
+                      shapeRefIndex
+                    );
+                  }
+                  break;
+                case "Circle":
+                  if (previewShape.circle) {
+                    trace = buildCircleTrace(
+                      previewShape.circle,
+                      colorSet,
+                      label,
+                      fieldType,
+                      fieldsetIndex,
+                      fieldIndex,
+                      shapeRefIndex
+                    );
+                  }
+                  break;
+                case "Polygon":
+                default:
+                  if (previewShape.polygon) {
+                    trace = buildPolygonTrace(
+                      previewShape.polygon,
+                      colorSet,
+                      label,
+                      fieldType,
+                      fieldsetIndex,
+                      fieldIndex,
+                      shapeRefIndex
+                    );
+                  }
+                  break;
+              }
+              if (trace) {
+                trace.line = {
+                  ...(trace.line || {}),
+                  color: colorSet.stroke,
+                  dash: "dot",
+                  width: Math.max((trace.line && trace.line.width) || 2, 2),
+                };
+                trace.fillcolor = colorSet.fill;
+                trace.name = label;
+                trace.showlegend = false;
+                trace.meta = { ...(trace.meta || {}), preview: true, replicatePreview: true };
+                traces.push(trace);
+              }
+            });
+          });
+          return traces;
+        }
+
         function buildReplicatePreviewTraces() {
-          if (!replicatePreviewState || replicatePreviewState.target === "case") {
+          if (!replicatePreviewState) {
+            return [];
+          }
+          const previewColorSet = {
+            stroke: "rgba(14, 165, 233, 0.95)",
+            fill: withAlpha("#0ea5e9", 0.08),
+          };
+          const { target } = replicatePreviewState;
+          if (target === "case") {
+            const {
+              caseIndexes = [],
+              copyCount = 1,
+              offsetX = 0,
+              offsetY = 0,
+              rotation = 0,
+              scalePercent = 0,
+              includeCutouts = false,
+            } = replicatePreviewState;
+            if (!caseIndexes.length) {
+              return [];
+            }
+            const traces = [];
+            caseIndexes.forEach((caseIndex) => {
+              const caseName = getReplicateCaseName(caseIndex) || `Case ${caseIndex + 1}`;
+              const fieldsetIndexes = getFieldsetIndexesForCase(caseIndex);
+              fieldsetIndexes.forEach((fieldsetIndex) => {
+                const fieldset = fieldsets[fieldsetIndex];
+                if (!fieldset || !Array.isArray(fieldset.fields) || !fieldset.fields.length) {
+                  return;
+                }
+                const fieldsetName = fieldset.attributes?.Name || `Fieldset ${fieldsetIndex + 1}`;
+                for (let step = 1; step <= copyCount; step += 1) {
+                  const transform = {
+                    offsetX: offsetX * step,
+                    offsetY: offsetY * step,
+                    rotation: rotation * step,
+                    scale: computeReplicationScale(scalePercent, step),
+                  };
+                  const copyLabel = `${caseName} / ${fieldsetName} (Copy ${step})`;
+                  const previewTraces = collectFieldsetPreviewTraces(fieldset, {
+                    colorSet: previewColorSet,
+                    labelPrefix: copyLabel,
+                    transform,
+                    includeCutouts,
+                    fieldsetIndex,
+                  });
+                  if (previewTraces.length) {
+                    traces.push(...previewTraces);
+                  }
+                }
+              });
+            });
+            return traces;
+          }
+          if (target !== "fieldset") {
             return [];
           }
           const {
-            target,
             fieldsetIndex,
             copyCount,
             offsetX,
@@ -2350,17 +2507,10 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             scalePercent,
             includeCutouts,
           } = replicatePreviewState;
-          if (target === "case") {
-            return [];
-          }
           const fieldset = fieldsets[fieldsetIndex];
           if (!fieldset || !Array.isArray(fieldset.fields) || !fieldset.fields.length) {
             return [];
           }
-          const previewColorSet = {
-            stroke: "rgba(14, 165, 233, 0.95)",
-            fill: withAlpha("#0ea5e9", 0.08),
-          };
           const traces = [];
           const fieldsetName = fieldset.attributes?.Name || `Fieldset ${fieldsetIndex + 1}`;
           for (let step = 1; step <= copyCount; step += 1) {
@@ -2371,82 +2521,16 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               scale: computeReplicationScale(scalePercent, step),
             };
             const copyLabel = `${fieldsetName} (Copy ${step})`;
-            fieldset.fields.forEach((field, fieldIndex) => {
-              const fieldType = field.attributes?.Fieldtype || "ProtectiveSafeBlanking";
-              const fieldName = field.attributes?.Name || `Field ${fieldIndex + 1}`;
-              (field.shapeRefs || []).forEach((shapeRef, shapeRefIndex) => {
-                const baseShape = findTriOrbShapeById(shapeRef?.shapeId);
-                if (!baseShape) {
-                  return;
-                }
-                if (!includeCutouts && isCutOutShape(baseShape)) {
-                  return;
-                }
-                const previewShape = cloneShape(baseShape);
-                if (!previewShape) {
-                  return;
-                }
-                applyReplicationTransform(previewShape, transform);
-                const shapeName = baseShape.name || baseShape.type;
-                const label = `${copyLabel} / ${fieldName} / ${shapeName}`;
-                let trace = null;
-                switch (previewShape.type) {
-                  case "Rectangle":
-                    if (previewShape.rectangle) {
-                      trace = buildRectangleTrace(
-                        previewShape.rectangle,
-                        previewColorSet,
-                        label,
-                        fieldType,
-                        fieldsetIndex,
-                        fieldIndex,
-                        shapeRefIndex
-                      );
-                    }
-                    break;
-                  case "Circle":
-                    if (previewShape.circle) {
-                      trace = buildCircleTrace(
-                        previewShape.circle,
-                        previewColorSet,
-                        label,
-                        fieldType,
-                        fieldsetIndex,
-                        fieldIndex,
-                        shapeRefIndex
-                      );
-                    }
-                    break;
-                  case "Polygon":
-                  default:
-                    if (previewShape.polygon) {
-                      trace = buildPolygonTrace(
-                        previewShape.polygon,
-                        previewColorSet,
-                        label,
-                        fieldType,
-                        fieldsetIndex,
-                        fieldIndex,
-                        shapeRefIndex
-                      );
-                    }
-                    break;
-                }
-                if (trace) {
-                  trace.line = {
-                    ...(trace.line || {}),
-                    color: previewColorSet.stroke,
-                    dash: "dot",
-                    width: Math.max((trace.line && trace.line.width) || 2, 2),
-                  };
-                  trace.fillcolor = previewColorSet.fill;
-                  trace.name = label;
-                  trace.showlegend = false;
-                  trace.meta = { ...(trace.meta || {}), preview: true, replicatePreview: true };
-                  traces.push(trace);
-                }
-              });
+            const previewTraces = collectFieldsetPreviewTraces(fieldset, {
+              colorSet: previewColorSet,
+              labelPrefix: copyLabel,
+              transform,
+              includeCutouts,
+              fieldsetIndex,
             });
+            if (previewTraces.length) {
+              traces.push(...previewTraces);
+            }
           }
           return traces;
         }
@@ -2886,10 +2970,20 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           copyCount = Math.min(32, copyCount);
           const prefixInput = replicateCasePrefixInput?.value?.trim();
           const casePrefix = prefixInput || resolveReplicatePrefixFallback();
+          const offsetX = parseNumeric(replicateOffsetXInput?.value, 0) || 0;
+          const offsetY = parseNumeric(replicateOffsetYInput?.value, 0) || 0;
+          const rotation = parseNumeric(replicateRotationInput?.value, 0) || 0;
+          const scalePercent = parseNumeric(replicateScalePercentInput?.value, 0) || 0;
+          const includeCutouts = Boolean(replicateIncludeCutoutsInput?.checked);
           replicateFormState.copyCount = copyCount;
           replicateFormState.casePrefix = casePrefix;
           replicateFormState.selectedCaseIndexes = selectedCaseIndexes;
           replicateFormState.target = "case";
+          replicateFormState.offsetX = offsetX;
+          replicateFormState.offsetY = offsetY;
+          replicateFormState.rotation = rotation;
+          replicateFormState.scalePercent = scalePercent;
+          replicateFormState.includeCutouts = includeCutouts;
           const availableSlots = casetableCasesLimit - casetableCases.length;
           const desiredCount = selectedCaseIndexes.length * copyCount;
           if (availableSlots <= 0) {
@@ -2902,17 +2996,49 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               : [],
           }));
           const caseMappings = [];
-          const createdCaseNames = [];
+          const createdFieldsets = [];
+          const caseAssignments = [];
+          const baseFieldsetCount = fieldsets.length;
+          let casesMissingFieldsets = 0;
           for (let idx = 0; idx < selectedCaseIndexes.length; idx += 1) {
             const sourceCaseIndex = selectedCaseIndexes[idx];
             const baseCase = casetableCases[sourceCaseIndex];
             if (!baseCase) {
               continue;
             }
+            const fieldsetIndexes = getFieldsetIndexesForCase(sourceCaseIndex);
+            const fieldsetSources = fieldsetIndexes
+              .map((fieldsetIndex) => ({
+                fieldsetIndex,
+                fieldset: fieldsets[fieldsetIndex],
+              }))
+              .filter((entry) => Array.isArray(entry.fieldset?.fields) && entry.fieldset.fields.length);
             for (let step = 1; step <= copyCount; step += 1) {
               if (caseMappings.length >= availableSlots) {
                 break;
               }
+              const transform = {
+                offsetX: offsetX * step,
+                offsetY: offsetY * step,
+                rotation: rotation * step,
+                scale: computeReplicationScale(scalePercent, step),
+              };
+              const replicatedFieldsetsForCase = [];
+              fieldsetSources.forEach(({ fieldset }) => {
+                const nextFieldsetIndex = baseFieldsetCount + createdFieldsets.length + 1;
+                const fieldsetName = `${casePrefix} ${nextFieldsetIndex}`;
+                const replicatedFieldset = buildReplicatedFieldset(fieldset, {
+                  copyIndex: step,
+                  transform,
+                  name: fieldsetName,
+                  includeCutouts,
+                });
+                if (replicatedFieldset) {
+                  fieldsets.push(replicatedFieldset);
+                  createdFieldsets.push(replicatedFieldset);
+                  replicatedFieldsetsForCase.push(replicatedFieldset);
+                }
+              });
               const targetCaseIndex = casetableCases.length;
               const newCase = buildReplicatedCase(baseCase, {
                 caseIndex: targetCaseIndex,
@@ -2924,7 +3050,16 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               casetableCases.push(newCase);
               caseToggleStates.push(false);
               caseMappings.push({ sourceCaseIndex, targetCaseIndex });
-              createdCaseNames.push(newCase.attributes?.Name || buildCaseName(targetCaseIndex));
+              const primaryFieldset = replicatedFieldsetsForCase[0];
+              if (primaryFieldset) {
+                const primaryShapeId = findPrimaryShapeIdForFieldset(primaryFieldset);
+                const userFieldId = getUserFieldIdForShapeId(primaryShapeId);
+                if (userFieldId) {
+                  caseAssignments.push({ caseIndex: targetCaseIndex, userFieldId });
+                }
+              } else if (!fieldsetSources.length) {
+                casesMissingFieldsets += 1;
+              }
             }
             if (caseMappings.length >= availableSlots) {
               break;
@@ -2954,6 +3089,12 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               }
             });
           });
+          assignCasesToFieldsets(caseAssignments);
+          if (createdFieldsets.length) {
+            renderFieldsets();
+            renderTriOrbShapes();
+            renderTriOrbShapeCheckboxes();
+          }
           renderCasetableCases();
           renderCasetableEvals();
           refreshCaseFieldAssignments({ rerenderCaseToggles: true });
@@ -2964,6 +3105,19 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             statusType = "warning";
             statusMessage = `${caseMappings.length} 件の Case を複製しました (上限により ${desiredCount - caseMappings.length} 件は未作成)。`;
           }
+          if (createdFieldsets.length) {
+            const replicatedFieldCount = createdFieldsets.reduce(
+              (sum, replicatedFieldset) => sum + (replicatedFieldset.fields?.length || 0),
+              0
+            );
+            statusMessage += ` ${createdFieldsets.length} 個の Fieldset (計 ${replicatedFieldCount} 個の Field) を複製しました。`;
+          } else {
+            statusMessage += " 紐づく Fieldset は複製されませんでした。";
+          }
+          if (casesMissingFieldsets) {
+            statusType = statusType === "error" ? "error" : "warning";
+            statusMessage += ` ${casesMissingFieldsets} 件の Case では紐づく Fieldset が見つかりませんでした。`;
+          }
           setStatus(statusMessage, statusType);
         }
 
@@ -2972,8 +3126,31 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             return null;
           }
           const target = replicateFormState.target === "case" ? "case" : "fieldset";
+          let copyCount = parseInt(replicateCopyCountInput?.value ?? "1", 10);
+          if (!Number.isFinite(copyCount) || copyCount < 1) {
+            copyCount = 1;
+          }
+          copyCount = Math.min(32, copyCount);
+          if (replicateCopyCountInput) {
+            replicateCopyCountInput.value = String(copyCount);
+          }
+          const offsetX = parseNumeric(replicateOffsetXInput?.value, 0) || 0;
+          const offsetY = parseNumeric(replicateOffsetYInput?.value, 0) || 0;
+          const rotation = parseNumeric(replicateRotationInput?.value, 0) || 0;
+          const scalePercent = parseNumeric(replicateScalePercentInput?.value, 0) || 0;
+          const includeCutouts = Boolean(replicateIncludeCutoutsInput?.checked);
           if (target === "case") {
-            return { target };
+            const caseIndexes = captureSelectedReplicateCases();
+            return {
+              target,
+              caseIndexes,
+              copyCount,
+              offsetX,
+              offsetY,
+              rotation,
+              scalePercent,
+              includeCutouts,
+            };
           }
           if (!replicateFieldsetSelect || !fieldsets.length) {
             return null;
@@ -2990,19 +3167,6 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           if (!fieldset || !Array.isArray(fieldset.fields) || !fieldset.fields.length) {
             return null;
           }
-          let copyCount = parseInt(replicateCopyCountInput?.value ?? "1", 10);
-          if (!Number.isFinite(copyCount) || copyCount < 1) {
-            copyCount = 1;
-          }
-          copyCount = Math.min(32, copyCount);
-          if (replicateCopyCountInput) {
-            replicateCopyCountInput.value = String(copyCount);
-          }
-          const offsetX = parseNumeric(replicateOffsetXInput?.value, 0) || 0;
-          const offsetY = parseNumeric(replicateOffsetYInput?.value, 0) || 0;
-          const rotation = parseNumeric(replicateRotationInput?.value, 0) || 0;
-          const scalePercent = parseNumeric(replicateScalePercentInput?.value, 0) || 0;
-          const includeCutouts = Boolean(replicateIncludeCutoutsInput?.checked);
           return {
             target,
             fieldsetIndex,
@@ -9199,6 +9363,7 @@ function parsePolygonTrace(doc) {
           replicateCaseSelect.addEventListener("change", () => {
             replicateFormState.selectedCaseIndexes = captureSelectedReplicateCases();
             updateReplicatePrefixPlaceholder();
+            updateReplicatePreview();
           });
         }
         [
