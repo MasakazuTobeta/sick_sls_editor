@@ -1662,10 +1662,6 @@
               <select id="replicate-fieldset-select"></select>
             </label>
             <label>
-              Field
-              <select id="replicate-field-select"></select>
-            </label>
-            <label>
               Copies
               <input type="number" id="replicate-copy-count" min="1" max="32" step="1" value="1" />
             </label>
@@ -1682,12 +1678,12 @@
               <input type="number" id="replicate-rotation" step="1" value="0" />
             </label>
             <label>
-              Case name prefix
-              <input type="text" id="replicate-case-prefix" placeholder="Case" />
+              Fieldset / Case prefix
+              <input type="text" id="replicate-case-prefix" placeholder="Fieldset" />
             </label>
           </div>
           <p class="replicate-note">
-            選択した Field を繰り返しコピーし、同数の Case を自動追加します。オフセット値はコピーごとの増分です。
+            選択した Fieldset 配下の Field をまとめて繰り返しコピーし、コピーごとに新しい Fieldset と Case を追加します。オフセット値はコピーごとの増分です。
           </p>
         </div>
         <div class="modal-footer">

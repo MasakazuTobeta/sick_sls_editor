@@ -321,7 +321,6 @@ document.addEventListener("DOMContentLoaded", () => {
           }, {})
         );
         const replicateFieldsetSelect = document.getElementById("replicate-fieldset-select");
-        const replicateFieldSelect = document.getElementById("replicate-field-select");
         const replicateCopyCountInput = document.getElementById("replicate-copy-count");
         const replicateOffsetXInput = document.getElementById("replicate-offset-x");
         const replicateOffsetYInput = document.getElementById("replicate-offset-y");
@@ -425,7 +424,6 @@ document.addEventListener("DOMContentLoaded", () => {
         let createShapeOriginal = null;
         const replicateFormState = {
           fieldsetIndex: 0,
-          fieldIndex: 0,
           copyCount: 1,
           offsetX: 0,
           offsetY: 0,
@@ -1654,14 +1652,11 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           return clonedShape.id;
         }
 
-        function buildReplicatedField(baseField, { fieldIndex, copyIndex, transform }) {
+        function buildReplicatedField(baseField, { copyIndex, transform }) {
           if (!baseField) {
             return null;
           }
           const attributes = cloneAttributes(baseField.attributes);
-          const fieldName = attributes.Name || `Field ${fieldIndex + 1}`;
-          const suffix = copyIndex ? `Copy ${copyIndex}` : "Copy";
-          attributes.Name = `${fieldName} ${suffix}`.trim();
           if (attributes.NameLatin9Key) {
             attributes.NameLatin9Key = `${attributes.NameLatin9Key}_${copyIndex}`;
           } else {
@@ -1675,6 +1670,33 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           return {
             attributes,
             shapeRefs: newRefs,
+          };
+        }
+
+        function buildReplicatedFieldset(baseFieldset, { copyIndex, transform, name }) {
+          if (!baseFieldset) {
+            return null;
+          }
+          const baseFields = Array.isArray(baseFieldset.fields) ? baseFieldset.fields : [];
+          const attributes = cloneAttributes(baseFieldset.attributes);
+          attributes.Name = name || attributes.Name || `Fieldset ${copyIndex}`;
+          if (attributes.NameLatin9Key) {
+            attributes.NameLatin9Key = `${attributes.NameLatin9Key}_${copyIndex}`;
+          } else {
+            attributes.NameLatin9Key = generateLatin9Key();
+          }
+          const fields = baseFields
+            .map((field) =>
+              buildReplicatedField(field, {
+                copyIndex,
+                transform,
+              })
+            )
+            .filter(Boolean);
+          return {
+            attributes,
+            fields,
+            visible: true,
           };
         }
 
@@ -2203,19 +2225,19 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
         }
 
 
-        function getReplicateFieldName(fieldsetIndex, fieldIndex) {
+        function getReplicateFieldsetName(fieldsetIndex) {
           const fieldset = fieldsets[fieldsetIndex];
-          if (!fieldset || !Array.isArray(fieldset.fields)) {
+          if (!fieldset) {
             return "";
           }
-          return fieldset.fields[fieldIndex]?.attributes?.Name || "";
+          return fieldset.attributes?.Name || "";
         }
 
-        function updateReplicateCasePrefixPlaceholder(fieldsetIndex, fieldIndex) {
+        function updateReplicateCasePrefixPlaceholder(fieldsetIndex) {
           if (!replicateCasePrefixInput) {
             return;
           }
-          const fallback = getReplicateFieldName(fieldsetIndex, fieldIndex) || "Case";
+          const fallback = getReplicateFieldsetName(fieldsetIndex) || "Fieldset";
           replicateCasePrefixInput.placeholder = fallback;
         }
 
@@ -2226,10 +2248,6 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           if (!fieldsets.length) {
             replicateFieldsetSelect.innerHTML = '<option value="">No fieldsets</option>';
             replicateFieldsetSelect.disabled = true;
-            if (replicateFieldSelect) {
-              replicateFieldSelect.innerHTML = '<option value="">No fields</option>';
-              replicateFieldSelect.disabled = true;
-            }
             return -1;
           }
           const safeIndex = Math.min(Math.max(preferredIndex, 0), fieldsets.length - 1);
@@ -2240,28 +2258,6 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             )
             .join("");
           replicateFieldsetSelect.value = String(safeIndex);
-          return safeIndex;
-        }
-
-        function populateReplicateFieldOptions(fieldsetIndex, preferredFieldIndex = 0) {
-          if (!replicateFieldSelect) {
-            return -1;
-          }
-          const fieldset = fieldsets[fieldsetIndex];
-          const fields = Array.isArray(fieldset?.fields) ? fieldset.fields : [];
-          if (!fields.length) {
-            replicateFieldSelect.innerHTML = '<option value="">No fields</option>';
-            replicateFieldSelect.disabled = true;
-            return -1;
-          }
-          const safeIndex = Math.min(Math.max(preferredFieldIndex, 0), fields.length - 1);
-          replicateFieldSelect.disabled = false;
-          replicateFieldSelect.innerHTML = fields
-            .map((field, index) =>
-              `<option value="${index}">${escapeHtml(field.attributes?.Name || `Field ${index + 1}`)}</option>`
-            )
-            .join("");
-          replicateFieldSelect.value = String(safeIndex);
           return safeIndex;
         }
 
@@ -2292,21 +2288,12 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             setStatus("複製対象の Fieldset が選択できません。", "error");
             return;
           }
-          const selectedFieldIndex = populateReplicateFieldOptions(
-            selectedFieldsetIndex,
-            replicateFormState.fieldIndex
-          );
-          if (selectedFieldIndex < 0) {
-            setStatus("選択した Fieldset に Field が存在しません。", "warning");
-            return;
-          }
           replicateFormState.fieldsetIndex = selectedFieldsetIndex;
-          replicateFormState.fieldIndex = selectedFieldIndex;
-          updateReplicateCasePrefixPlaceholder(selectedFieldsetIndex, selectedFieldIndex);
+          updateReplicateCasePrefixPlaceholder(selectedFieldsetIndex);
           const fallbackPrefix =
             replicateFormState.casePrefix ||
-            getReplicateFieldName(selectedFieldsetIndex, selectedFieldIndex) ||
-            "Case";
+            getReplicateFieldsetName(selectedFieldsetIndex) ||
+            "Fieldset";
           if (replicateCopyCountInput) {
             replicateCopyCountInput.value = replicateFormState.copyCount ?? 1;
           }
@@ -2337,11 +2324,10 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
         }
 
         function handleReplicateApply() {
-          if (!replicateFieldsetSelect || !replicateFieldSelect) {
+          if (!replicateFieldsetSelect) {
             return;
           }
           const fieldsetIndex = Number(replicateFieldsetSelect.value);
-          const fieldIndex = Number(replicateFieldSelect.value);
           if (
             Number.isNaN(fieldsetIndex) ||
             fieldsetIndex < 0 ||
@@ -2351,12 +2337,8 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             return;
           }
           const fieldset = fieldsets[fieldsetIndex];
-          if (!fieldset || !Array.isArray(fieldset.fields)) {
+          if (!fieldset || !Array.isArray(fieldset.fields) || !fieldset.fields.length) {
             setStatus("選択した Fieldset に Field がありません。", "error");
-            return;
-          }
-          if (Number.isNaN(fieldIndex) || fieldIndex < 0 || fieldIndex >= fieldset.fields.length) {
-            setStatus("有効な Field を選択してください。", "error");
             return;
           }
           let copyCount = parseInt(replicateCopyCountInput?.value ?? "1", 10);
@@ -2369,38 +2351,39 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           const rotation = parseNumeric(replicateRotationInput?.value, 0) || 0;
           const prefixInput = replicateCasePrefixInput?.value?.trim();
           const casePrefix =
-            prefixInput || getReplicateFieldName(fieldsetIndex, fieldIndex) || "Case";
+            prefixInput || getReplicateFieldsetName(fieldsetIndex) || "Fieldset";
           replicateFormState.fieldsetIndex = fieldsetIndex;
-          replicateFormState.fieldIndex = fieldIndex;
           replicateFormState.copyCount = copyCount;
           replicateFormState.offsetX = offsetX;
           replicateFormState.offsetY = offsetY;
           replicateFormState.rotation = rotation;
           replicateFormState.casePrefix = casePrefix;
-          const baseField = fieldset.fields[fieldIndex];
-          const createdFields = [];
+          const createdFieldsets = [];
+          const baseFieldsetCount = fieldsets.length;
           for (let step = 1; step <= copyCount; step += 1) {
             const transform = {
               offsetX: offsetX * step,
               offsetY: offsetY * step,
               rotation: rotation * step,
             };
-            const replicatedField = buildReplicatedField(baseField, {
-              fieldIndex,
+            const nextFieldsetIndex = baseFieldsetCount + createdFieldsets.length + 1;
+            const fieldsetName = `${casePrefix} ${nextFieldsetIndex}`;
+            const replicatedFieldset = buildReplicatedFieldset(fieldset, {
               copyIndex: step,
               transform,
+              name: fieldsetName,
             });
-            if (replicatedField) {
-              fieldset.fields.push(replicatedField);
-              createdFields.push(replicatedField.attributes?.Name || `Field ${fieldset.fields.length}`);
+            if (replicatedFieldset) {
+              fieldsets.push(replicatedFieldset);
+              createdFieldsets.push(replicatedFieldset);
             }
           }
-          if (!createdFields.length) {
-            setStatus("Field の複製に失敗しました。", "error");
+          if (!createdFieldsets.length) {
+            setStatus("Fieldset の複製に失敗しました。", "error");
             return;
           }
           const availableSlots = casetableCasesLimit - casetableCases.length;
-          const casesToCreate = Math.min(availableSlots, createdFields.length);
+          const casesToCreate = Math.min(availableSlots, createdFieldsets.length);
           const createdCaseNames = [];
           for (let idx = 0; idx < casesToCreate; idx += 1) {
             const newCase = createDefaultCasetableCase(casetableCases.length);
@@ -2420,11 +2403,18 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           if (!createdCaseNames.length) {
             caseMessage = "Case 上限のため新規 Case は追加されませんでした。";
             statusType = "warning";
-          } else if (createdCaseNames.length < createdFields.length) {
+          } else if (createdCaseNames.length < createdFieldsets.length) {
             statusType = "warning";
-            caseMessage = `${createdCaseNames.length} 件の Case を追加しました (上限により ${createdFields.length - createdCaseNames.length} 件は未作成)。`;
+            caseMessage = `${createdCaseNames.length} 件の Case を追加しました (上限により ${createdFieldsets.length - createdCaseNames.length} 件は未作成)。`;
           }
-          setStatus(`${createdFields.length} 個の Field を複製しました。${caseMessage}`, statusType);
+          const replicatedFieldCount = createdFieldsets.reduce(
+            (sum, replicatedFieldset) => sum + (replicatedFieldset.fields?.length || 0),
+            0
+          );
+          setStatus(
+            `${createdFieldsets.length} 個の Fieldset (計 ${replicatedFieldCount} 個の Field) を複製しました。${caseMessage}`,
+            statusType
+          );
         }
 
         function registerTriOrbShapeInRegistry(shape) {
@@ -8563,23 +8553,8 @@ function parsePolygonTrace(doc) {
             const safeFieldsetIndex = Number.isFinite(nextIndex)
               ? Math.max(0, nextIndex)
               : 0;
-            const selectedFieldIndex = populateReplicateFieldOptions(safeFieldsetIndex, 0);
             replicateFormState.fieldsetIndex = safeFieldsetIndex;
-            replicateFormState.fieldIndex = Math.max(0, selectedFieldIndex);
-            updateReplicateCasePrefixPlaceholder(
-              replicateFormState.fieldsetIndex,
-              replicateFormState.fieldIndex
-            );
-          });
-        }
-        if (replicateFieldSelect) {
-          replicateFieldSelect.addEventListener("change", (event) => {
-            const nextFieldIndex = Number(event.target.value);
-            if (Number.isFinite(nextFieldIndex) && nextFieldIndex >= 0) {
-              replicateFormState.fieldIndex = nextFieldIndex;
-              const fieldsetIndex = Number(replicateFieldsetSelect?.value ?? 0) || 0;
-              updateReplicateCasePrefixPlaceholder(fieldsetIndex, nextFieldIndex);
-            }
+            updateReplicateCasePrefixPlaceholder(replicateFormState.fieldsetIndex);
           });
         }
         function startCreateShapeDrag(event) {
