@@ -248,6 +248,9 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         const triorbShapeCheckAllBtn = document.getElementById("btn-triorb-shape-check-all");
         const triorbShapeUncheckAllBtn = document.getElementById("btn-triorb-shape-uncheck-all");
+        const overlayShapeBtn = document.getElementById("btn-add-shape-overlay");
+        const overlayFieldBtn = document.getElementById("btn-add-field-overlay");
+        const replicateFieldBtn = document.getElementById("btn-replicate-field");
         let globalMultipleSampling = "2";
         const initialTriOrbShapes = bootstrapData.triorbShapes || [];
         const shapeModal = document.getElementById("shape-modal");
@@ -7978,9 +7981,6 @@ function parsePolygonTrace(doc) {
             setStatus("New canvas ready.");
           });
         }
-        const overlayShapeBtn = document.getElementById("btn-add-shape-overlay");
-        const overlayFieldBtn = document.getElementById("btn-add-field-overlay");
-        const replicateFieldBtn = document.getElementById("btn-replicate-field");
         let createShapeModalOffsetX = 0;
         let createShapeModalOffsetY = 0;
         let createShapeDragStartX = 0;
