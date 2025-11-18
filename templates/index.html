@@ -1986,12 +1986,12 @@
   <script>
     window.appBootstrapData = {
       defaultFigure: {{ plot_spec | tojson }},
-    rootAttributes: { { root_attrs | tojson } },
-    scanPlanes: { { scan_planes | tojson } },
-    fieldsets: { { fieldsets | tojson } },
-    casetablePayload: { { casetable_payload | tojson } },
-    triorbShapes: { { triorb_shapes | tojson } },
-    triorbSource: { { triorb_source | tojson } },
+    rootAttributes: {{ root_attrs | tojson }},
+    scanPlanes: {{ scan_planes | tojson }},
+    fieldsets: {{ fieldsets | tojson }},
+    casetablePayload: {{ casetable_payload | tojson }},
+    triorbShapes: {{ triorb_shapes | tojson }},
+    triorbSource: {{ triorb_source | tojson }},
   };
   </script>
   <script type="module" src="{{ url_for('static', filename='js/app.js') }}"></script>
