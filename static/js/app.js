@@ -222,10 +222,16 @@ document.addEventListener("DOMContentLoaded", () => {
         const addCasetableEvalBtn = document.getElementById("btn-add-eval");
         const casetableEvalsWarning = document.getElementById("casetable-evals-warning");
         const globalMultipleSamplingInput = document.getElementById("global-multiple-sampling");
+        const caseCheckboxes = document.getElementById("case-checkboxes");
+        if (caseCheckboxes) {
+          caseCheckboxes.classList.add("toggle-pill-grid");
+        }
         const fieldsetCheckboxes = document.getElementById("fieldset-checkboxes");
         if (fieldsetCheckboxes) {
           fieldsetCheckboxes.classList.add("toggle-pill-grid");
         }
+        const caseCheckAllBtn = document.getElementById("btn-case-check-all");
+        const caseUncheckAllBtn = document.getElementById("btn-case-uncheck-all");
         const checkAllBtn = document.getElementById("btn-fieldset-check-all");
         const uncheckAllBtn = document.getElementById("btn-fieldset-uncheck-all");
         const toggleLegendBtn = document.getElementById("btn-toggle-legend");
@@ -354,6 +360,8 @@ document.addEventListener("DOMContentLoaded", () => {
           casetableCases.length
         );
         let casetableFieldsConfiguration = null;
+        let caseToggleStates = casetableCases.map(() => false);
+        let caseFieldAssignments = [];
         globalMultipleSampling = deriveInitialMultipleSampling(fieldsets);
         let legendVisible = true;
         let fieldOfViewDegrees = parseNumeric(fieldOfViewInput?.value, 270);
@@ -1287,23 +1295,28 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           if (!Array.isArray(data) || !data.length) {
             return [createDefaultFieldset(0)];
           }
-          return data.map((fieldset, index) => ({
-            attributes: {
-              Name: fieldset.attributes?.Name || `Fieldset ${index + 1}`,
-              ...fieldset.attributes,
-            },
-            fields:
-              Array.isArray(fieldset.fields) && fieldset.fields.length
-                ? fieldset.fields.map((field, fieldIndex) => ({
-                    attributes: {
-                      Name: field.attributes?.Name || `Field ${fieldIndex + 1}`,
-                      ...field.attributes,
-                    },
-                    shapeRefs: normalizeFieldShapeRefs(field),
-                  }))
-                : [createDefaultField(0)],
-            visible: fieldset.visible !== false,
-          }));
+          return data.map((fieldset, index) => {
+            const userVisible = fieldset.visible !== false;
+            return {
+              attributes: {
+                Name: fieldset.attributes?.Name || `Fieldset ${index + 1}`,
+                ...fieldset.attributes,
+              },
+              fields:
+                Array.isArray(fieldset.fields) && fieldset.fields.length
+                  ? fieldset.fields.map((field, fieldIndex) => ({
+                      attributes: {
+                        Name: field.attributes?.Name || `Field ${fieldIndex + 1}`,
+                        ...field.attributes,
+                      },
+                      shapeRefs: normalizeFieldShapeRefs(field),
+                    }))
+                  : [createDefaultField(0)],
+              userVisible,
+              visible: userVisible,
+              forcedVisibleCount: 0,
+            };
+          });
         }
 
         function createDefaultFieldset(index = fieldsets.length) {
@@ -1314,8 +1327,43 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               NameLatin9Key: `FS_DEFAULT_${index + 1}`,
             },
             fields: [createDefaultField(0)],
+            userVisible: true,
             visible: true,
+            forcedVisibleCount: 0,
           };
+        }
+
+        function syncFieldsetVisibility(fieldset) {
+          if (!fieldset) {
+            return false;
+          }
+          const userVisible = fieldset.userVisible !== false;
+          const forcedCount = Number(fieldset.forcedVisibleCount) || 0;
+          const nextVisible = userVisible || forcedCount > 0;
+          const changed = fieldset.visible !== nextVisible;
+          fieldset.visible = nextVisible;
+          return changed;
+        }
+
+        function setFieldsetUserVisibility(fieldset, isVisible) {
+          if (!fieldset) {
+            return false;
+          }
+          fieldset.userVisible = isVisible;
+          return syncFieldsetVisibility(fieldset);
+        }
+
+        function adjustFieldsetForcedVisibility(fieldset, delta) {
+          if (!fieldset || !Number.isFinite(delta)) {
+            return false;
+          }
+          const current = Number(fieldset.forcedVisibleCount) || 0;
+          const next = Math.max(0, current + delta);
+          if (current === next) {
+            return syncFieldsetVisibility(fieldset);
+          }
+          fieldset.forcedVisibleCount = next;
+          return syncFieldsetVisibility(fieldset);
         }
 
         function createDefaultField(index = 0) {
@@ -1676,6 +1724,11 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           </div>`;
           })
           .join("");
+          refreshCaseFieldAssignments({
+            rerenderFieldsetToggles: false,
+            rerenderFigure: false,
+            rerenderCaseToggles: false,
+          });
           renderFieldsetCheckboxes();
           renderFigure();
           regenerateFieldsConfiguration();
@@ -5744,6 +5797,7 @@ function parsePolygonTrace(doc) {
             casetableAttributes = { Index: "0" };
             casetableConfiguration = createDefaultCasetableConfiguration();
             casetableCases = [createDefaultCasetableCase(0)];
+            caseToggleStates = casetableCases.map(() => false);
             casetableLayout = normalizeCasetableLayout([]);
             casetableEvals = normalizeCasetableEvals(null, casetableCases.length);
             casetableFieldsConfiguration = null;
@@ -5770,6 +5824,7 @@ function parsePolygonTrace(doc) {
                 serializeCaseElement(caseElement)
               );
               casetableCases = initializeCasetableCases(serializedCases);
+              caseToggleStates = casetableCases.map(() => false);
               layout.push({ kind: "cases" });
             } else if (child.tagName === "Evals") {
               casetableEvals = normalizeCasetableEvals(
@@ -5786,6 +5841,7 @@ function parsePolygonTrace(doc) {
           casetableLayout = normalizeCasetableLayout(layout);
           if (!layout.some((segment) => segment.kind === "cases")) {
             casetableCases = initializeCasetableCases([]);
+            caseToggleStates = casetableCases.map(() => false);
           }
           if (!layout.some((segment) => segment.kind === "evals")) {
             casetableEvals = normalizeCasetableEvals(null, casetableCases.length);
@@ -6123,6 +6179,7 @@ function parsePolygonTrace(doc) {
               }
               const caseIndex = Number(removeBtn.dataset.caseIndex);
               casetableCases.splice(caseIndex, 1);
+              caseToggleStates.splice(caseIndex, 1);
               renderCasetableCases();
               return;
             }
@@ -6156,6 +6213,7 @@ function parsePolygonTrace(doc) {
               return;
             }
             casetableCases.push(createDefaultCasetableCase(casetableCases.length));
+            caseToggleStates.push(false);
             renderCasetableCases();
           });
         }
@@ -6187,6 +6245,7 @@ function parsePolygonTrace(doc) {
               const evalIndex = Number(target.dataset.evalIndex);
               const caseIndex = Number(target.dataset.caseIndex);
               updateEvalUserFieldId(evalIndex, caseIndex, target.value);
+              refreshCaseFieldAssignments({ rerenderCaseToggles: true });
             }
           });
 
@@ -6506,6 +6565,7 @@ function parsePolygonTrace(doc) {
             addCasetableEvalBtn.disabled = evalEntries.length >= casetableEvalsLimit;
           }
           applyEvalUserFieldValidation();
+          refreshCaseFieldAssignments();
         }
 
         function renderCasetableConfiguration() {
@@ -6757,7 +6817,9 @@ function parsePolygonTrace(doc) {
           if (addCasetableCaseBtn) {
             addCasetableCaseBtn.disabled = casetableCases.length >= casetableCasesLimit;
           }
+          ensureCaseToggleStateLength();
           renderCasetableEvals();
+          renderCaseCheckboxes();
         }
 
         function renderCasetableCase(caseData, caseIndex) {
@@ -6916,7 +6978,6 @@ function parsePolygonTrace(doc) {
           fieldsetCheckboxes.innerHTML = fieldsets
             .map((fieldset, index) => {
               const isVisible = fieldset.visible !== false;
-              fieldset.visible = isVisible;
               return `
               <button
                 type="button"
@@ -6930,6 +6991,188 @@ function parsePolygonTrace(doc) {
             .join("");
         }
 
+        function ensureCaseToggleStateLength() {
+          const desiredLength = casetableCases.length;
+          if (caseToggleStates.length === desiredLength) {
+            return;
+          }
+          const nextStates = new Array(desiredLength).fill(false);
+          for (let index = 0; index < desiredLength; index += 1) {
+            nextStates[index] = caseToggleStates[index] ?? false;
+          }
+          caseToggleStates = nextStates;
+        }
+
+        function renderCaseCheckboxes() {
+          if (!caseCheckboxes) {
+            return;
+          }
+          ensureCaseToggleStateLength();
+          if (!casetableCases.length) {
+            caseCheckboxes.innerHTML = '<p class="toggle-pill-empty">No cases available.</p>';
+            return;
+          }
+          caseCheckboxes.innerHTML = casetableCases
+            .map((caseData, index) => {
+              const isActive = caseToggleStates[index];
+              const label = caseData.attributes?.Name || buildCaseName(index);
+              return `
+                <button
+                  type="button"
+                  class="toggle-pill-btn${isActive ? " active" : ""}"
+                  data-case-index="${index}"
+                  aria-pressed="${isActive}"
+                >
+                  ${escapeHtml(label)}
+                </button>`;
+            })
+            .join("");
+        }
+
+        function buildUserFieldLookup() {
+          const lookup = new Map();
+          triorbShapes.forEach((shape, index) => {
+            if (!shape || !shape.id) {
+              return;
+            }
+            const key = String(index + 1);
+            const fieldsetIndexes = getFieldsetIndexesReferencingShape(shape.id);
+            if (fieldsetIndexes.length) {
+              lookup.set(key, fieldsetIndexes);
+            }
+          });
+          return lookup;
+        }
+
+        function applyCaseToggleVisibility({ rerenderFieldsetToggles = true, rerenderFigure = true } = {}) {
+          fieldsets.forEach((fieldset) => {
+            fieldset.forcedVisibleCount = 0;
+          });
+          caseToggleStates.forEach((isActive, caseIndex) => {
+            if (!isActive) {
+              return;
+            }
+            const assignments = caseFieldAssignments[caseIndex];
+            if (!assignments || !assignments.size) {
+              return;
+            }
+            assignments.forEach((fieldsetIndex) => {
+              const fieldset = fieldsets[fieldsetIndex];
+              if (!fieldset) {
+                return;
+              }
+              fieldset.forcedVisibleCount = (Number(fieldset.forcedVisibleCount) || 0) + 1;
+            });
+          });
+          let visibilityChanged = false;
+          fieldsets.forEach((fieldset) => {
+            if (syncFieldsetVisibility(fieldset)) {
+              visibilityChanged = true;
+            }
+          });
+          if (rerenderFieldsetToggles) {
+            renderFieldsetCheckboxes();
+          }
+          if (visibilityChanged && rerenderFigure) {
+            renderFigure();
+          }
+        }
+
+        function refreshCaseFieldAssignments({
+          applyVisibility = true,
+          rerenderFieldsetToggles = true,
+          rerenderFigure = true,
+          rerenderCaseToggles = false,
+        } = {}) {
+          const lookup = buildUserFieldLookup();
+          caseFieldAssignments = casetableCases.map((_, caseIndex) => {
+            const assignment = new Set();
+            const evalEntries = Array.isArray(casetableEvals?.evals) ? casetableEvals.evals : [];
+            evalEntries.forEach((evalEntry) => {
+              const evalCase = evalEntry?.cases?.[caseIndex];
+              if (!evalCase) {
+                return;
+              }
+              const userFieldId = String(evalCase.scanPlane?.userFieldId ?? "").trim();
+              if (!userFieldId) {
+                return;
+              }
+              const fieldsetIndexes = lookup.get(userFieldId);
+              if (fieldsetIndexes && fieldsetIndexes.length) {
+                fieldsetIndexes.forEach((fieldsetIndex) => {
+                  assignment.add(fieldsetIndex);
+                });
+              }
+            });
+            return assignment;
+          });
+          if (applyVisibility) {
+            applyCaseToggleVisibility({
+              rerenderFieldsetToggles,
+              rerenderFigure,
+            });
+          }
+          if (rerenderCaseToggles) {
+            renderCaseCheckboxes();
+          }
+        }
+
+        function toggleCaseVisibility(caseIndex, nextState) {
+          ensureCaseToggleStateLength();
+          if (caseToggleStates[caseIndex] === nextState) {
+            return;
+          }
+          caseToggleStates[caseIndex] = nextState;
+          const caseName = casetableCases[caseIndex]?.attributes?.Name || buildCaseName(caseIndex);
+          const assignments = caseFieldAssignments[caseIndex];
+          if (!assignments || !assignments.size) {
+            setStatus(`${caseName} に紐づく Field が見つかりません。`, "warning");
+          } else {
+            setStatus(
+              `${caseName} を ${nextState ? "表示" : "非表示"} ケースに切り替えました。`,
+              nextState ? "ok" : "warning"
+            );
+          }
+          applyCaseToggleVisibility({ rerenderFieldsetToggles: true, rerenderFigure: true });
+          renderCaseCheckboxes();
+        }
+
+        function setAllCaseToggles(active) {
+          ensureCaseToggleStateLength();
+          caseToggleStates = caseToggleStates.map(() => active);
+          applyCaseToggleVisibility({ rerenderFieldsetToggles: true, rerenderFigure: true });
+          renderCaseCheckboxes();
+          setStatus(
+            active ? "All cases activated." : "All cases deactivated.",
+            active ? "ok" : "warning"
+          );
+        }
+
+        if (caseCheckboxes) {
+          caseCheckboxes.addEventListener("click", (event) => {
+            const button = event.target.closest(".toggle-pill-btn");
+            if (!button || button.dataset.caseIndex === undefined) {
+              return;
+            }
+            event.preventDefault();
+            const caseIndex = Number(button.dataset.caseIndex);
+            const nextState = !button.classList.contains("active");
+            toggleCaseVisibility(caseIndex, nextState);
+          });
+        }
+
+        if (caseCheckAllBtn) {
+          caseCheckAllBtn.addEventListener("click", () => {
+            setAllCaseToggles(true);
+          });
+        }
+
+        if (caseUncheckAllBtn) {
+          caseUncheckAllBtn.addEventListener("click", () => {
+            setAllCaseToggles(false);
+          });
+        }
+
         if (fieldsetCheckboxes) {
           fieldsetCheckboxes.addEventListener("click", (event) => {
             const button = event.target.closest(".toggle-pill-btn");
@@ -6938,19 +7181,27 @@ function parsePolygonTrace(doc) {
             }
             event.preventDefault();
             const index = Number(button.dataset.fieldsetIndex);
-            const nextState = !button.classList.contains("active");
-            button.classList.toggle("active", nextState);
-            button.setAttribute("aria-pressed", String(nextState));
-            if (fieldsets[index]) {
-              fieldsets[index].visible = nextState;
-              const fieldsetName =
-                fieldsets[index].attributes?.Name || `Fieldset ${index + 1}`;
-              setStatus(
-                `${fieldsetName} を ${nextState ? "表示" : "非表示"} にしました。`,
-                nextState ? "ok" : "warning"
-              );
-              renderFigure();
+            const fieldset = fieldsets[index];
+            if (!fieldset) {
+              return;
             }
+            const nextState = !button.classList.contains("active");
+            if (!nextState && (fieldset.forcedVisibleCount || 0) > 0) {
+              const lockedName = fieldset.attributes?.Name || `Fieldset ${index + 1}`;
+              setStatus(
+                `${lockedName} は Case トグルで表示中です。Case の表示を解除してください。`,
+                "warning"
+              );
+              return;
+            }
+            setFieldsetUserVisibility(fieldset, nextState);
+            renderFieldsetCheckboxes();
+            const fieldsetName = fieldset.attributes?.Name || `Fieldset ${index + 1}`;
+            setStatus(
+              `${fieldsetName} を ${nextState ? "表示" : "非表示"} にしました。`,
+              nextState ? "ok" : "warning"
+            );
+            renderFigure();
           });
         }
 
@@ -7218,14 +7469,20 @@ function parsePolygonTrace(doc) {
         }
 
         function toggleAllFieldsetCheckboxes(checked) {
+          let lockedCount = 0;
           fieldsets.forEach((fieldset) => {
-            fieldset.visible = checked;
+            if (!checked && (fieldset.forcedVisibleCount || 0) > 0) {
+              lockedCount += 1;
+            }
+            setFieldsetUserVisibility(fieldset, checked);
           });
           renderFieldsetCheckboxes();
-          setStatus(
-            checked ? "All fieldsets checked." : "All fieldsets unchecked.",
-            checked ? "ok" : "warning"
-          );
+          const message = checked
+            ? "All fieldsets checked."
+            : lockedCount
+            ? `All fieldsets unchecked. ${lockedCount} fieldset(s) remain visible due to Case filters.`
+            : "All fieldsets unchecked.";
+          setStatus(message, checked ? "ok" : lockedCount ? "warning" : "warning");
           renderFigure();
         }
 
