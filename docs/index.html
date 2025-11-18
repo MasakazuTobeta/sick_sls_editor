@@ -1202,6 +1202,18 @@
         align-self: flex-end;
         margin: 0;
       }
+      .replicate-modal-window {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .replicate-modal-body {
+        flex: 1;
+        overflow-y: auto;
+      }
+      .replicate-modal-body .field-resize-handle {
+        margin-top: auto;
+      }
       .shape-create-window {
         max-width: 720px;
       }
@@ -1237,6 +1249,43 @@
       }
       .field-create-window {
         max-width: min(960px, 75vw);
+      }
+      .replicate-target-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        margin-bottom: 0.75rem;
+      }
+      .replicate-target-group span {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #475569;
+      }
+      .replicate-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 0.6rem;
+      }
+      .replicate-grid label {
+        display: flex;
+        flex-direction: column;
+        font-weight: 600;
+        gap: 0.3rem;
+      }
+      .replicate-grid input,
+      .replicate-grid select {
+        font-weight: normal;
+      }
+      .replicate-modal-window[data-replicate-target="case"] [data-target-section="fieldset"] {
+        display: none;
+      }
+      .replicate-modal-window[data-replicate-target="fieldset"] [data-target-section="case"] {
+        display: none;
+      }
+      .replicate-note {
+        font-size: 0.85rem;
+        color: #475569;
+        margin-top: 0.5rem;
       }
       .field-create-body .modal-section {
         margin-bottom: 0.85rem;
@@ -1530,6 +1579,83 @@
             Cancel
           </button>
           <button type="button" class="inline-btn" id="create-field-modal-save">OK</button>
+        </div>
+      </div>
+    </div>
+    <div id="replicate-modal" class="modal" aria-hidden="true">
+      <div class="modal-backdrop" data-action="close-replicate-modal"></div>
+      <div
+        class="modal-window replicate-modal-window"
+        role="dialog"
+        aria-modal="true"
+        data-replicate-target="fieldset"
+      >
+        <div class="modal-header">
+          <span class="modal-title">Replicate Fields</span>
+          <button type="button" class="inline-btn inline-danger shape-mini-btn" id="replicate-modal-close">
+            ×
+          </button>
+        </div>
+        <div class="modal-body replicate-modal-body">
+          <div class="replicate-target-group" id="replicate-target-toggle">
+            <span>Target</span>
+            <div class="toggle-group">
+              <button type="button" class="toggle-option is-active" data-replicate-target="fieldset">
+                Fieldset
+              </button>
+              <button type="button" class="toggle-option" data-replicate-target="case">
+                Case
+              </button>
+            </div>
+          </div>
+          <div class="replicate-grid">
+            <label data-target-section="fieldset">
+              Fieldset
+              <select id="replicate-fieldset-select"></select>
+            </label>
+            <label data-target-section="case">
+              Source Cases
+              <select id="replicate-case-select" multiple size="6"></select>
+            </label>
+            <label>
+              Copies
+              <input type="number" id="replicate-copy-count" min="1" max="32" step="1" value="1" />
+            </label>
+            <label>
+              Offset X (mm / copy)
+              <input type="number" id="replicate-offset-x" step="1" value="0" />
+            </label>
+            <label>
+              Offset Y (mm / copy)
+              <input type="number" id="replicate-offset-y" step="1" value="0" />
+            </label>
+            <label>
+              Rotation (° / copy)
+              <input type="number" id="replicate-rotation" step="1" value="0" />
+            </label>
+            <label>
+              Scale (％ / copy)
+              <input type="number" id="replicate-scale-percent" step="1" value="0" />
+            </label>
+            <label class="replicate-option">
+              <input type="checkbox" id="replicate-include-cutouts" />
+              Type = CutOut の Shape も複製する
+            </label>
+            <label>
+              Fieldset / Case prefix
+              <input type="text" id="replicate-case-prefix" placeholder="Fieldset" />
+            </label>
+          </div>
+          <p class="replicate-note">
+            Target を Fieldset にすると選択した Fieldset 配下の Field をまとめてコピーし、コピーごとに新しい Fieldset と Case を追加します（オフセット／
+            回転／スケール／CutOut 設定が適用され、入力変更時は Plotly に青いプレビューが表示されます）。Target を Case にすると Ctrl / Cmd や Shift
+            で複数選択した Case を Copies 倍で複製します（例: Case を 2 件選択し Copies=4 の場合は 8 件生成）。Case ターゲットでも紐づく Fieldset
+            が同じパラメータで複製され、入力値に応じたプレビューが Plotly に表示されます。
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="inline-btn secondary" id="replicate-modal-cancel">Cancel</button>
+          <button type="button" class="inline-btn" id="replicate-modal-apply">Apply</button>
         </div>
       </div>
     </div>
