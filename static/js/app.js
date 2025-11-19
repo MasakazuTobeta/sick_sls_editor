@@ -354,10 +354,20 @@ document.addEventListener("DOMContentLoaded", () => {
         let scanPlanes = initializeScanPlanes(initialScanPlanes);
         let triorbShapes = initializeTriOrbShapes(initialTriOrbShapes);
         const triOrbShapeRegistry = new Map();
+        const triOrbShapeCardElements = new Map();
+        const triOrbShapeCheckboxElements = new Map();
         let triorbSource = bootstrapData.triorbSource || "";
         let fieldsets = initializeFieldsets(initialFieldsets);
         let fieldsetDevices = initializeFieldsetDevices(initialFieldsetDevices);
         let fieldsetGlobalGeometry = initializeGlobalGeometry(initialFieldsetGlobal);
+
+        const requestRenderFrame =
+          typeof window !== "undefined" && typeof window.requestAnimationFrame === "function"
+            ? (callback) => window.requestAnimationFrame(callback)
+            : (callback) => setTimeout(callback, 16);
+        let pendingFigureRenderHandle = null;
+        let pendingFieldsetsRenderHandle = null;
+        let pendingCreateFieldShapeListHandle = null;
         const casetableCasesLimit = 128;
         const casetableEvalsLimit = 5;
         const casetableConfigurationStaticInputsCount = 8;
@@ -545,10 +555,48 @@ document.addEventListener("DOMContentLoaded", () => {
           );
         }
 
+        function scheduleFigureRender() {
+          if (pendingFigureRenderHandle !== null) {
+            return;
+          }
+          pendingFigureRenderHandle = requestRenderFrame(() => {
+            pendingFigureRenderHandle = null;
+            renderFigure();
+          });
+        }
+
+        function scheduleFieldsetsRender() {
+          if (pendingFieldsetsRenderHandle !== null) {
+            return;
+          }
+          pendingFieldsetsRenderHandle = requestRenderFrame(() => {
+            pendingFieldsetsRenderHandle = null;
+            renderFieldsets();
+          });
+        }
+
+        function scheduleCreateFieldShapeListsRender() {
+          if (pendingCreateFieldShapeListHandle !== null || !isCreateFieldModalOpen()) {
+            return;
+          }
+          pendingCreateFieldShapeListHandle = requestRenderFrame(() => {
+            pendingCreateFieldShapeListHandle = null;
+            if (isCreateFieldModalOpen()) {
+              renderCreateFieldShapeLists();
+            }
+          });
+        }
+
         function buildFieldsetTraces() {
           if (!Array.isArray(fieldsets) || !fieldsets.length) {
             return [];
           }
+          const shapeIndexMap = new Map();
+          triorbShapes.forEach((shape, index) => {
+            if (shape && shape.id) {
+              shapeIndexMap.set(shape.id, index);
+            }
+          });
           const traces = [];
           fieldsets.forEach((fieldset, fieldsetIndex) => {
             if (!fieldset || fieldset.visible === false) {
@@ -562,12 +610,11 @@ document.addEventListener("DOMContentLoaded", () => {
               const labelPrefix = `${fieldsetName} / ${fieldName}`;
               const fieldType = field.attributes?.Fieldtype || "ProtectiveSafeBlanking";
               (field.shapeRefs || []).forEach((shapeRef, shapeRefIndex) => {
-                const shapeIndex = triorbShapes.findIndex(
-                  (item) => item.id === shapeRef.shapeId
-                );
-                if (shapeIndex < 0) {
+                const targetShapeId = shapeRef?.shapeId;
+                if (!targetShapeId || !shapeIndexMap.has(targetShapeId)) {
                   return;
                 }
+                const shapeIndex = shapeIndexMap.get(targetShapeId);
                 const shape = triorbShapes[shapeIndex];
                 if (!shape) {
                   return;
@@ -3526,22 +3573,86 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           return shape.id;
         }
 
-        function renderTriOrbShapes() {
+        function isCreateFieldModalOpen() {
+          return Boolean(createFieldModal && createFieldModal.classList?.contains("active"));
+        }
+
+        function renderTriOrbShapes(options = {}) {
+          const { updatedShapeIds = [], forceFullRender = false } = options || {};
+          const hasCustomSyncOption = typeof options.syncDependents === "boolean";
+          const syncDependentsForPartial = hasCustomSyncOption ? options.syncDependents : false;
+          const syncDependentsForFull = hasCustomSyncOption ? options.syncDependents : true;
+          const uniqueShapeIds = Array.isArray(updatedShapeIds)
+            ? Array.from(new Set(updatedShapeIds.filter(Boolean)))
+            : [];
+          const shouldAttemptPartial = !forceFullRender && uniqueShapeIds.length > 0;
           if (!triorbShapesContainer) {
             return;
           }
           if (!triorbShapes.length) {
             triorbShapesContainer.innerHTML = "<p>No shapes defined.</p>";
-            renderCasetableEvals();
+            triorbShapesContainer.dataset.shapeCount = "0";
+            triOrbShapeCardElements.clear();
+            if (syncDependentsForFull) {
+              if (isCreateFieldModalOpen()) {
+                renderCreateFieldShapeLists();
+              }
+              renderCasetableEvals();
+            }
             return;
+          }
+          const recordedCount = Number(triorbShapesContainer.dataset.shapeCount || "0");
+          const canPartialRender =
+            shouldAttemptPartial &&
+            recordedCount === triorbShapes.length &&
+            triOrbShapeCardElements.size === triorbShapes.length &&
+            triorbShapesContainer.querySelector(".triorb-shape-card");
+          if (canPartialRender) {
+            let partialFailed = false;
+            uniqueShapeIds.forEach((shapeId) => {
+              if (partialFailed) {
+                return;
+              }
+              const shapeIndex = triorbShapes.findIndex((item) => item.id === shapeId);
+              if (shapeIndex < 0) {
+                partialFailed = true;
+                return;
+              }
+              const existingCard = triOrbShapeCardElements.get(shapeId);
+              if (!existingCard) {
+                partialFailed = true;
+                return;
+              }
+              const nextCard = createTriOrbShapeCardElement(shapeIndex, triorbShapes[shapeIndex]);
+              if (!nextCard) {
+                partialFailed = true;
+                return;
+              }
+              triorbShapesContainer.replaceChild(nextCard, existingCard);
+              triOrbShapeCardElements.set(shapeId, nextCard);
+            });
+            if (!partialFailed) {
+              triorbShapesContainer.dataset.shapeCount = String(triorbShapes.length);
+              if (syncDependentsForPartial) {
+                if (isCreateFieldModalOpen()) {
+                  renderCreateFieldShapeLists();
+                }
+                renderCasetableEvals();
+              }
+              return;
+            }
           }
           triorbShapesContainer.innerHTML = triorbShapes
             .map((shape, shapeIndex) => renderTriOrbShapeCard(shapeIndex, shape))
             .join("");
-          if (createFieldModal) {
-            renderCreateFieldShapeLists();
+          triorbShapesContainer.dataset.shapeCount = String(triorbShapes.length);
+          rebuildTriOrbShapeCardMap();
+          if (syncDependentsForFull) {
+            if (isCreateFieldModalOpen()) {
+              renderCreateFieldShapeLists();
+            }
+            renderCasetableEvals();
           }
-          renderCasetableEvals();
         }
 
         function renderTriOrbShapeCard(shapeIndex, shape) {
@@ -3570,8 +3681,9 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
                 }>${opt}</option>`
             )
             .join("");
+          const shapeIdAttr = escapeHtml(shape.id || `shape-${shapeIndex}`);
           return `
-            <div class="triorb-shape-card" data-shape-index="${shapeIndex}">
+            <div class="triorb-shape-card" data-shape-index="${shapeIndex}" data-shape-id="${shapeIdAttr}">
           <div class="shape-row">
             <span>ID: ${escapeHtml(shape.id)}</span>
             <label>
@@ -3625,6 +3737,26 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           </div>
               <div class="shape-details">${details}</div>
             </div>`;
+        }
+
+        function createTriOrbShapeCardElement(shapeIndex, shape) {
+          const wrapper = document.createElement("div");
+          wrapper.innerHTML = renderTriOrbShapeCard(shapeIndex, shape).trim();
+          return wrapper.firstElementChild;
+        }
+
+        function rebuildTriOrbShapeCardMap() {
+          triOrbShapeCardElements.clear();
+          if (!triorbShapesContainer) {
+            return;
+          }
+          const cards = triorbShapesContainer.querySelectorAll(".triorb-shape-card");
+          cards.forEach((card) => {
+            const shapeId = card.dataset.shapeId;
+            if (shapeId) {
+              triOrbShapeCardElements.set(shapeId, card);
+            }
+          });
         }
 
         function renderTriOrbShapeDetails(shape, shapeIndex) {
@@ -3690,15 +3822,22 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           const field = target.dataset.field;
           const dimension = target.dataset["shapeDimension"];
           let changed = false;
+          let geometryChanged = false;
+          let requiresFieldsetRender = false;
+          let requiresShapeListUpdate = false;
           if (field === "name") {
             shape.name = target.value;
             changed = true;
+            requiresFieldsetRender = true;
+            requiresShapeListUpdate = true;
           } else if (field === "fieldtype") {
             shape.fieldtype = target.value;
             changed = true;
           } else if (field === "kind") {
             applyShapeKind(shape, target.value);
             changed = true;
+            requiresFieldsetRender = true;
+            requiresShapeListUpdate = true;
           } else if (field === "type") {
             shape.type = target.value;
             if (shape.type === "Polygon") {
@@ -3708,28 +3847,47 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             } else if (shape.type === "Circle") {
               shape.circle = shape.circle || createDefaultCircleDetails();
             }
-            renderTriOrbShapes();
+            renderTriOrbShapes({
+              updatedShapeIds: [shape.id],
+              syncDependents: false,
+            });
             renderTriOrbShapeCheckboxes();
             applyShapeKind(shape, shape.kind || "Field");
             changed = true;
+            geometryChanged = true;
+            requiresFieldsetRender = true;
+            requiresShapeListUpdate = true;
           } else if (dimension === "polygon") {
             if (!shape.polygon) {
               shape.polygon = createDefaultPolygonDetails();
             }
             shape.polygon.points = parsePolygonPoints(target.value);
             changed = true;
+            geometryChanged = true;
           } else if (dimension === "rectangle") {
             shape.rectangle = shape.rectangle || createDefaultRectangleDetails();
             shape.rectangle[field] = target.value;
             changed = true;
+            geometryChanged = true;
           } else if (dimension === "circle") {
             shape.circle = shape.circle || createDefaultCircleDetails();
             shape.circle[field] = target.value;
             changed = true;
+            geometryChanged = true;
           }
           if (changed) {
-            renderFigure();
-            renderFieldsets();
+            if (requiresFieldsetRender) {
+              scheduleFieldsetsRender();
+            }
+            if (geometryChanged || !requiresFieldsetRender) {
+              scheduleFigureRender();
+            }
+            if (requiresShapeListUpdate) {
+              renderTriOrbShapeCheckboxes({
+                updatedShapeIds: [shape.id],
+              });
+              scheduleCreateFieldShapeListsRender();
+            }
           }
         }
 
@@ -8904,36 +9062,105 @@ function parsePolygonTrace(doc) {
           renderFigure();
         }
 
-        function renderTriOrbShapeCheckboxes() {
+        function renderTriOrbShapeCheckboxes(options = {}) {
           if (!triorbShapeCheckboxes) {
             return;
           }
+          const { updatedShapeIds = [], forceFullRender = false } = options || {};
           if (!triorbShapes.length) {
             triorbShapeCheckboxes.innerHTML = '<p class="toggle-pill-empty">No shapes available.</p>';
+            triOrbShapeCheckboxElements.clear();
+            triorbShapeCheckboxes.dataset.shapeCount = "0";
             return;
           }
+          const uniqueShapeIds = Array.isArray(updatedShapeIds)
+            ? Array.from(new Set(updatedShapeIds.filter(Boolean)))
+            : [];
+          const recordedCount = Number(triorbShapeCheckboxes.dataset.shapeCount || "0");
+          const shouldAttemptPartial = !forceFullRender && uniqueShapeIds.length > 0;
+          const canPartialRender =
+            shouldAttemptPartial &&
+            recordedCount === triorbShapes.length &&
+            triOrbShapeCheckboxElements.size === triorbShapes.length &&
+            triorbShapeCheckboxes.querySelector(".toggle-pill-btn");
+          if (canPartialRender) {
+            let partialFailed = false;
+            uniqueShapeIds.forEach((shapeId) => {
+              if (partialFailed) {
+                return;
+              }
+              const shapeIndex = triorbShapes.findIndex((shape) => shape.id === shapeId);
+              if (shapeIndex < 0) {
+                partialFailed = true;
+                return;
+              }
+              const existingButton = triOrbShapeCheckboxElements.get(shapeId);
+              if (!existingButton) {
+                partialFailed = true;
+                return;
+              }
+              const nextButton = createTriOrbShapeCheckboxElement(triorbShapes[shapeIndex], shapeIndex);
+              if (!nextButton) {
+                partialFailed = true;
+                return;
+              }
+              existingButton.replaceWith(nextButton);
+              triOrbShapeCheckboxElements.set(shapeId, nextButton);
+            });
+            if (!partialFailed) {
+              triorbShapeCheckboxes.dataset.shapeCount = String(triorbShapes.length);
+              return;
+            }
+          }
           triorbShapeCheckboxes.innerHTML = triorbShapes
-            .map((shape, index) => {
-              const isVisible = shape.visible !== false;
-              shape.visible = isVisible;
-              return `
-                <button
-                  type="button"
-                  class="toggle-pill-btn${isVisible ? " active" : ""}"
-                  data-shape-index="${index}"
-                  aria-pressed="${isVisible}"
-                >
-                  ${escapeHtml(shape.name || `Shape ${index + 1}`)}
-                </button>`;
-            })
+            .map((shape, index) => renderTriOrbShapeCheckbox(shape, index))
             .join("");
+          triorbShapeCheckboxes.dataset.shapeCount = String(triorbShapes.length);
+          rebuildTriOrbShapeCheckboxMap();
+        }
+
+        function renderTriOrbShapeCheckbox(shape, index) {
+          const isVisible = shape.visible !== false;
+          shape.visible = isVisible;
+          const shapeIdAttr = escapeHtml(shape.id || `shape-${index}`);
+          const label = escapeHtml(shape.name || `Shape ${index + 1}`);
+          return `
+            <button
+              type="button"
+              class="toggle-pill-btn${isVisible ? " active" : ""}"
+              data-shape-index="${index}"
+              data-shape-id="${shapeIdAttr}"
+              aria-pressed="${isVisible}"
+            >
+              ${label}
+            </button>`;
+        }
+
+        function createTriOrbShapeCheckboxElement(shape, index) {
+          const wrapper = document.createElement("div");
+          wrapper.innerHTML = renderTriOrbShapeCheckbox(shape, index).trim();
+          return wrapper.firstElementChild;
+        }
+
+        function rebuildTriOrbShapeCheckboxMap() {
+          triOrbShapeCheckboxElements.clear();
+          if (!triorbShapeCheckboxes) {
+            return;
+          }
+          const buttons = triorbShapeCheckboxes.querySelectorAll(".toggle-pill-btn");
+          buttons.forEach((button) => {
+            const shapeId = button.dataset.shapeId;
+            if (shapeId) {
+              triOrbShapeCheckboxElements.set(shapeId, button);
+            }
+          });
         }
 
         function setTriOrbShapeVisibility(visible) {
           triorbShapes.forEach((shape) => {
             shape.visible = visible;
           });
-          renderTriOrbShapeCheckboxes();
+          renderTriOrbShapeCheckboxes({ forceFullRender: true });
           renderFigure();
         }
 
