@@ -354,6 +354,8 @@ document.addEventListener("DOMContentLoaded", () => {
         let scanPlanes = initializeScanPlanes(initialScanPlanes);
         let triorbShapes = initializeTriOrbShapes(initialTriOrbShapes);
         const triOrbShapeRegistry = new Map();
+        const triOrbShapeCardCache = new Map();
+        let triOrbShapesListInitialized = false;
         let triorbSource = bootstrapData.triorbSource || "";
         let fieldsets = initializeFieldsets(initialFieldsets);
         let fieldsetDevices = initializeFieldsetDevices(initialFieldsetDevices);
@@ -3531,17 +3533,93 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             return;
           }
           if (!triorbShapes.length) {
+            triOrbShapeCardCache.clear();
+            triOrbShapesListInitialized = false;
             triorbShapesContainer.innerHTML = "<p>No shapes defined.</p>";
             renderCasetableEvals();
             return;
           }
-          triorbShapesContainer.innerHTML = triorbShapes
-            .map((shape, shapeIndex) => renderTriOrbShapeCard(shapeIndex, shape))
-            .join("");
+          if (!triOrbShapesListInitialized) {
+            triorbShapesContainer.innerHTML = "";
+            triOrbShapesListInitialized = true;
+          }
+          const renderedShapeIds = new Set();
+          triorbShapes.forEach((shape, shapeIndex) => {
+            const shapeId = shape.id;
+            let card = triOrbShapeCardCache.get(shapeId);
+            if (!card) {
+              card = document.createElement("div");
+            }
+            updateTriOrbShapeCardElement(card, shapeIndex, shape);
+            triOrbShapeCardCache.set(shapeId, card);
+            renderedShapeIds.add(shapeId);
+            triorbShapesContainer.appendChild(card);
+          });
+          Array.from(triOrbShapeCardCache.keys()).forEach((shapeId) => {
+            if (!renderedShapeIds.has(shapeId)) {
+              const cachedCard = triOrbShapeCardCache.get(shapeId);
+              if (cachedCard?.parentNode === triorbShapesContainer) {
+                triorbShapesContainer.removeChild(cachedCard);
+              }
+              triOrbShapeCardCache.delete(shapeId);
+            }
+          });
           if (createFieldModal) {
             renderCreateFieldShapeLists();
           }
           renderCasetableEvals();
+        }
+
+        function updateTriOrbShapeCardElement(card, shapeIndex, shape) {
+          const shapeSignature = buildTriOrbShapeCardSignature(shape);
+          const shouldUpdateMarkup = card.dataset.shapeSignature !== shapeSignature;
+          card.className = "triorb-shape-card";
+          card.dataset.shapeIndex = String(shapeIndex);
+          card.dataset.shapeId = shape.id;
+          if (shouldUpdateMarkup) {
+            card.innerHTML = renderTriOrbShapeCard(shapeIndex, shape);
+            card.dataset.shapeSignature = shapeSignature;
+          } else {
+            syncTriOrbShapeCardIndexes(card, shapeIndex);
+          }
+        }
+
+        function syncTriOrbShapeCardIndexes(card, shapeIndex) {
+          const nextIndexValue = String(shapeIndex);
+          card.querySelectorAll("[data-shape-index]").forEach((node) => {
+            node.dataset.shapeIndex = nextIndexValue;
+          });
+        }
+
+        function buildTriOrbShapeCardSignature(shape) {
+          const base = {
+            id: shape.id || "",
+            name: shape.name || "",
+            fieldtype: shape.fieldtype || "",
+            kind: shape.kind || "",
+            type: shape.type || "",
+          };
+          if (shape.type === "Rectangle") {
+            base.dimensions = {
+              OriginX: shape.rectangle?.OriginX ?? "",
+              OriginY: shape.rectangle?.OriginY ?? "",
+              Width: shape.rectangle?.Width ?? "",
+              Height: shape.rectangle?.Height ?? "",
+              Rotation: shape.rectangle?.Rotation ?? "",
+            };
+          } else if (shape.type === "Circle") {
+            base.dimensions = {
+              CenterX: shape.circle?.CenterX ?? "",
+              CenterY: shape.circle?.CenterY ?? "",
+              Radius: shape.circle?.Radius ?? "",
+            };
+          } else {
+            base.dimensions = {
+              Type: shape.polygon?.Type || getPolygonTypeValue(shape.polygon) || shape.kind || "Field",
+              points: (shape.polygon?.points || []).map((point) => `${point.X ?? ""},${point.Y ?? ""}`),
+            };
+          }
+          return JSON.stringify(base);
         }
 
         function renderTriOrbShapeCard(shapeIndex, shape) {
@@ -3571,7 +3649,6 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             )
             .join("");
           return `
-            <div class="triorb-shape-card" data-shape-index="${shapeIndex}">
           <div class="shape-row">
             <span>ID: ${escapeHtml(shape.id)}</span>
             <label>
@@ -3623,8 +3700,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               Remove
             </button>
           </div>
-              <div class="shape-details">${details}</div>
-            </div>`;
+              <div class="shape-details">${details}</div>`;
         }
 
         function renderTriOrbShapeDetails(shape, shapeIndex) {
