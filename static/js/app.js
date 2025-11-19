@@ -6070,12 +6070,12 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
           const childLines = [];
           const layout = deriveCaseLayout(caseData);
           const caseNameValue =
-            extractCaseNodeText(caseData, "Name") ??
             caseData.attributes?.Name ??
+            extractCaseNodeText(caseData, "Name") ??
             buildCaseName(caseIndex);
           const latin9Value =
-            extractCaseNodeText(caseData, "NameLatin9Key") ??
             caseData.attributes?.NameLatin9Key ??
+            extractCaseNodeText(caseData, "NameLatin9Key") ??
             "";
           const displayOrderValue = String(caseIndex);
           let hasNameNode = false;
@@ -6122,6 +6122,17 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
                     indentLevel + 1
                   )
                 );
+              } else if (segment.node.tag === "StaticInputs") {
+                childLines.push(
+                  ...buildStaticInputsLines(caseData.staticInputs, indentLevel + 1)
+                );
+              } else if (segment.node.tag === "SpeedActivation") {
+                childLines.push(
+                  ...buildSpeedActivationLines(
+                    caseData.speedActivation,
+                    indentLevel + 1
+                  )
+                );
               } else {
                 childLines.push(...buildGenericNodeLines(segment.node, indentLevel + 1));
               }
@@ -6151,6 +6162,16 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
           const attrText = buildRootAttributes(node.attributes, getAttributeOrder(node.tag));
           const lines = [`${indent}<${sanitizeTagName(node.tag)}${attrText ? ` ${attrText}` : ""}>`];
           const childNodes = Array.isArray(node.children) ? node.children : [];
+          const activationHasStaticInputs = childNodes.some(
+            (child) => child?.tag === "StaticInputs"
+          );
+          const activationHasSpeedActivation = childNodes.some(
+            (child) => child?.tag === "SpeedActivation"
+          );
+          const inlineActivationStaticInputs =
+            caseData.staticInputsPlacement === "activation" || activationHasStaticInputs;
+          const inlineActivationSpeedActivation =
+            caseData.speedActivationPlacement === "activation" || activationHasSpeedActivation;
           let staticInserted = false;
           let speedInserted = false;
           let minSpeedInserted = false;
@@ -6158,12 +6179,12 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
           const minSpeedValue = getCaseSpeedRangeValue(caseData, "min");
           const maxSpeedValue = getCaseSpeedRangeValue(caseData, "max");
           childNodes.forEach((child) => {
-            if (child.tag === "StaticInputs" && caseData.staticInputsPlacement === "activation") {
+            if (child.tag === "StaticInputs" && inlineActivationStaticInputs) {
               lines.push(...buildStaticInputsLines(caseData.staticInputs, indentLevel + 1));
               staticInserted = true;
             } else if (
               child.tag === "SpeedActivation" &&
-              caseData.speedActivationPlacement === "activation"
+              inlineActivationSpeedActivation
             ) {
               lines.push(...buildSpeedActivationLines(caseData.speedActivation, indentLevel + 1));
               speedInserted = true;
@@ -6181,10 +6202,10 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
               lines.push(...buildGenericNodeLines(child, indentLevel + 1));
             }
           });
-          if (!staticInserted && caseData.staticInputsPlacement === "activation") {
+          if (!staticInserted && inlineActivationStaticInputs) {
             lines.push(...buildStaticInputsLines(caseData.staticInputs, indentLevel + 1));
           }
-          if (!speedInserted && caseData.speedActivationPlacement === "activation") {
+          if (!speedInserted && inlineActivationSpeedActivation) {
             lines.push(...buildSpeedActivationLines(caseData.speedActivation, indentLevel + 1));
           }
           if (!minSpeedInserted) {
