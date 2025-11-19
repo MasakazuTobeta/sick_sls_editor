@@ -351,7 +351,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const originTrace = findOriginTrace(defaultFigure);
 
         let currentFigure = cloneFigure(defaultFigure);
-        invalidateBaseFigureTraces();
         let scanPlanes = initializeScanPlanes(initialScanPlanes);
         let triorbShapes = initializeTriOrbShapes(initialTriOrbShapes);
         const triOrbShapeRegistry = new Map();
@@ -462,6 +461,7 @@ document.addEventListener("DOMContentLoaded", () => {
         let deviceOverlayVersion = 0;
         let triOrbShapeTraceVersion = 0;
         let fieldsetTraceVersion = 0;
+        invalidateBaseFigureTraces();
 
         rebuildTriOrbShapeRegistry();
         renderScanPlanes();
