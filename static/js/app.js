@@ -331,6 +331,9 @@ document.addEventListener("DOMContentLoaded", () => {
           "replicate-preserve-orientation"
         );
         const replicateStaticInputsAutoInput = document.getElementById("replicate-static-inputs-auto");
+        const replicateIncludePreviousFieldsInput = document.getElementById(
+          "replicate-include-previous-fieldset-fields"
+        );
         const replicateSpeedMinStepInput = document.getElementById("replicate-speed-min-step");
         const replicateSpeedMaxStepInput = document.getElementById("replicate-speed-max-step");
         const replicateCasePrefixInput = document.getElementById("replicate-case-prefix");
@@ -455,6 +458,7 @@ document.addEventListener("DOMContentLoaded", () => {
           autoStaticInputs: false,
           speedRangeMinStep: 0,
           speedRangeMaxStep: 0,
+          includePreviousFields: false,
         };
         let replicatePreviewState = null;
         const plotTraceCache = {
@@ -2060,6 +2064,37 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           };
         }
 
+        function prependPreviousFieldsetFields(targetFieldset, previousFieldset, options = {}) {
+          if (!targetFieldset || !previousFieldset) {
+            return;
+          }
+          const previousFields = Array.isArray(previousFieldset.fields) ? previousFieldset.fields : [];
+          if (!previousFields.length) {
+            return;
+          }
+          const identityTransform = {
+            offsetX: 0,
+            offsetY: 0,
+            rotation: 0,
+            scale: 1,
+            preserveOrientation: true,
+          };
+          const clonedFields = previousFields
+            .map((field) =>
+              buildReplicatedField(field, {
+                copyIndex: options.copyIndex ?? 0,
+                transform: identityTransform,
+                includeCutouts: options.includeCutouts,
+              })
+            )
+            .filter(Boolean);
+          if (!clonedFields.length) {
+            return;
+          }
+          const nextFields = Array.isArray(targetFieldset.fields) ? targetFieldset.fields : [];
+          targetFieldset.fields = [...clonedFields, ...nextFields];
+        }
+
         function buildReplicatedCase(
           baseCase,
           { caseIndex, prefix, staticInputs: staticInputsOverride, speedRange }
@@ -3136,6 +3171,11 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               replicateFormState.autoStaticInputs
             );
           }
+          if (replicateIncludePreviousFieldsInput) {
+            replicateIncludePreviousFieldsInput.checked = Boolean(
+              replicateFormState.includePreviousFields
+            );
+          }
           if (replicateSpeedMinStepInput) {
             replicateSpeedMinStepInput.value = String(
               Number.isFinite(replicateFormState.speedRangeMinStep)
@@ -3311,6 +3351,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           const includeCutouts = Boolean(replicateIncludeCutoutsInput?.checked);
           const preserveOrientation = Boolean(replicatePreserveOrientationInput?.checked);
           const autoStaticInputs = Boolean(replicateStaticInputsAutoInput?.checked);
+          const includePreviousFields = Boolean(replicateIncludePreviousFieldsInput?.checked);
           let speedRangeMinStep = parseInt(replicateSpeedMinStepInput?.value ?? "0", 10);
           let speedRangeMaxStep = parseInt(replicateSpeedMaxStepInput?.value ?? "0", 10);
           if (!Number.isFinite(speedRangeMinStep)) {
@@ -3332,6 +3373,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           replicateFormState.autoStaticInputs = autoStaticInputs;
           replicateFormState.speedRangeMinStep = speedRangeMinStep;
           replicateFormState.speedRangeMaxStep = speedRangeMaxStep;
+          replicateFormState.includePreviousFields = includePreviousFields;
           const availableSlots = casetableCasesLimit - casetableCases.length;
           const desiredCount = selectedCaseIndexes.length * copyCount;
           if (availableSlots <= 0) {
@@ -3364,6 +3406,11 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
                 fieldset: fieldsets[fieldsetIndex],
               }))
               .filter((entry) => Array.isArray(entry.fieldset?.fields) && entry.fieldset.fields.length);
+            const previousFieldsetsBySource = includePreviousFields
+              ? new Map(
+                  fieldsetSources.map(({ fieldsetIndex, fieldset }) => [fieldsetIndex, fieldset])
+                )
+              : null;
             for (let step = 1; step <= copyCount; step += 1) {
               if (caseMappings.length >= availableSlots) {
                 break;
@@ -3376,7 +3423,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
                 preserveOrientation,
               };
               const replicatedFieldsetsForCase = [];
-              fieldsetSources.forEach(({ fieldset }) => {
+              fieldsetSources.forEach(({ fieldset, fieldsetIndex }) => {
                 const nextFieldsetIndex = baseFieldsetCount + createdFieldsets.length + 1;
                 const fieldsetName = `${casePrefix} ${nextFieldsetIndex}`;
                 const replicatedFieldset = buildReplicatedFieldset(fieldset, {
@@ -3386,9 +3433,21 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
                   includeCutouts,
                 });
                 if (replicatedFieldset) {
+                  if (includePreviousFields && previousFieldsetsBySource) {
+                    const previousFieldset = previousFieldsetsBySource.get(fieldsetIndex);
+                    if (previousFieldset) {
+                      prependPreviousFieldsetFields(replicatedFieldset, previousFieldset, {
+                        copyIndex: step,
+                        includeCutouts,
+                      });
+                    }
+                  }
                   fieldsets.push(replicatedFieldset);
                   createdFieldsets.push(replicatedFieldset);
                   replicatedFieldsetsForCase.push(replicatedFieldset);
+                  if (includePreviousFields && previousFieldsetsBySource) {
+                    previousFieldsetsBySource.set(fieldsetIndex, replicatedFieldset);
+                  }
                 }
               });
               const targetCaseIndex = casetableCases.length;
@@ -3538,6 +3597,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               autoStaticInputs: Boolean(replicateStaticInputsAutoInput?.checked),
               speedRangeMinStep,
               speedRangeMaxStep,
+              includePreviousFields: Boolean(replicateIncludePreviousFieldsInput?.checked),
             };
           }
           if (!replicateFieldsetSelect || !fieldsets.length) {
@@ -10011,6 +10071,9 @@ function parsePolygonTrace(doc) {
         }
         if (replicateStaticInputsAutoInput) {
           replicateStaticInputsAutoInput.addEventListener("change", updateReplicatePreview);
+        }
+        if (replicateIncludePreviousFieldsInput) {
+          replicateIncludePreviousFieldsInput.addEventListener("change", updateReplicatePreview);
         }
         function startCreateShapeDrag(event) {
           if (!createShapeModalWindow) return;
