@@ -5,7 +5,11 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>SICK SLS Editor (Web)</title>
-  <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.ico') }}" />
+  <link
+    rel="icon"
+    type="image/png"
+    href="{{ url_for('static', filename='favicon.ico') }}"
+  />
   <script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
   <style>
     :root {
@@ -1986,15 +1990,18 @@
   <script>
     window.appBootstrapData = {
       defaultFigure: {{ plot_spec | tojson }},
-    rootAttributes: { { root_attrs | tojson } },
-    scanPlanes: { { scan_planes | tojson } },
-    fieldsets: { { fieldsets | tojson } },
-    casetablePayload: { { casetable_payload | tojson } },
-    triorbShapes: { { triorb_shapes | tojson } },
-    triorbSource: { { triorb_source | tojson } },
+    rootAttributes: {{ root_attrs | tojson }},
+    scanPlanes: {{ scan_planes | tojson }},
+    fieldsets: {{ fieldsets | tojson }},
+    casetablePayload: {{ casetable_payload | tojson }},
+    triorbShapes: {{ triorb_shapes | tojson }},
+    triorbSource: {{ triorb_source | tojson }},
   };
   </script>
-  <script type="module" src="{{ url_for('static', filename='js/app.js') }}"></script>
+  <script
+    type="module"
+    src="{{ url_for('static', filename='js/app.js') }}"
+  ></script>
 </body>
 
 </html>

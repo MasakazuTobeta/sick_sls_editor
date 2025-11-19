@@ -354,6 +354,10 @@ document.addEventListener("DOMContentLoaded", () => {
         let scanPlanes = initializeScanPlanes(initialScanPlanes);
         let triorbShapes = initializeTriOrbShapes(initialTriOrbShapes);
         const triOrbShapeRegistry = new Map();
+        const triOrbShapeLookup = new Map();
+        const triOrbShapeIndexLookup = new Map();
+        const triOrbShapeCardCache = new Map();
+        let triOrbShapesListInitialized = false;
         let triorbSource = bootstrapData.triorbSource || "";
         let fieldsets = initializeFieldsets(initialFieldsets);
         let fieldsetDevices = initializeFieldsetDevices(initialFieldsetDevices);
@@ -392,7 +396,6 @@ document.addEventListener("DOMContentLoaded", () => {
         globalMultipleSampling = deriveInitialMultipleSampling(fieldsets);
         let legendVisible = true;
         let fieldOfViewDegrees = parseNumeric(fieldOfViewInput?.value, 270);
-        rebuildTriOrbShapeRegistry();
         const debugMode = Boolean(new URLSearchParams(window.location.search).get("debug"));
         if (debugMode) {
           document.body.classList.add("debug-mode");
@@ -449,7 +452,19 @@ document.addEventListener("DOMContentLoaded", () => {
           speedRangeMaxStep: 0,
         };
         let replicatePreviewState = null;
+        const plotTraceCache = {
+          baseFigure: { version: -1, traces: [] },
+          deviceOverlay: { version: -1, traces: [] },
+          triOrbShapes: { version: -1, traces: [] },
+          fieldsets: { version: -1, traces: [] },
+        };
+        let baseFigureVersion = 0;
+        let deviceOverlayVersion = 0;
+        let triOrbShapeTraceVersion = 0;
+        let fieldsetTraceVersion = 0;
+        invalidateBaseFigureTraces();
 
+        rebuildTriOrbShapeRegistry();
         renderScanPlanes();
         renderFieldsets();
         renderFieldsetDevices();
@@ -490,22 +505,83 @@ document.addEventListener("DOMContentLoaded", () => {
           statusText.dataset.state = resolvedState;
         }
 
-        function renderFigure() {
-          syncPlotSize();
-          const baseData = (currentFigure.data || []).map((trace, index) => {
+        function invalidateBaseFigureTraces() {
+          baseFigureVersion += 1;
+        }
+
+        function invalidateDeviceTraceCache() {
+          deviceOverlayVersion += 1;
+        }
+
+        function invalidateFieldsetTraces({ skipDeviceCache = false } = {}) {
+          fieldsetTraceVersion += 1;
+          if (!skipDeviceCache) {
+            invalidateDeviceTraceCache();
+          }
+        }
+
+        function invalidateTriOrbShapeCaches() {
+          triOrbShapeTraceVersion += 1;
+          invalidateFieldsetTraces({ skipDeviceCache: true });
+        }
+
+        function buildBaseFigureTraces() {
+          return (currentFigure.data || []).map((trace, index) => {
             const copy = { ...trace };
             const originalName = copy.name || `Trace ${index + 1}`;
             copy.name = formatLegendLabel(originalName);
             return copy;
           });
-          const deviceTraces = buildDeviceOverlayTraces();
-          const triOrbShapeTraces = buildTriOrbShapeTraces();
-          const fieldsetTraces = buildFieldsetTraces();
+        }
+
+        function resolveBaseFigureTraces() {
+          if (plotTraceCache.baseFigure.version === baseFigureVersion) {
+            return plotTraceCache.baseFigure.traces;
+          }
+          const traces = buildBaseFigureTraces();
+          plotTraceCache.baseFigure = { version: baseFigureVersion, traces };
+          return traces;
+        }
+
+        function resolveDeviceOverlayTraces() {
+          if (plotTraceCache.deviceOverlay.version === deviceOverlayVersion) {
+            return plotTraceCache.deviceOverlay.traces;
+          }
+          const traces = buildDeviceOverlayTraces();
+          plotTraceCache.deviceOverlay = { version: deviceOverlayVersion, traces };
+          return traces;
+        }
+
+        function resolveTriOrbShapeTraces() {
+          if (plotTraceCache.triOrbShapes.version === triOrbShapeTraceVersion) {
+            return plotTraceCache.triOrbShapes.traces;
+          }
+          const traces = buildTriOrbShapeTraces();
+          plotTraceCache.triOrbShapes = { version: triOrbShapeTraceVersion, traces };
+          return traces;
+        }
+
+        function resolveFieldsetTraces() {
+          if (plotTraceCache.fieldsets.version === fieldsetTraceVersion) {
+            return plotTraceCache.fieldsets.traces;
+          }
+          const traces = buildFieldsetTraces();
+          plotTraceCache.fieldsets = { version: fieldsetTraceVersion, traces };
+          return traces;
+        }
+
+        function renderFigure() {
+          syncPlotSize();
+          const baseData = resolveBaseFigureTraces();
+          const deviceTraces = resolveDeviceOverlayTraces();
+          const triOrbShapeTraces = resolveTriOrbShapeTraces();
+          const fieldsetTraces = resolveFieldsetTraces();
           const previewTraces = buildCreateShapePreviewTraces();
           const fieldModalPreviewTraces = buildFieldModalPreviewTraces();
           const replicatePreviewTraces = buildReplicatePreviewTraces();
           const layout = {
             ...(currentFigure.layout || {}),
+            uirevision: `${baseFigureVersion}:${triOrbShapeTraceVersion}:${fieldsetTraceVersion}:${deviceOverlayVersion}`,
             showlegend: legendVisible,
             legend: {
               ...(currentFigure.layout?.legend || {}),
@@ -531,18 +607,29 @@ document.addEventListener("DOMContentLoaded", () => {
               title: "",
             },
           };
-          Plotly.react(
-            plotNode,
-            deviceTraces
-              .concat(triOrbShapeTraces)
-              .concat(baseData)
-              .concat(fieldsetTraces)
-              .concat(previewTraces)
-              .concat(fieldModalPreviewTraces)
-              .concat(replicatePreviewTraces),
-            layout,
-            figureConfig
-          );
+          const combinedTraces = [];
+          if (deviceTraces.length) {
+            combinedTraces.push(...deviceTraces);
+          }
+          if (triOrbShapeTraces.length) {
+            combinedTraces.push(...triOrbShapeTraces);
+          }
+          if (baseData.length) {
+            combinedTraces.push(...baseData);
+          }
+          if (fieldsetTraces.length) {
+            combinedTraces.push(...fieldsetTraces);
+          }
+          if (previewTraces.length) {
+            combinedTraces.push(...previewTraces);
+          }
+          if (fieldModalPreviewTraces.length) {
+            combinedTraces.push(...fieldModalPreviewTraces);
+          }
+          if (replicatePreviewTraces.length) {
+            combinedTraces.push(...replicatePreviewTraces);
+          }
+          Plotly.react(plotNode, combinedTraces, layout, figureConfig);
         }
 
         function buildFieldsetTraces() {
@@ -562,18 +649,13 @@ document.addEventListener("DOMContentLoaded", () => {
               const labelPrefix = `${fieldsetName} / ${fieldName}`;
               const fieldType = field.attributes?.Fieldtype || "ProtectiveSafeBlanking";
               (field.shapeRefs || []).forEach((shapeRef, shapeRefIndex) => {
-                const shapeIndex = triorbShapes.findIndex(
-                  (item) => item.id === shapeRef.shapeId
-                );
-                if (shapeIndex < 0) {
-                  return;
-                }
-                const shape = triorbShapes[shapeIndex];
+                const shape = findTriOrbShapeById(shapeRef?.shapeId);
                 if (!shape) {
                   return;
                 }
+                const shapeIndex = getTriOrbShapeIndexById(shape.id);
                 const shapeLabel = `${labelPrefix} / ${shape.name || shape.type}`;
-                const colorSeed = `${shape.id || shapeIndex}:${fieldsetIndex}:${fieldIndex}:${shapeRefIndex}`;
+                const colorSeed = `${shape.id || shapeRefIndex}:${fieldsetIndex}:${fieldIndex}:${shapeRefIndex}`;
                 const color = pickFieldColor(fieldType, colorSeed);
                 let shapeTrace = null;
                 switch (shape.type) {
@@ -1052,6 +1134,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
 
         function resetFigure() {
           currentFigure = cloneFigure(defaultFigure);
+          invalidateBaseFigureTraces();
           renderFigure();
           setStatus(`${updatedShape.name} を更新しました（${attached} 件の Fieldset に適用）`, "ok");
 
@@ -1321,8 +1404,52 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             attrs.TypekeyVersion || targetDevice.attributes.TypekeyVersion || "";
         }
 
+        function registerTriOrbShapeLookup(shape, index) {
+          if (!shape || !shape.id) {
+            return;
+          }
+          triOrbShapeLookup.set(shape.id, shape);
+          if (Number.isInteger(index)) {
+            triOrbShapeIndexLookup.set(shape.id, index);
+          } else {
+            const derivedIndex = triorbShapes.indexOf(shape);
+            if (derivedIndex >= 0) {
+              triOrbShapeIndexLookup.set(shape.id, derivedIndex);
+            }
+          }
+        }
+
+        function rebuildTriOrbShapeLookup() {
+          triOrbShapeLookup.clear();
+          triOrbShapeIndexLookup.clear();
+          triorbShapes.forEach((shape, index) => {
+            if (shape?.id) {
+              triOrbShapeLookup.set(shape.id, shape);
+              triOrbShapeIndexLookup.set(shape.id, index);
+            }
+          });
+        }
+
         function findTriOrbShapeById(shapeId) {
-          return triorbShapes.find((shape) => shape.id === shapeId) || null;
+          if (!shapeId) {
+            return null;
+          }
+          return triOrbShapeLookup.get(shapeId) || null;
+        }
+
+        function getTriOrbShapeIndexById(shapeId) {
+          if (!shapeId) {
+            return -1;
+          }
+          const cached = triOrbShapeIndexLookup.get(shapeId);
+          if (Number.isInteger(cached)) {
+            return cached;
+          }
+          const fallbackIndex = triorbShapes.findIndex((shape) => shape.id === shapeId);
+          if (fallbackIndex >= 0) {
+            triOrbShapeIndexLookup.set(shapeId, fallbackIndex);
+          }
+          return fallbackIndex;
         }
 
         function normalizeFieldShapeRefs(field) {
@@ -1388,6 +1515,9 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           const nextVisible = userVisible || forcedCount > 0;
           const changed = fieldset.visible !== nextVisible;
           fieldset.visible = nextVisible;
+          if (changed) {
+            invalidateFieldsetTraces();
+          }
           return changed;
         }
 
@@ -1419,6 +1549,8 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               : globalMultipleSampling;
           const newShape = createDefaultTriOrbShape(triorbShapes.length, "Polygon");
           triorbShapes.push(newShape);
+          registerTriOrbShapeInRegistry(newShape, triorbShapes.length - 1);
+          invalidateTriOrbShapeCaches();
           return {
             attributes: {
               Name: `Field ${index + 1}`,
@@ -1766,7 +1898,8 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           clonedShape.visible = true;
           applyReplicationTransform(clonedShape, transform);
           triorbShapes.push(clonedShape);
-          registerTriOrbShapeInRegistry(clonedShape);
+          registerTriOrbShapeInRegistry(clonedShape, triorbShapes.length - 1);
+          invalidateTriOrbShapeCaches();
           return clonedShape.id;
         }
 
@@ -2081,6 +2214,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
         }
 
         function renderFieldsets() {
+          invalidateFieldsetTraces();
           if (!fieldsetsContainer) {
             return;
           }
@@ -3439,10 +3573,11 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           renderFigure();
         }
 
-        function registerTriOrbShapeInRegistry(shape) {
+        function registerTriOrbShapeInRegistry(shape, index) {
           if (!shape) {
             return;
           }
+          registerTriOrbShapeLookup(shape, index);
           let attrs = {};
           let points = [];
           if (shape.type === "Polygon" && shape.polygon) {
@@ -3466,7 +3601,9 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
 
         function rebuildTriOrbShapeRegistry() {
           triOrbShapeRegistry.clear();
-          triorbShapes.forEach((shape) => registerTriOrbShapeInRegistry(shape));
+          rebuildTriOrbShapeLookup();
+          triorbShapes.forEach((shape, index) => registerTriOrbShapeInRegistry(shape, index));
+          invalidateTriOrbShapeCaches();
         }
 
         function ensureTriOrbShapeFromGeometry(shapeType, attrs = {}, points = [], context = {}) {
@@ -3522,7 +3659,8 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             "Field";
           applyShapeKind(shape, inferredKind);
           triorbShapes.push(shape);
-          registerTriOrbShapeInRegistry(shape);
+          registerTriOrbShapeInRegistry(shape, triorbShapes.length - 1);
+          invalidateTriOrbShapeCaches();
           return shape.id;
         }
 
@@ -3531,17 +3669,93 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             return;
           }
           if (!triorbShapes.length) {
+            triOrbShapeCardCache.clear();
+            triOrbShapesListInitialized = false;
             triorbShapesContainer.innerHTML = "<p>No shapes defined.</p>";
             renderCasetableEvals();
             return;
           }
-          triorbShapesContainer.innerHTML = triorbShapes
-            .map((shape, shapeIndex) => renderTriOrbShapeCard(shapeIndex, shape))
-            .join("");
+          if (!triOrbShapesListInitialized) {
+            triorbShapesContainer.innerHTML = "";
+            triOrbShapesListInitialized = true;
+          }
+          const renderedShapeIds = new Set();
+          triorbShapes.forEach((shape, shapeIndex) => {
+            const shapeId = shape.id;
+            let card = triOrbShapeCardCache.get(shapeId);
+            if (!card) {
+              card = document.createElement("div");
+            }
+            updateTriOrbShapeCardElement(card, shapeIndex, shape);
+            triOrbShapeCardCache.set(shapeId, card);
+            renderedShapeIds.add(shapeId);
+            triorbShapesContainer.appendChild(card);
+          });
+          Array.from(triOrbShapeCardCache.keys()).forEach((shapeId) => {
+            if (!renderedShapeIds.has(shapeId)) {
+              const cachedCard = triOrbShapeCardCache.get(shapeId);
+              if (cachedCard?.parentNode === triorbShapesContainer) {
+                triorbShapesContainer.removeChild(cachedCard);
+              }
+              triOrbShapeCardCache.delete(shapeId);
+            }
+          });
           if (createFieldModal) {
             renderCreateFieldShapeLists();
           }
           renderCasetableEvals();
+        }
+
+        function updateTriOrbShapeCardElement(card, shapeIndex, shape) {
+          const shapeSignature = buildTriOrbShapeCardSignature(shape);
+          const shouldUpdateMarkup = card.dataset.shapeSignature !== shapeSignature;
+          card.className = "triorb-shape-card";
+          card.dataset.shapeIndex = String(shapeIndex);
+          card.dataset.shapeId = shape.id;
+          if (shouldUpdateMarkup) {
+            card.innerHTML = renderTriOrbShapeCard(shapeIndex, shape);
+            card.dataset.shapeSignature = shapeSignature;
+          } else {
+            syncTriOrbShapeCardIndexes(card, shapeIndex);
+          }
+        }
+
+        function syncTriOrbShapeCardIndexes(card, shapeIndex) {
+          const nextIndexValue = String(shapeIndex);
+          card.querySelectorAll("[data-shape-index]").forEach((node) => {
+            node.dataset.shapeIndex = nextIndexValue;
+          });
+        }
+
+        function buildTriOrbShapeCardSignature(shape) {
+          const base = {
+            id: shape.id || "",
+            name: shape.name || "",
+            fieldtype: shape.fieldtype || "",
+            kind: shape.kind || "",
+            type: shape.type || "",
+          };
+          if (shape.type === "Rectangle") {
+            base.dimensions = {
+              OriginX: shape.rectangle?.OriginX ?? "",
+              OriginY: shape.rectangle?.OriginY ?? "",
+              Width: shape.rectangle?.Width ?? "",
+              Height: shape.rectangle?.Height ?? "",
+              Rotation: shape.rectangle?.Rotation ?? "",
+            };
+          } else if (shape.type === "Circle") {
+            base.dimensions = {
+              CenterX: shape.circle?.CenterX ?? "",
+              CenterY: shape.circle?.CenterY ?? "",
+              Radius: shape.circle?.Radius ?? "",
+            };
+          } else {
+            base.dimensions = {
+              Type: shape.polygon?.Type || getPolygonTypeValue(shape.polygon) || shape.kind || "Field",
+              points: (shape.polygon?.points || []).map((point) => `${point.X ?? ""},${point.Y ?? ""}`),
+            };
+          }
+          return JSON.stringify(base);
         }
 
         function renderTriOrbShapeCard(shapeIndex, shape) {
@@ -3571,7 +3785,6 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             )
             .join("");
           return `
-            <div class="triorb-shape-card" data-shape-index="${shapeIndex}">
           <div class="shape-row">
             <span>ID: ${escapeHtml(shape.id)}</span>
             <label>
@@ -3623,8 +3836,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               Remove
             </button>
           </div>
-              <div class="shape-details">${details}</div>
-            </div>`;
+              <div class="shape-details">${details}</div>`;
         }
 
         function renderTriOrbShapeDetails(shape, shapeIndex) {
@@ -3728,6 +3940,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             changed = true;
           }
           if (changed) {
+            invalidateTriOrbShapeCaches();
             renderFigure();
             renderFieldsets();
           }
@@ -3957,6 +4170,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               summary.textContent = value;
             }
           }
+          invalidateFieldsetTraces();
           renderFigure();
         }
 
@@ -4127,7 +4341,14 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
         function resolveShape(meta) {
           if (!meta) return null;
           if (meta.isTriOrbShape) {
-            return triorbShapes[meta.shapeIndex] || null;
+            let shapeIndex = Number.isInteger(meta.shapeIndex)
+              ? meta.shapeIndex
+              : getTriOrbShapeIndexById(meta.shapeId);
+            if (shapeIndex < 0) {
+              return findTriOrbShapeById(meta.shapeId);
+            }
+            meta.shapeIndex = shapeIndex;
+            return triorbShapes[shapeIndex] || null;
           }
           const field = getFieldEntry(meta.fieldsetIndex, meta.fieldIndex);
           if (!field) {
@@ -5255,6 +5476,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
         }
 
         function renderFieldsetDevices() {
+          invalidateDeviceTraceCache();
           if (!fieldsetDevicesContainer) return;
           if (!fieldsetDevices.length) {
             fieldsetDevicesContainer.innerHTML = "<p>No devices defined.</p>";
@@ -5383,6 +5605,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               summary.textContent = value;
             }
           }
+          invalidateDeviceTraceCache();
           renderFigure();
         }
 
@@ -7443,6 +7666,7 @@ function parsePolygonTrace(doc) {
             }
             fieldOfViewDegrees = nextValue;
             event.target.value = fieldOfViewDegrees;
+            invalidateDeviceTraceCache();
             renderFigure();
           });
         }
@@ -8651,6 +8875,7 @@ function parsePolygonTrace(doc) {
             button.classList.toggle("active", nextState);
             button.setAttribute("aria-pressed", String(nextState));
             shape.visible = nextState;
+            invalidateTriOrbShapeCaches();
             renderFigure();
           });
         }
@@ -8879,7 +9104,10 @@ function parsePolygonTrace(doc) {
 
         if (addTriOrbShapeBtn) {
           addTriOrbShapeBtn.addEventListener("click", () => {
-            triorbShapes.push(createDefaultTriOrbShape(triorbShapes.length));
+            const shape = createDefaultTriOrbShape(triorbShapes.length);
+            triorbShapes.push(shape);
+            registerTriOrbShapeInRegistry(shape, triorbShapes.length - 1);
+            invalidateTriOrbShapeCaches();
             renderTriOrbShapes();
             renderTriOrbShapeCheckboxes();
             renderFieldsets();
@@ -8933,6 +9161,7 @@ function parsePolygonTrace(doc) {
           triorbShapes.forEach((shape) => {
             shape.visible = visible;
           });
+          invalidateTriOrbShapeCaches();
           renderTriOrbShapeCheckboxes();
           renderFigure();
         }
@@ -8943,6 +9172,7 @@ function parsePolygonTrace(doc) {
           }
           const removedShape = triorbShapes[shapeIndex];
           triorbShapes.splice(shapeIndex, 1);
+          rebuildTriOrbShapeRegistry();
           fieldsets.forEach((fieldset) => {
             (fieldset.fields || []).forEach((field) => {
               if (Array.isArray(field.shapeRefs)) {
@@ -9497,6 +9727,8 @@ function parsePolygonTrace(doc) {
               const updatedShape = JSON.parse(JSON.stringify(draft));
               updatedShape.visible = triorbShapes[shapeIndex].visible !== false;
               triorbShapes[shapeIndex] = updatedShape;
+              registerTriOrbShapeLookup(updatedShape, shapeIndex);
+              invalidateTriOrbShapeCaches();
               const selectedFieldsets = getCreateShapeSelectedFieldsets();
               detachShapeFromAllFieldsets(updatedShape.id);
               const attached = attachShapeToFieldsets(updatedShape.id, selectedFieldsets);
@@ -9506,9 +9738,12 @@ function parsePolygonTrace(doc) {
               renderFigure();
               setStatus(`${updatedShape.name} を更新しました（${attached} 件の Fieldset に適用）`, "ok");
             } else {
-              triorbShapes.push(JSON.parse(JSON.stringify(draft)));
+              const createdShape = JSON.parse(JSON.stringify(draft));
+              triorbShapes.push(createdShape);
+              registerTriOrbShapeInRegistry(createdShape, triorbShapes.length - 1);
+              invalidateTriOrbShapeCaches();
               const selectedFieldsets = getCreateShapeSelectedFieldsets();
-              const attached = attachShapeToFieldsets(draft.id, selectedFieldsets);
+              const attached = attachShapeToFieldsets(createdShape.id, selectedFieldsets);
               renderTriOrbShapes();
               renderTriOrbShapeCheckboxes();
               renderFieldsets();
@@ -9911,6 +10146,7 @@ function parsePolygonTrace(doc) {
               const { traces, warning, triOrbPresent } = parseXmlToFigure(reader.result);
               const layout = cloneFigure(defaultFigure).layout;
               currentFigure = { data: traces, layout };
+              invalidateBaseFigureTraces();
               renderFigure();
               if (warning) {
                 setStatus(`${file.name} loaded with warnings: ${warning}`, "warning");
