@@ -127,3 +127,6 @@ sample/
 
 # Temp files
 tests/evidence_*.sgexml
+
+# Static site
+docs/
