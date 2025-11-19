@@ -6345,19 +6345,17 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
               ? scanPlanes
               : [createDefaultScanPlane(0)];
           const counter = { value: 1 };
-          let fieldsetsAssigned = false;
+          const userFieldsetsTemplate = buildFieldsConfigurationUserFieldsets(counter);
           return planes.map((plane, planeIndex) => {
             const attrs = plane?.attributes || {};
             const indexValue = attrs.Index ?? String(planeIndex);
             const numericIndex = Number.parseInt(indexValue, 10);
-            const planeId = attrs.Id || (Number.isFinite(numericIndex) ? String(numericIndex + 1) : String(planeIndex + 1));
+            const planeId =
+              attrs.Id || (Number.isFinite(numericIndex) ? String(numericIndex + 1) : String(planeIndex + 1));
             const nameValue = attrs.Name || `ScanPlane ${planeIndex + 1}`;
-            const userFieldsetsNode = fieldsetsAssigned
-              ? { tag: "UserFieldsets", attributes: {}, text: "", children: [] }
-              : buildFieldsConfigurationUserFieldsets(counter);
-            if (!fieldsetsAssigned) {
-              fieldsetsAssigned = true;
-            }
+            const clonedFieldsets =
+              cloneFieldsConfigurationNode(userFieldsetsTemplate) ||
+              { tag: "UserFieldsets", attributes: {}, text: "", children: [] };
             return {
               tag: "ScanPlane",
               attributes: { Id: String(planeId) },
@@ -6365,7 +6363,7 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
               children: [
                 { tag: "Index", attributes: {}, text: String(indexValue), children: [] },
                 { tag: "Name", attributes: {}, text: nameValue, children: [] },
-                userFieldsetsNode,
+                clonedFieldsets,
               ],
             };
           });
@@ -6431,6 +6429,20 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
               ],
             };
           });
+        }
+
+        function cloneFieldsConfigurationNode(node) {
+          if (!node) {
+            return null;
+          }
+          return {
+            tag: node.tag,
+            attributes: { ...(node.attributes || {}) },
+            text: typeof node.text === "string" ? node.text : "",
+            children: Array.isArray(node.children)
+              ? node.children.map((child) => cloneFieldsConfigurationNode(child))
+              : [],
+          };
         }
 
         function buildFieldsConfigurationStatFields() {
