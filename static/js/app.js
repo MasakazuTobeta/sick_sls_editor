@@ -2094,6 +2094,10 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           if (!targetFieldset || !previousFieldset) {
             return;
           }
+          const targetFields = Array.isArray(targetFieldset.fields) ? targetFieldset.fields : [];
+          if (!targetFields.length) {
+            return;
+          }
           const previousFields = Array.isArray(previousFieldset.fields) ? previousFieldset.fields : [];
           if (!previousFields.length) {
             return;
@@ -2105,20 +2109,49 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             scale: 1,
             preserveOrientation: true,
           };
-          const clonedFields = previousFields
-            .map((field) =>
-              buildReplicatedField(field, {
-                copyIndex: options.copyIndex ?? 0,
-                transform: identityTransform,
-                includeCutouts: options.includeCutouts,
-              })
-            )
-            .filter(Boolean);
-          if (!clonedFields.length) {
-            return;
-          }
-          const nextFields = Array.isArray(targetFieldset.fields) ? targetFieldset.fields : [];
-          targetFieldset.fields = [...clonedFields, ...nextFields];
+          const previousFieldsByType = previousFields.reduce((lookup, field) => {
+            const typeKey = field?.attributes?.Fieldtype || "";
+            if (!lookup.has(typeKey)) {
+              lookup.set(typeKey, []);
+            }
+            lookup.get(typeKey).push(field);
+            return lookup;
+          }, new Map());
+          const cloneShapeRefs = (baseField) => {
+            const shapeRefs = Array.isArray(baseField?.shapeRefs) ? baseField.shapeRefs : [];
+            const filteredRefs = shapeRefs.filter((ref) => {
+              if (!ref?.shapeId) {
+                return false;
+              }
+              if (options.includeCutouts) {
+                return true;
+              }
+              const shape = findTriOrbShapeById(ref.shapeId);
+              return !isCutOutShape(shape);
+            });
+            return filteredRefs
+              .map((ref) =>
+                duplicateShapeForReplication(ref.shapeId, identityTransform, {
+                  copyIndex: options.copyIndex ?? 0,
+                })
+              )
+              .filter(Boolean)
+              .map((shapeId) => ({ shapeId }));
+          };
+          targetFields.forEach((targetField) => {
+            const typeKey = targetField?.attributes?.Fieldtype || "";
+            const candidates = previousFieldsByType.get(typeKey);
+            if (!candidates?.length) {
+              return;
+            }
+            const previousField = candidates.shift();
+            const clonedRefs = cloneShapeRefs(previousField);
+            if (!clonedRefs.length) {
+              return;
+            }
+            const existingRefs = Array.isArray(targetField.shapeRefs) ? targetField.shapeRefs : [];
+            targetField.shapeRefs = [...clonedRefs, ...existingRefs];
+          });
         }
 
         function buildReplicatedCase(
