@@ -201,12 +201,6 @@
                           "children": []
                         },
                         {
-                          "tag": "NameLatin9Key",
-                          "attributes": {},
-                          "text": "_SET_A",
-                          "children": []
-                        },
-                        {
                           "tag": "UserFields",
                           "attributes": {},
                           "text": "",

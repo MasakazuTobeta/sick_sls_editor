@@ -90,6 +90,22 @@ def _convert_element_to_node(element: ET.Element) -> Dict[str, Any]:
     }
 
 
+def _strip_userfieldset_name_latin9(node: Dict[str, Any]) -> Dict[str, Any]:
+    children = []
+    attributes = dict(node.get("attributes") or {})
+    if node.get("tag") == "UserFieldset":
+        attributes.pop("NameLatin9Key", None)
+    for child in node.get("children", []) or []:
+        if not isinstance(child, dict):
+            continue
+        if child.get("tag") == "NameLatin9Key" and node.get("tag") == "UserFieldset":
+            continue
+        children.append(_strip_userfieldset_name_latin9(child))
+    node["attributes"] = attributes
+    node["children"] = children
+    return node
+
+
 def _resolve_static_input_value_key(attrs: Dict[str, str]) -> str:
     for candidate in ("Value", "State", "Level", "Mode"):
         if candidate in attrs:
@@ -142,6 +158,7 @@ def _serialize_case_element(case_element: ET.Element) -> Dict[str, Any]:
         "speed_activation": None,
         "layout": [],
     }
+    entry["attributes"].pop("NameLatin9Key", None)
     for child in list(case_element):
         if child.tag == "StaticInputs":
             static_inputs = [
@@ -153,6 +170,8 @@ def _serialize_case_element(case_element: ET.Element) -> Dict[str, Any]:
         elif child.tag == "SpeedActivation":
             entry["speed_activation"] = _serialize_speed_activation_element(child)
             entry["layout"].append({"kind": "speed-activation"})
+        elif child.tag == "NameLatin9Key":
+            continue
         else:
             entry.setdefault("layout", []).append(
                 {"kind": "node", "node": _convert_element_to_node(child)}
@@ -289,7 +308,9 @@ def load_casetable_payload() -> Dict[str, Any]:
             payload["evals"] = _serialize_evals_node(child)
             payload["layout"].append({"kind": "evals"})
         elif child.tag == "FieldsConfiguration":
-            payload["fields_configuration"] = _convert_element_to_node(child)
+            payload["fields_configuration"] = _strip_userfieldset_name_latin9(
+                _convert_element_to_node(child)
+            )
             payload["layout"].append({"kind": "fields_configuration"})
         else:
             payload["layout"].append(
