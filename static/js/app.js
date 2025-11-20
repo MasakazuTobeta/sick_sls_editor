@@ -1925,6 +1925,38 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           return String(kind || "").toLowerCase() === "cutout";
         }
 
+        function buildShapeIdLookup() {
+          const lookup = new Map();
+          if (!Array.isArray(triorbShapes)) {
+            return lookup;
+          }
+          triorbShapes.forEach((shape, index) => {
+            lookup.set(String(shape.id), index + 1);
+          });
+          return lookup;
+        }
+
+        function findPrimaryShapeIdForField(field) {
+          if (!field) {
+            return null;
+          }
+          let fallback = null;
+          const refs = Array.isArray(field.shapeRefs) ? field.shapeRefs : [];
+          for (const ref of refs) {
+            const shape = findTriOrbShapeById(ref?.shapeId);
+            if (!shape) {
+              continue;
+            }
+            if (!isCutOutShape(shape)) {
+              return shape.id;
+            }
+            if (!fallback) {
+              fallback = shape.id;
+            }
+          }
+          return fallback;
+        }
+
         function findPrimaryShapeIdForFieldset(fieldset) {
           if (!fieldset) {
             return null;
@@ -1932,18 +1964,12 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           let fallback = null;
           const fields = Array.isArray(fieldset.fields) ? fieldset.fields : [];
           for (const field of fields) {
-            const refs = Array.isArray(field.shapeRefs) ? field.shapeRefs : [];
-            for (const ref of refs) {
-              const shape = findTriOrbShapeById(ref?.shapeId);
-              if (!shape) {
-                continue;
-              }
-              if (!isCutOutShape(shape)) {
-                return shape.id;
-              }
-              if (!fallback) {
-                fallback = shape.id;
-              }
+            const primaryShapeId = findPrimaryShapeIdForField(field);
+            if (primaryShapeId && !isCutOutShape(findTriOrbShapeById(primaryShapeId))) {
+              return primaryShapeId;
+            }
+            if (!fallback && primaryShapeId) {
+              fallback = primaryShapeId;
             }
           }
           return fallback;
@@ -6411,20 +6437,30 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
 
         function collectUserFieldDefinitions({ includeStatFields = false } = {}) {
           const entries = [];
+          const shapeIdLookup = buildShapeIdLookup();
+          const seenIds = new Set();
+          let counter = 1;
           if (Array.isArray(fieldsets)) {
-            let counter = 1;
             fieldsets.forEach((fieldset, fieldsetIndex) => {
               const fields = Array.isArray(fieldset?.fields) ? fieldset.fields : [];
               fields.forEach((field, fieldIndex) => {
+                const primaryShapeId = findPrimaryShapeIdForField(field);
+                const shapeIndex = shapeIdLookup.get(String(primaryShapeId)) || null;
+                const id = shapeIndex ?? counter;
+                counter = Math.max(counter, id + 1);
+                if (seenIds.has(id)) {
+                  return;
+                }
+                seenIds.add(id);
                 entries.push({
-                  id: String(counter),
+                  id: String(id),
                   fieldsetIndex,
                   fieldIndex,
                   field,
                   fieldset,
                   type: "fieldset",
+                  shapeId: primaryShapeId,
                 });
-                counter += 1;
               });
             });
           }
@@ -6537,8 +6573,11 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
           const fields = Array.isArray(fieldset?.fields) ? fieldset.fields : [];
           return fields.map((field, fieldIndex) => {
             const attrs = field?.attributes || {};
-            const id = counter.value;
-            counter.value += 1;
+            const primaryShapeId = findPrimaryShapeIdForField(field);
+            const shapeIdLookup = buildShapeIdLookup();
+            const shapeIndex = shapeIdLookup.get(String(primaryShapeId)) || null;
+            const id = shapeIndex ?? counter.value;
+            counter.value = Math.max(counter.value + 1, id + 1);
             const fieldName = attrs.Name || `Field ${fieldIndex + 1}`;
             const fieldType = attrs.Fieldtype || "ProtectiveSafeBlanking";
             const multipleSampling = attrs.MultipleSampling || String(globalMultipleSampling || "2");
