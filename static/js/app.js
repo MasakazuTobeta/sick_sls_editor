@@ -5936,16 +5936,6 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
               lines.push("          </Polygon>");
               wrote = true;
             });
-            (field.rectangles || []).forEach((rectangle) => {
-              const rectAttrs = buildAttributeString(
-                rectangle,
-                getAttributeOrder("Rectangle")
-              );
-              lines.push(
-                `          <Rectangle${rectAttrs ? " " + rectAttrs : ""} />`
-              );
-              wrote = true;
-            });
             (field.circles || []).forEach((circle) => {
               const circleAttrs = buildAttributeString(
                 circle,
@@ -5953,6 +5943,16 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
               );
               lines.push(
                 `          <Circle${circleAttrs ? " " + circleAttrs : ""} />`
+              );
+              wrote = true;
+            });
+            (field.rectangles || []).forEach((rectangle) => {
+              const rectAttrs = buildAttributeString(
+                rectangle,
+                getAttributeOrder("Rectangle")
+              );
+              lines.push(
+                `          <Rectangle${rectAttrs ? " " + rectAttrs : ""} />`
               );
               wrote = true;
             });
@@ -5975,49 +5975,61 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
                   lines.push(`          <Field${fieldAttrs ? " " + fieldAttrs : ""}>`);
                   let wroteShape = writeInlineGeometry(field);
                   if (!wroteShape && field.shapeRefs && field.shapeRefs.length) {
+                    const orderedShapes = { Polygon: [], Circle: [], Rectangle: [] };
                     field.shapeRefs.forEach((shapeRef) => {
                       const shape = findTriOrbShapeById(shapeRef.shapeId);
                       if (!shape) {
                         return;
                       }
-                      if (shape.type === "Polygon" && shape.polygon) {
-                        const polygonAttr = buildAttributeString(
-                          { Type: getPolygonTypeValue(shape.polygon) },
-                          getAttributeOrder("Polygon")
-                        );
-                        lines.push(
-                          `            <Polygon${polygonAttr ? " " + polygonAttr : ""}>`
-                        );
-                        (shape.polygon.points || []).forEach((point) => {
-                          const pointAttrs = buildAttributeString(
-                            sanitizePointAttributes(point),
-                            getAttributeOrder("Point")
+                      const typeKey = shape.type === "Circle"
+                        ? "Circle"
+                        : shape.type === "Rectangle"
+                        ? "Rectangle"
+                        : "Polygon";
+                      orderedShapes[typeKey].push(shape);
+                    });
+
+                    ["Polygon", "Circle", "Rectangle"].forEach((typeKey) => {
+                      orderedShapes[typeKey].forEach((shape) => {
+                        if (shape.type === "Polygon" && shape.polygon) {
+                          const polygonAttr = buildAttributeString(
+                            { Type: getPolygonTypeValue(shape.polygon) },
+                            getAttributeOrder("Polygon")
                           );
                           lines.push(
-                            `              <Point${pointAttrs ? " " + pointAttrs : ""} />`
+                            `            <Polygon${polygonAttr ? " " + polygonAttr : ""}>`
                           );
-                        });
-                        lines.push("            </Polygon>");
-                        wroteShape = true;
-                      } else if (shape.type === "Rectangle" && shape.rectangle) {
-                        const rectAttrs = buildAttributeString(
-                          shape.rectangle,
-                          getAttributeOrder("Rectangle")
-                        );
-                        lines.push(
-                          `            <Rectangle${rectAttrs ? " " + rectAttrs : ""} />`
-                        );
-                        wroteShape = true;
-                      } else if (shape.type === "Circle" && shape.circle) {
-                        const circleAttrs = buildAttributeString(
-                          shape.circle,
-                          getAttributeOrder("Circle")
-                        );
-                        lines.push(
-                          `            <Circle${circleAttrs ? " " + circleAttrs : ""} />`
-                        );
-                        wroteShape = true;
-                      }
+                          (shape.polygon.points || []).forEach((point) => {
+                            const pointAttrs = buildAttributeString(
+                              sanitizePointAttributes(point),
+                              getAttributeOrder("Point")
+                            );
+                            lines.push(
+                              `              <Point${pointAttrs ? " " + pointAttrs : ""} />`
+                            );
+                          });
+                          lines.push("            </Polygon>");
+                          wroteShape = true;
+                        } else if (shape.type === "Circle" && shape.circle) {
+                          const circleAttrs = buildAttributeString(
+                            shape.circle,
+                            getAttributeOrder("Circle")
+                          );
+                          lines.push(
+                            `            <Circle${circleAttrs ? " " + circleAttrs : ""} />`
+                          );
+                          wroteShape = true;
+                        } else if (shape.type === "Rectangle" && shape.rectangle) {
+                          const rectAttrs = buildAttributeString(
+                            shape.rectangle,
+                            getAttributeOrder("Rectangle")
+                          );
+                          lines.push(
+                            `            <Rectangle${rectAttrs ? " " + rectAttrs : ""} />`
+                          );
+                          wroteShape = true;
+                        }
+                      });
                     });
                   }
                   if (!wroteShape) {
