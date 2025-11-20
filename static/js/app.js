@@ -4870,6 +4870,15 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           };
         }
 
+        function normalizeUserFieldIdValue(value) {
+          const { values, defaultValue } = resolveEvalUserFieldOptions();
+          const normalized = (value || "").trim();
+          if (!normalized) {
+            return defaultValue || "";
+          }
+          return values.has(normalized) ? normalized : defaultValue || "";
+        }
+
         function buildEvalUserFieldOptionsHtml(selectedValue) {
           const { options, defaultValue } = resolveEvalUserFieldOptions();
           let value = selectedValue;
@@ -4919,10 +4928,9 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           if (!("Id" in scanPlaneAttributes)) {
             scanPlaneAttributes.Id = "1";
           }
-          let userFieldId = String(entry?.scanPlane?.userFieldId ?? "").trim();
-          if (!userFieldId && optionDefaults.defaultValue) {
-            userFieldId = optionDefaults.defaultValue;
-          }
+          const userFieldId = normalizeUserFieldIdValue(
+            String(entry?.scanPlane?.userFieldId ?? "").trim() || optionDefaults.defaultValue
+          );
           const isSplitted =
             String(entry?.scanPlane?.isSplitted ?? "false").toLowerCase() === "true"
               ? "true"
@@ -4958,7 +4966,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           }
           const attributes = { ...(evalCase.attributes || {}) };
           const scanPlaneAttributes = { ...(evalCase.scanPlane?.attributes || {}) };
-          const userFieldId = evalCase.scanPlane?.userFieldId ?? "";
+          const userFieldId = normalizeUserFieldIdValue(evalCase.scanPlane?.userFieldId ?? "");
           const isSplitted =
             String(evalCase.scanPlane?.isSplitted ?? "false").toLowerCase() === "true"
               ? "true"
@@ -5416,7 +5424,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             userFieldId: "",
             isSplitted: "false",
           };
-          caseEntry.scanPlane.userFieldId = value;
+          caseEntry.scanPlane.userFieldId = normalizeUserFieldIdValue(value);
           applyEvalUserFieldValidation();
         }
 
@@ -6341,7 +6349,7 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
             { ...(evalCase?.scanPlane?.attributes || {}), Id: evalCase?.scanPlane?.attributes?.Id || "1" },
             getAttributeOrder("ScanPlane")
           );
-          const userFieldId = evalCase?.scanPlane?.userFieldId ?? "";
+          const userFieldId = normalizeUserFieldIdValue(evalCase?.scanPlane?.userFieldId ?? "");
           const isSplitted = evalCase?.scanPlane?.isSplitted ?? "false";
           return [
             `${indent}<Case${attrText ? ` ${attrText}` : ""}>`,
