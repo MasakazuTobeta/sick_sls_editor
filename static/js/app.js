@@ -2988,23 +2988,23 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           const latinKey = createFieldsetLatinInput?.value?.trim() || generateLatin9Key();
           const entries = [];
           createFieldModalFieldShapeSelections.forEach((selection, fieldIndex) => {
+            const allShapeIds = [];
             shapeKinds.forEach((kind) => {
               const shapeIds = Array.from(selection[kind] || []);
-              const fieldName =
-                createFieldNameInputs[fieldIndex]?.value?.trim() || `Field ${fieldIndex + 1}`;
-              const typeValue = createFieldTypeSelects[fieldIndex]?.value || "Field";
-              entries.push({
-                attributes: {
-                  Name: fieldName,
-                  Fieldtype: fieldTypeLabels[fieldIndex] || fieldTypeLabels[0],
-                  Type: kind,
-                  MultipleSampling: globalMultipleSampling ?? "2",
-                  Resolution: globalResolution ?? "70",
-                  TolerancePositive: globalTolerancePositive ?? "0",
-                  ToleranceNegative: globalToleranceNegative ?? "0",
-                },
-                shapeRefs: shapeIds.map((shapeId) => ({ shapeId })),
-              });
+              shapeIds.forEach((shapeId) => allShapeIds.push(shapeId));
+            });
+            const fieldName =
+              createFieldNameInputs[fieldIndex]?.value?.trim() || `Field ${fieldIndex + 1}`;
+            entries.push({
+              attributes: {
+                Name: fieldName,
+                Fieldtype: fieldTypeLabels[fieldIndex] || fieldTypeLabels[0],
+                MultipleSampling: globalMultipleSampling ?? "2",
+                Resolution: globalResolution ?? "70",
+                TolerancePositive: globalTolerancePositive ?? "0",
+                ToleranceNegative: globalToleranceNegative ?? "0",
+              },
+              shapeRefs: allShapeIds.map((shapeId) => ({ shapeId })),
             });
           });
           const newFieldset = {
@@ -5884,6 +5884,48 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
           return lines;
         }
 
+        function mergeFieldsByAttributes(fields = []) {
+          const merged = [];
+          const map = new Map();
+          fields
+            .filter((field) => field && typeof field === "object")
+            .forEach((field) => {
+              const normalizedAttrs = stripLatin9Key(field.attributes) || {};
+              const { Type: _ignoreType, ...restAttrs } = normalizedAttrs;
+              const orderedAttrs = Object.keys(restAttrs)
+                .sort()
+                .reduce((acc, key) => {
+                  acc[key] = restAttrs[key];
+                  return acc;
+                }, {});
+              const key = JSON.stringify({ attrs: orderedAttrs });
+              if (!map.has(key)) {
+                map.set(key, {
+                  attributes: { ...orderedAttrs },
+                  polygons: [],
+                  circles: [],
+                  rectangles: [],
+                  shapeRefs: [],
+                });
+                merged.push(map.get(key));
+              }
+              const target = map.get(key);
+              if (Array.isArray(field.polygons)) {
+                target.polygons.push(...field.polygons);
+              }
+              if (Array.isArray(field.circles)) {
+                target.circles.push(...field.circles);
+              }
+              if (Array.isArray(field.rectangles)) {
+                target.rectangles.push(...field.rectangles);
+              }
+              if (Array.isArray(field.shapeRefs)) {
+                target.shapeRefs.push(...field.shapeRefs);
+              }
+            });
+          return merged;
+        }
+
         function buildFieldsetsXml(fieldsetDeviceAttrs = null) {
           const lines = [];
           lines.push('    <ScanPlane Index="0">');
@@ -5967,10 +6009,11 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
                 getAttributeOrder("Fieldset")
               );
               lines.push(`        <Fieldset${attrText ? " " + attrText : ""}>`);
-              if (fieldset.fields && fieldset.fields.length) {
-                fieldset.fields.forEach((field) => {
+              const mergedFields = mergeFieldsByAttributes(fieldset.fields || []);
+              if (mergedFields.length) {
+                mergedFields.forEach((field) => {
                   const fieldAttrs = buildAttributeString(
-                    stripLatin9Key(field.attributes),
+                    field.attributes,
                     getAttributeOrder("Field")
                   );
                   lines.push(`          <Field${fieldAttrs ? " " + fieldAttrs : ""}>`);
@@ -6624,7 +6667,7 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
         }
 
         function buildFieldsConfigurationUserFields(fieldset, fieldsetIndex, counter) {
-          const fields = Array.isArray(fieldset?.fields) ? fieldset.fields : [];
+          const fields = Array.isArray(fieldset?.fields) ? mergeFieldsByAttributes(fieldset.fields) : [];
           return fields.map((field, fieldIndex) => {
             const attrs = field?.attributes || {};
             const primaryShapeId = findPrimaryShapeIdForField(field);
