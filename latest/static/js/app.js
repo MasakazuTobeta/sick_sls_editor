@@ -58,14 +58,14 @@ document.addEventListener("DOMContentLoaded", () => {
           {
             DeviceName: "Right",
             PositionX: "170",
-            PositionY: "156",
+            PositionY: "102",
             Rotation: "290",
             StandingUpsideDown: "true",
           },
           {
             DeviceName: "Left",
             PositionX: "-170",
-            PositionY: "156",
+            PositionY: "102",
             Rotation: "70",
             StandingUpsideDown: "true",
           },
@@ -203,6 +203,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const plotNode = document.getElementById("plot");
         const statusText = document.getElementById("status-text");
         const fileInput = document.getElementById("file-input");
+        const svgFileInput = document.getElementById("svg-file-input");
         const plotWrapper = document.querySelector(".plot-wrapper");
         const scanPlanesContainer = document.getElementById("scanplanes-editor");
         const addScanPlaneBtn = document.getElementById("btn-add-scanplane");
@@ -2987,23 +2988,23 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           const latinKey = createFieldsetLatinInput?.value?.trim() || generateLatin9Key();
           const entries = [];
           createFieldModalFieldShapeSelections.forEach((selection, fieldIndex) => {
+            const allShapeIds = [];
             shapeKinds.forEach((kind) => {
               const shapeIds = Array.from(selection[kind] || []);
-              const fieldName =
-                createFieldNameInputs[fieldIndex]?.value?.trim() || `Field ${fieldIndex + 1}`;
-              const typeValue = createFieldTypeSelects[fieldIndex]?.value || "Field";
-              entries.push({
-                attributes: {
-                  Name: fieldName,
-                  Fieldtype: fieldTypeLabels[fieldIndex] || fieldTypeLabels[0],
-                  Type: kind,
-                  MultipleSampling: globalMultipleSampling ?? "2",
-                  Resolution: globalResolution ?? "70",
-                  TolerancePositive: globalTolerancePositive ?? "0",
-                  ToleranceNegative: globalToleranceNegative ?? "0",
-                },
-                shapeRefs: shapeIds.map((shapeId) => ({ shapeId })),
-              });
+              shapeIds.forEach((shapeId) => allShapeIds.push(shapeId));
+            });
+            const fieldName =
+              createFieldNameInputs[fieldIndex]?.value?.trim() || `Field ${fieldIndex + 1}`;
+            entries.push({
+              attributes: {
+                Name: fieldName,
+                Fieldtype: fieldTypeLabels[fieldIndex] || fieldTypeLabels[0],
+                MultipleSampling: globalMultipleSampling ?? "2",
+                Resolution: globalResolution ?? "70",
+                TolerancePositive: globalTolerancePositive ?? "0",
+                ToleranceNegative: globalToleranceNegative ?? "0",
+              },
+              shapeRefs: allShapeIds.map((shapeId) => ({ shapeId })),
             });
           });
           const newFieldset = {
@@ -5883,6 +5884,48 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
           return lines;
         }
 
+        function mergeFieldsByAttributes(fields = []) {
+          const merged = [];
+          const map = new Map();
+          fields
+            .filter((field) => field && typeof field === "object")
+            .forEach((field) => {
+              const normalizedAttrs = stripLatin9Key(field.attributes) || {};
+              const { Type: _ignoreType, ...restAttrs } = normalizedAttrs;
+              const orderedAttrs = Object.keys(restAttrs)
+                .sort()
+                .reduce((acc, key) => {
+                  acc[key] = restAttrs[key];
+                  return acc;
+                }, {});
+              const key = JSON.stringify({ attrs: orderedAttrs });
+              if (!map.has(key)) {
+                map.set(key, {
+                  attributes: { ...orderedAttrs },
+                  polygons: [],
+                  circles: [],
+                  rectangles: [],
+                  shapeRefs: [],
+                });
+                merged.push(map.get(key));
+              }
+              const target = map.get(key);
+              if (Array.isArray(field.polygons)) {
+                target.polygons.push(...field.polygons);
+              }
+              if (Array.isArray(field.circles)) {
+                target.circles.push(...field.circles);
+              }
+              if (Array.isArray(field.rectangles)) {
+                target.rectangles.push(...field.rectangles);
+              }
+              if (Array.isArray(field.shapeRefs)) {
+                target.shapeRefs.push(...field.shapeRefs);
+              }
+            });
+          return merged;
+        }
+
         function buildFieldsetsXml(fieldsetDeviceAttrs = null) {
           const lines = [];
           lines.push('    <ScanPlane Index="0">');
@@ -5966,10 +6009,11 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
                 getAttributeOrder("Fieldset")
               );
               lines.push(`        <Fieldset${attrText ? " " + attrText : ""}>`);
-              if (fieldset.fields && fieldset.fields.length) {
-                fieldset.fields.forEach((field) => {
+              const mergedFields = mergeFieldsByAttributes(fieldset.fields || []);
+              if (mergedFields.length) {
+                mergedFields.forEach((field) => {
                   const fieldAttrs = buildAttributeString(
-                    stripLatin9Key(field.attributes),
+                    field.attributes,
                     getAttributeOrder("Field")
                   );
                   lines.push(`          <Field${fieldAttrs ? " " + fieldAttrs : ""}>`);
@@ -6623,7 +6667,7 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
         }
 
         function buildFieldsConfigurationUserFields(fieldset, fieldsetIndex, counter) {
-          const fields = Array.isArray(fieldset?.fields) ? fieldset.fields : [];
+          const fields = Array.isArray(fieldset?.fields) ? mergeFieldsByAttributes(fieldset.fields) : [];
           return fields.map((field, fieldIndex) => {
             const attrs = field?.attributes || {};
             const primaryShapeId = findPrimaryShapeIdForField(field);
@@ -6972,6 +7016,339 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
             return "";
           }
           return buildAttributeString(attrs, order);
+        }
+
+          function invertSvgNumber(value) {
+            const num = Number.parseFloat(value);
+            return Number.isFinite(num) ? String(-num) : value;
+          }
+
+          function invertSvgPoints(points = []) {
+            return points.map((point) => ({
+              ...point,
+              Y: invertSvgNumber(point.Y),
+            }));
+          }
+
+          function parseSvgPoints(pointsAttr) {
+            const tokens = (pointsAttr || "")
+              .trim()
+              .replace(/,/g, " ")
+              .split(/\s+/)
+              .filter(Boolean);
+            const points = [];
+            for (let i = 0; i + 1 < tokens.length; i += 2) {
+              points.push({ X: tokens[i], Y: tokens[i + 1] });
+            }
+            return points;
+          }
+
+          function parseSvgPathToPolygons(d = "") {
+            const tokens = [];
+            const pathWarnings = new Set();
+            const regex = /([MLHVZmlhvz])|([-+]?\d*\.?\d+(?:[eE][-+]?\d+)?)/g;
+            let match;
+            while ((match = regex.exec(d)) !== null) {
+              tokens.push(match[0]);
+            }
+
+            const isCommand = (token) => /[MLHVZmlhvz]/.test(token);
+            const toNumber = (value) => {
+              const parsed = Number.parseFloat(value);
+              return Number.isFinite(parsed) ? parsed : null;
+            };
+
+            let index = 0;
+            let command = null;
+            let current = { x: 0, y: 0 };
+            let subpathStart = { x: 0, y: 0 };
+            let points = [];
+            const polygons = [];
+
+            const pushSubpath = () => {
+              if (points.length) {
+                const closedPoints = [...points];
+                const first = closedPoints[0];
+                const last = closedPoints[closedPoints.length - 1];
+                if (first && (first.X !== last.X || first.Y !== last.Y)) {
+                  closedPoints.push({ ...first });
+                }
+                polygons.push(closedPoints);
+                points = [];
+              }
+            };
+
+            while (index < tokens.length) {
+              const token = tokens[index];
+              if (isCommand(token)) {
+                command = token;
+                index += 1;
+                if (command === "Z" || command === "z") {
+                  pushSubpath();
+                  current = { ...subpathStart };
+                }
+                continue;
+              }
+              if (!command) {
+                index += 1;
+                continue;
+              }
+              if (command === "M" || command === "m") {
+                const xValue = toNumber(tokens[index]);
+                const yValue = toNumber(tokens[index + 1]);
+                if (xValue === null || yValue === null) {
+                  break;
+                }
+                index += 2;
+                const targetX = command === "m" ? current.x + xValue : xValue;
+                const targetY = command === "m" ? current.y + yValue : yValue;
+                pushSubpath();
+                const point = { X: String(targetX), Y: String(targetY) };
+                points.push(point);
+                current = { x: targetX, y: targetY };
+                subpathStart = { ...current };
+                command = command === "m" ? "l" : "L";
+                continue;
+              }
+              if (command === "L" || command === "l") {
+                const xValue = toNumber(tokens[index]);
+                const yValue = toNumber(tokens[index + 1]);
+                if (xValue === null || yValue === null) {
+                  break;
+                }
+                index += 2;
+                const targetX = command === "l" ? current.x + xValue : xValue;
+                const targetY = command === "l" ? current.y + yValue : yValue;
+                const point = { X: String(targetX), Y: String(targetY) };
+                points.push(point);
+                current = { x: targetX, y: targetY };
+                continue;
+              }
+              if (command === "H" || command === "h") {
+                const xValue = toNumber(tokens[index]);
+                if (xValue === null) {
+                  break;
+                }
+                index += 1;
+                const targetX = command === "h" ? current.x + xValue : xValue;
+                const point = { X: String(targetX), Y: String(current.y) };
+                points.push(point);
+                current = { x: targetX, y: current.y };
+                continue;
+              }
+              if (command === "V" || command === "v") {
+                const yValue = toNumber(tokens[index]);
+                if (yValue === null) {
+                  break;
+                }
+                index += 1;
+                const targetY = command === "v" ? current.y + yValue : yValue;
+                const point = { X: String(current.x), Y: String(targetY) };
+                points.push(point);
+                current = { x: current.x, y: targetY };
+                continue;
+              }
+              pathWarnings.add(`path (${command})`);
+              index += 1;
+            }
+
+            pushSubpath();
+            const validPolygons = polygons.filter((polygon) => polygon.length >= 3);
+            return { polygons: validPolygons, warnings: Array.from(pathWarnings) };
+          }
+
+        function extractRotationFromTransform(transformText) {
+          if (!transformText) {
+            return "0";
+          }
+          const match = /rotate\(\s*([-+]?\d*\.?\d+)/i.exec(transformText);
+          if (match && match[1]) {
+            return match[1];
+          }
+          return "0";
+        }
+
+        function parseSvgToShapes(svgText) {
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(svgText, "image/svg+xml");
+          if (doc.querySelector("parsererror")) {
+            throw new Error("SVG の解析に失敗しました。");
+          }
+          const svgRoot = doc.querySelector("svg");
+          if (!svgRoot) {
+            throw new Error("SVG ルート要素が見つかりませんでした。");
+          }
+          const unsupportedTags = new Set();
+          const ignoreTags = new Set(["svg", "g", "defs", "title", "desc", "metadata", "style", "clippath"]);
+          const shapes = [];
+          let polygonCount = 0;
+          let rectangleCount = 0;
+          let circleCount = 0;
+          svgRoot.querySelectorAll("*").forEach((node) => {
+            const tag = node.tagName.toLowerCase();
+            if (ignoreTags.has(tag)) {
+              return;
+            }
+            if (tag === "polygon") {
+              const points = parseSvgPoints(node.getAttribute("points"));
+              if (points.length < 3) {
+                return;
+              }
+              polygonCount += 1;
+              shapes.push({
+                type: "Polygon",
+                polygon: { points },
+                id: node.getAttribute("id") || undefined,
+                name:
+                  node.getAttribute("id") ||
+                  node.getAttribute("name") ||
+                  node.getAttribute("inkscape:label") ||
+                  `SVG Polygon ${polygonCount}`,
+              });
+              return;
+            }
+            if (tag === "rect") {
+              rectangleCount += 1;
+              shapes.push({
+                type: "Rectangle",
+                rectangle: {
+                  OriginX: node.getAttribute("x") || "0",
+                  OriginY: node.getAttribute("y") || "0",
+                  Width: node.getAttribute("width") || "0",
+                  Height: node.getAttribute("height") || "0",
+                  Rotation: extractRotationFromTransform(node.getAttribute("transform")),
+                },
+                id: node.getAttribute("id") || undefined,
+                name:
+                  node.getAttribute("id") ||
+                  node.getAttribute("name") ||
+                  node.getAttribute("inkscape:label") ||
+                  `SVG Rectangle ${rectangleCount}`,
+              });
+              return;
+            }
+            if (tag === "circle") {
+              circleCount += 1;
+              shapes.push({
+                type: "Circle",
+                circle: {
+                  CenterX: node.getAttribute("cx") || "0",
+                  CenterY: node.getAttribute("cy") || "0",
+                  Radius: node.getAttribute("r") || "0",
+                },
+                id: node.getAttribute("id") || undefined,
+                name:
+                  node.getAttribute("id") ||
+                  node.getAttribute("name") ||
+                  node.getAttribute("inkscape:label") ||
+                  `SVG Circle ${circleCount}`,
+              });
+              return;
+            }
+            if (tag === "path") {
+              const pathData = node.getAttribute("d") || "";
+              const { polygons, warnings: pathWarnings } = parseSvgPathToPolygons(pathData);
+              pathWarnings.forEach((warning) => unsupportedTags.add(warning));
+              if (!polygons.length) {
+                return;
+              }
+              const primaryPolygon = polygons[0];
+              if (polygons.length > 1) {
+                unsupportedTags.add("path (multiple subpaths collapsed)");
+              }
+              const baseName =
+                node.getAttribute("id") ||
+                node.getAttribute("name") ||
+                node.getAttribute("inkscape:label") ||
+                "SVG Path";
+              const rawId = node.getAttribute("id") || "";
+              polygonCount += 1;
+              const shapeName = baseName === "SVG Path" ? `SVG Path ${polygonCount}` : baseName;
+              const shapeId = rawId || undefined;
+              shapes.push({
+                type: "Polygon",
+                polygon: { points: primaryPolygon },
+                id: shapeId,
+                name: shapeName,
+              });
+              return;
+            }
+            unsupportedTags.add(node.tagName);
+          });
+          return { shapes, warnings: Array.from(unsupportedTags) };
+        }
+
+        function ensureUniqueShapeName(baseName, usedNames) {
+          const normalized = baseName || "Shape";
+          let candidate = normalized;
+          let suffix = 2;
+          while (usedNames.has(candidate)) {
+            candidate = `${normalized} (${suffix})`;
+            suffix += 1;
+          }
+          usedNames.add(candidate);
+          return candidate;
+        }
+
+        function ensureUniqueShapeId(baseId, usedIds) {
+          let candidate = baseId || createShapeId();
+          while (usedIds.has(candidate)) {
+            candidate = createShapeId();
+          }
+          usedIds.add(candidate);
+          return candidate;
+        }
+
+          function normalizeSvgShapeEntry(entry, index) {
+            const shapeType = entry.type || "Polygon";
+            const shape = createDefaultTriOrbShape(triorbShapes.length + index, shapeType);
+            shape.id = entry.id || shape.id || createShapeId();
+            shape.name = entry.name || `SVG ${shapeType} ${index + 1}`;
+            shape.fieldtype = "ProtectiveSafeBlanking";
+            shape.kind = "Field";
+            shape.type = shapeType;
+            if (shapeType === "Polygon" && entry.polygon) {
+              shape.polygon = {
+                Type: "Field",
+                points: invertSvgPoints(entry.polygon.points || []),
+              };
+            } else if (shapeType === "Rectangle" && entry.rectangle) {
+              shape.rectangle = {
+                ...shape.rectangle,
+                ...entry.rectangle,
+                OriginY: invertSvgNumber(entry.rectangle?.OriginY),
+                Type: "Field",
+              };
+            } else if (shapeType === "Circle" && entry.circle) {
+              shape.circle = {
+                ...shape.circle,
+                ...entry.circle,
+                CenterY: invertSvgNumber(entry.circle?.CenterY),
+                Type: "Field",
+              };
+            }
+          applyShapeKind(shape, "Field");
+          return shape;
+        }
+
+        function addSvgShapesToState(entries = []) {
+          if (!Array.isArray(entries) || !entries.length) {
+            return 0;
+          }
+          const usedNames = new Set(triorbShapes.map((shape) => shape.name).filter(Boolean));
+          const usedIds = new Set(triorbShapes.map((shape) => shape.id).filter(Boolean));
+          const normalizedShapes = entries.map((entry, index) => {
+            const shape = normalizeSvgShapeEntry(entry, index);
+            shape.name = ensureUniqueShapeName(shape.name, usedNames);
+            shape.id = ensureUniqueShapeId(shape.id, usedIds);
+            return shape;
+          });
+          normalizedShapes.forEach((shape) => {
+            triorbShapes.push(shape);
+            registerTriOrbShapeInRegistry(shape, triorbShapes.length - 1);
+          });
+          invalidateTriOrbShapeCaches();
+          return normalizedShapes.length;
         }
 
         function parseXmlToFigure(xmlText) {
@@ -10425,6 +10802,47 @@ function parsePolygonTrace(doc) {
           };
           reader.readAsText(file, "utf-8");
         });
+
+        if (svgFileInput) {
+          svgFileInput.addEventListener("change", (event) => {
+            const file = event.target.files?.[0];
+            if (!file) {
+              return;
+            }
+            const reader = new FileReader();
+            reader.onload = () => {
+              try {
+                const { shapes, warnings } = parseSvgToShapes(reader.result || "");
+                if (!shapes.length) {
+                  setStatus(
+                    `${file.name} に取り込める Polygon / Rectangle / Circle が見つかりませんでした。`,
+                    "warning"
+                  );
+                  return;
+                }
+                const importedCount = addSvgShapesToState(shapes);
+                renderTriOrbShapes();
+                renderTriOrbShapeCheckboxes();
+                renderFieldsets();
+                renderFigure();
+                if (warnings.length) {
+                  alert(`未対応の SVG 要素: ${warnings.join(", ")}`);
+                }
+                const warningSuffix = warnings.length ? `（未対応: ${warnings.join(", ")}）` : "";
+                setStatus(
+                  `${file.name} から ${importedCount} 件の Shape をインポートしました${warningSuffix}。`,
+                  warnings.length ? "warning" : "ok"
+                );
+              } catch (error) {
+                console.error(error);
+                setStatus(error.message || "SVG の読み込みに失敗しました。", "error");
+              } finally {
+                svgFileInput.value = "";
+              }
+            };
+            reader.readAsText(file, "utf-8");
+          });
+        }
 
         window.addEventListener("resize", () => {
           syncPlotSize();
