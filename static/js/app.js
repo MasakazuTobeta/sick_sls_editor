@@ -7278,6 +7278,18 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
           return { shapes, warnings: Array.from(unsupportedTags) };
         }
 
+        function ensureUniqueShapeName(baseName, usedNames) {
+          const normalized = baseName || "Shape";
+          let candidate = normalized;
+          let suffix = 2;
+          while (usedNames.has(candidate)) {
+            candidate = `${normalized} (${suffix})`;
+            suffix += 1;
+          }
+          usedNames.add(candidate);
+          return candidate;
+        }
+
           function normalizeSvgShapeEntry(entry, index) {
             const shapeType = entry.type || "Polygon";
             const shape = createDefaultTriOrbShape(triorbShapes.length + index, shapeType);
@@ -7314,7 +7326,12 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
           if (!Array.isArray(entries) || !entries.length) {
             return 0;
           }
-          const normalizedShapes = entries.map((entry, index) => normalizeSvgShapeEntry(entry, index));
+          const usedNames = new Set(triorbShapes.map((shape) => shape.name).filter(Boolean));
+          const normalizedShapes = entries.map((entry, index) => {
+            const shape = normalizeSvgShapeEntry(entry, index);
+            shape.name = ensureUniqueShapeName(shape.name, usedNames);
+            return shape;
+          });
           normalizedShapes.forEach((shape) => {
             triorbShapes.push(shape);
             registerTriOrbShapeInRegistry(shape, triorbShapes.length - 1);
