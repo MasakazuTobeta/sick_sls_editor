@@ -1793,17 +1793,38 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           if (!points.length) {
             return null;
           }
-          const sum = points.reduce(
-            (acc, point) => {
-              acc.x += point.x;
-              acc.y += point.y;
-              return acc;
-            },
-            { x: 0, y: 0 }
-          );
+          if (points.length === 1) {
+            return { ...points[0] };
+          }
+          let area = 0;
+          let centroidX = 0;
+          let centroidY = 0;
+          for (let i = 0; i < points.length; i += 1) {
+            const current = points[i];
+            const next = points[(i + 1) % points.length];
+            const cross = current.x * next.y - next.x * current.y;
+            area += cross;
+            centroidX += (current.x + next.x) * cross;
+            centroidY += (current.y + next.y) * cross;
+          }
+          area *= 0.5;
+          if (Math.abs(area) < 1e-10) {
+            const sum = points.reduce(
+              (acc, point) => {
+                acc.x += point.x;
+                acc.y += point.y;
+                return acc;
+              },
+              { x: 0, y: 0 }
+            );
+            return {
+              x: sum.x / points.length,
+              y: sum.y / points.length,
+            };
+          }
           return {
-            x: sum.x / points.length,
-            y: sum.y / points.length,
+            x: centroidX / (6 * area),
+            y: centroidY / (6 * area),
           };
         }
 
