@@ -58,14 +58,14 @@ document.addEventListener("DOMContentLoaded", () => {
           {
             DeviceName: "Right",
             PositionX: "170",
-            PositionY: "156",
+            PositionY: "102",
             Rotation: "290",
             StandingUpsideDown: "true",
           },
           {
             DeviceName: "Left",
             PositionX: "-170",
-            PositionY: "156",
+            PositionY: "102",
             Rotation: "70",
             StandingUpsideDown: "true",
           },
