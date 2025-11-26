@@ -6147,7 +6147,7 @@ function buildBaseSdImportExportLines({
             });
             (field.circles || []).forEach((circle) => {
               const circleAttrs = buildAttributeString(
-                circle,
+                sanitizeCircleAttributes(circle),
                 getAttributeOrder("Circle")
               );
               lines.push(
@@ -6239,7 +6239,7 @@ function buildBaseSdImportExportLines({
                           wroteShape = true;
                         } else if (shape.type === "Circle" && shape.circle) {
                           const circleAttrs = buildAttributeString(
-                            shape.circle,
+                            sanitizeCircleAttributes(shape.circle),
                             getAttributeOrder("Circle")
                           );
                           lines.push(
@@ -7030,6 +7030,27 @@ function buildBaseSdImportExportLines({
           if (Object.prototype.hasOwnProperty.call(attrs, "Y")) {
             attrs.Y = normalizePointCoordinate(attrs.Y);
           }
+          return attrs;
+        }
+
+        function normalizeCircleCoordinate(value) {
+          if (typeof value === "number" && Number.isFinite(value)) {
+            return String(Math.round(value));
+          }
+          const parsed = Number.parseFloat(value);
+          if (Number.isFinite(parsed)) {
+            return String(Math.round(parsed));
+          }
+          return typeof value === "string" ? value.trim() : String(value ?? "");
+        }
+
+        function sanitizeCircleAttributes(circle) {
+          const attrs = { ...(circle || {}) };
+          ["CenterX", "CenterY", "Radius"].forEach((key) => {
+            if (Object.prototype.hasOwnProperty.call(attrs, key)) {
+              attrs[key] = normalizeCircleCoordinate(attrs[key]);
+            }
+          });
           return attrs;
         }
 
