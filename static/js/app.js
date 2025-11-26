@@ -5069,6 +5069,30 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           return { html: unknownOption + optionHtml, selectedValue: value };
         }
 
+        function refreshEvalUserFieldOptions(selectElement) {
+          if (!selectElement) {
+            return;
+          }
+          const previousValue = selectElement.value;
+          const { html, selectedValue } = buildEvalUserFieldOptionsHtml(previousValue);
+          if (selectElement.innerHTML === html && previousValue === selectedValue) {
+            return;
+          }
+          selectElement.innerHTML = html;
+          selectElement.value = selectedValue;
+          const evalIndex = Number(selectElement.dataset.evalIndex);
+          const caseIndex = Number(selectElement.dataset.caseIndex);
+          if (!Number.isFinite(evalIndex) || !Number.isFinite(caseIndex)) {
+            applyEvalUserFieldValidation();
+            return;
+          }
+          if (previousValue !== selectedValue) {
+            updateEvalUserFieldId(evalIndex, caseIndex, selectedValue);
+            refreshCaseFieldAssignments({ rerenderCaseToggles: true });
+          }
+          applyEvalUserFieldValidation();
+        }
+
         function normalizeEvalReset(entry) {
           return {
             resetType: entry?.resetType ?? "NoReset",
@@ -5885,11 +5909,17 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           fieldsetGlobalGeometry[key] = value;
         }
 
-function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAttrs = null } = {}) {
+function buildBaseSdImportExportLines({
+          scanDeviceAttrs = null,
+          fieldsetDeviceAttrs = null,
+          includeUserFieldIds = true,
+        } = {}) {
           const figure = currentFigure || defaultFigure;
           const fileInfoLines = buildFileInfoLines();
           const scanPlaneLines = buildScanPlanesXml(scanDeviceAttrs);
-          const fieldsetLines = buildFieldsetsXml(fieldsetDeviceAttrs);
+          const fieldsetLines = buildFieldsetsXml(fieldsetDeviceAttrs, {
+            includeUserFieldIds,
+          });
           const casetableLines = buildCasetablesXml();
           const rootAttrOverrides = {
             ...rootAttributes,
@@ -5920,7 +5950,9 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
         }
 
         function buildLegacyXml() {
-          const lines = buildBaseSdImportExportLines();
+          const lines = buildBaseSdImportExportLines({
+            includeUserFieldIds: false,
+          });
           return lines.join("\n");
         }
 
@@ -6060,7 +6092,7 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
           return merged;
         }
 
-        function buildFieldsetsXml(fieldsetDeviceAttrs = null) {
+        function buildFieldsetsXml(fieldsetDeviceAttrs = null, { includeUserFieldIds = true } = {}) {
           const lines = [];
           lines.push('    <ScanPlane Index="0">');
 
@@ -6160,8 +6192,15 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
                     return;
                   }
 
+                  const fieldAttributes = includeUserFieldIds
+                    ? field.attributes
+                    : (() => {
+                        const attrs = { ...(field.attributes || {}) };
+                        delete attrs.UserFieldId;
+                        return attrs;
+                      })();
                   const fieldAttrs = buildAttributeString(
-                    field.attributes,
+                    fieldAttributes,
                     getAttributeOrder("Field")
                   );
                   lines.push(`          <Field${fieldAttrs ? " " + fieldAttrs : ""}>`);
@@ -6678,20 +6717,54 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
           const shapeIdLookup = buildShapeIdLookup();
           const seenIds = new Set();
           let counter = 1;
+
+          const reserveId = (rawId) => {
+            const id = String(rawId);
+            if (!id || seenIds.has(id)) {
+              return null;
+            }
+            seenIds.add(id);
+            const numericId = Number.parseInt(id, 10);
+            counter = Number.isFinite(numericId)
+              ? Math.max(counter, numericId + 1)
+              : counter + 1;
+            return id;
+          };
+
+          const allocateId = (...candidates) => {
+            for (const candidate of candidates) {
+              if (candidate === null || typeof candidate === "undefined") {
+                continue;
+              }
+              const id = reserveId(candidate);
+              if (id !== null) {
+                return id;
+              }
+            }
+            while (seenIds.has(String(counter))) {
+              counter += 1;
+            }
+            const fallbackId = reserveId(counter);
+            return fallbackId ?? "";
+          };
+
           if (Array.isArray(fieldsets)) {
             fieldsets.forEach((fieldset, fieldsetIndex) => {
               const fields = Array.isArray(fieldset?.fields) ? fieldset.fields : [];
               fields.forEach((field, fieldIndex) => {
+                const attributes = field?.attributes || {};
+                const explicitId = attributes.UserFieldId ?? attributes.Id ?? null;
                 const primaryShapeId = findPrimaryShapeIdForField(field);
                 const shapeIndex = shapeIdLookup.get(String(primaryShapeId)) || null;
-                const id = shapeIndex ?? counter;
-                counter = Math.max(counter, id + 1);
-                if (seenIds.has(id)) {
+                const id = allocateId(explicitId, shapeIndex);
+                if (!id) {
                   return;
                 }
-                seenIds.add(id);
+                if (attributes.UserFieldId !== id) {
+                  field.attributes = { ...attributes, UserFieldId: id };
+                }
                 entries.push({
-                  id: String(id),
+                  id,
                   fieldsetIndex,
                   fieldIndex,
                   field,
@@ -6814,8 +6887,12 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
             const primaryShapeId = findPrimaryShapeIdForField(field);
             const shapeIdLookup = buildShapeIdLookup();
             const shapeIndex = shapeIdLookup.get(String(primaryShapeId)) || null;
-            const id = shapeIndex ?? counter.value;
-            counter.value = Math.max(counter.value + 1, id + 1);
+            const explicitId = attrs.UserFieldId ?? attrs.Id;
+            const id = explicitId ?? shapeIndex ?? counter.value;
+            const numericId = Number.parseInt(id, 10);
+            counter.value = Number.isFinite(numericId)
+              ? Math.max(counter.value, numericId + 1)
+              : counter.value + 1;
             const fieldName = attrs.Name || `Field ${fieldIndex + 1}`;
             const fieldType = attrs.Fieldtype || "ProtectiveSafeBlanking";
             const multipleSampling = attrs.MultipleSampling || String(globalMultipleSampling || "2");
@@ -8269,6 +8346,53 @@ function parsePolygonTrace(doc) {
           return { attributes, evals };
         }
 
+        function applyFieldsConfigurationUserFieldIds(fieldsConfigurationElement) {
+          if (!fieldsConfigurationElement || !Array.isArray(fieldsets)) {
+            return;
+          }
+          const scanPlaneNodes = Array.from(
+            fieldsConfigurationElement.querySelectorAll(":scope > ScanPlanes > ScanPlane")
+          );
+          scanPlaneNodes.forEach((scanPlaneNode) => {
+            const userFieldsetNodes = Array.from(
+              scanPlaneNode.querySelectorAll(":scope > UserFieldsets > UserFieldset")
+            );
+            userFieldsetNodes.forEach((fieldsetNode) => {
+              const fieldsetIndexNode = fieldsetNode.querySelector(":scope > Index");
+              const fieldsetIndex = Number.parseInt(fieldsetIndexNode?.textContent ?? "", 10);
+              if (
+                !Number.isInteger(fieldsetIndex) ||
+                fieldsetIndex < 0 ||
+                fieldsetIndex >= fieldsets.length
+              ) {
+                return;
+              }
+              const targetFieldset = fieldsets[fieldsetIndex];
+              const userFieldNodes = Array.from(
+                fieldsetNode.querySelectorAll(":scope > UserFields > UserField")
+              );
+              userFieldNodes.forEach((userFieldNode) => {
+                const idAttr = userFieldNode.getAttribute("Id");
+                if (!idAttr) {
+                  return;
+                }
+                const fieldIndexNode = userFieldNode.querySelector(":scope > Index");
+                const fieldIndex = Number.parseInt(fieldIndexNode?.textContent ?? "", 10);
+                if (
+                  !Number.isInteger(fieldIndex) ||
+                  fieldIndex < 0 ||
+                  fieldIndex >= targetFieldset.fields.length
+                ) {
+                  return;
+                }
+                const targetField = targetFieldset.fields[fieldIndex];
+                targetField.attributes = targetField.attributes || {};
+                targetField.attributes.UserFieldId = idAttr;
+              });
+            });
+          });
+        }
+
         function populateCasetablesFromDoc(doc) {
           const casetableNodes = Array.from(
             doc.querySelectorAll("Export_CasetablesAndCases > Casetable")
@@ -8290,6 +8414,10 @@ function parsePolygonTrace(doc) {
             renderCasetableFieldsConfiguration();
             return;
           }
+          const fieldsConfigurationElement = casetableNode.querySelector(
+            ":scope > FieldsConfiguration"
+          );
+          applyFieldsConfigurationUserFieldIds(fieldsConfigurationElement);
           casetableAttributes = Array.from(casetableNode.attributes || []).reduce(
             (acc, attr) => {
               acc[attr.name] = attr.value;
@@ -8704,6 +8832,20 @@ function parsePolygonTrace(doc) {
         }
 
         if (casetableEvalsContainer) {
+          casetableEvalsContainer.addEventListener("pointerdown", (event) => {
+            const target = event.target;
+            if (target.classList.contains("eval-userfield-input")) {
+              refreshEvalUserFieldOptions(target);
+            }
+          });
+
+          casetableEvalsContainer.addEventListener("focusin", (event) => {
+            const target = event.target;
+            if (target.classList.contains("eval-userfield-input")) {
+              refreshEvalUserFieldOptions(target);
+            }
+          });
+
           casetableEvalsContainer.addEventListener("input", (event) => {
             const target = event.target;
             if (target.classList.contains("eval-attr-input")) {
@@ -10057,6 +10199,7 @@ function parsePolygonTrace(doc) {
               const xmlLines = buildBaseSdImportExportLines({
                 scanDeviceAttrs: scanAttrs,
                 fieldsetDeviceAttrs: device.attributes,
+                includeUserFieldIds: false,
               });
               const xml = xmlLines.join("\n");
               const prefix = formatDeviceFilePrefix(device.attributes, index);
