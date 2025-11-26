@@ -1433,9 +1433,21 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           triOrbShapeLookup.clear();
           triOrbShapeIndexLookup.clear();
           triorbShapes.forEach((shape, index) => {
-            if (shape?.id) {
-              triOrbShapeLookup.set(shape.id, shape);
-              triOrbShapeIndexLookup.set(shape.id, index);
+            if (!shape?.id) {
+              return;
+            }
+            const registerShapeKey = (key) => {
+              triOrbShapeLookup.set(key, shape);
+              triOrbShapeIndexLookup.set(key, index);
+            };
+            registerShapeKey(shape.id);
+            const stringKey = String(shape.id);
+            if (stringKey !== shape.id) {
+              registerShapeKey(stringKey);
+            }
+            const numericKey = Number(stringKey);
+            if (!Number.isNaN(numericKey) && numericKey !== shape.id && numericKey !== stringKey) {
+              registerShapeKey(numericKey);
             }
           });
         }
@@ -1444,7 +1456,23 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           if (!shapeId) {
             return null;
           }
-          return triOrbShapeLookup.get(shapeId) || null;
+          const direct = triOrbShapeLookup.get(shapeId);
+          if (direct) {
+            return direct;
+          }
+          const stringKey = String(shapeId);
+          const stringMatch = triOrbShapeLookup.get(stringKey);
+          if (stringMatch) {
+            return stringMatch;
+          }
+          const numericKey = Number(stringKey);
+          if (!Number.isNaN(numericKey)) {
+            const numericMatch = triOrbShapeLookup.get(numericKey);
+            if (numericMatch) {
+              return numericMatch;
+            }
+          }
+          return null;
         }
 
         function getTriOrbShapeIndexById(shapeId) {
