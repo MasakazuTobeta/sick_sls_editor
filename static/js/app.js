@@ -1737,7 +1737,14 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
 
         function transformPolygonPoints(
           points,
-          { offsetX = 0, offsetY = 0, rotation = 0, scale = 1, preserveOrientation = false } = {}
+          {
+            offsetX = 0,
+            offsetY = 0,
+            rotation = 0,
+            scale = 1,
+            preserveOrientation = false,
+            rotationOrigin,
+          } = {}
         ) {
           const numericPoints = (points || []).map((point) => ({
             x: parseNumeric(point.X, 0),
@@ -1749,6 +1756,8 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           const scaleFactor = Number.isFinite(scale) ? scale : 1;
           const hasScale = scaleFactor !== 1;
           const hasRotation = rotation !== 0;
+          const rotationOriginX = parseNumeric(rotationOrigin?.x ?? rotationOrigin?.X, 0) || 0;
+          const rotationOriginY = parseNumeric(rotationOrigin?.y ?? rotationOrigin?.Y, 0) || 0;
           const radians = hasRotation ? degreesToRadians(rotation) : 0;
           let transformedPoints = numericPoints.map((point) => {
             let x = point.x;
@@ -1762,7 +1771,13 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           if (hasRotation && preserveOrientation) {
             const centroid = computePointCentroid(transformedPoints);
             if (centroid) {
-              const rotatedCentroid = rotatePoint(centroid.x, centroid.y, radians, 0, 0);
+              const rotatedCentroid = rotatePoint(
+                centroid.x,
+                centroid.y,
+                radians,
+                rotationOriginX,
+                rotationOriginY
+              );
               const deltaX = rotatedCentroid.x - centroid.x;
               const deltaY = rotatedCentroid.y - centroid.y;
               transformedPoints = transformedPoints.map((point) => ({
@@ -1771,12 +1786,12 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               }));
             } else {
               transformedPoints = transformedPoints.map((point) =>
-                rotatePoint(point.x, point.y, radians, 0, 0)
+                rotatePoint(point.x, point.y, radians, rotationOriginX, rotationOriginY)
               );
             }
           } else if (hasRotation) {
             transformedPoints = transformedPoints.map((point) =>
-              rotatePoint(point.x, point.y, radians, 0, 0)
+              rotatePoint(point.x, point.y, radians, rotationOriginX, rotationOriginY)
             );
           }
           transformedPoints = transformedPoints.map((point) => ({
@@ -1828,6 +1843,92 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           };
         }
 
+        function computeShapeCentroid(shape) {
+          if (!shape) {
+            return null;
+          }
+          if (shape.type === "Polygon" && shape.polygon?.points?.length) {
+            const numericPoints = shape.polygon.points.map((point) => ({
+              x: parseNumeric(point.X, 0),
+              y: parseNumeric(point.Y, 0),
+            }));
+            return computePointCentroid(numericPoints);
+          }
+          if (shape.type === "Rectangle" && shape.rectangle) {
+            const originX = parseNumeric(shape.rectangle.OriginX, null);
+            const originY = parseNumeric(shape.rectangle.OriginY, null);
+            const width = parseNumeric(shape.rectangle.Width, null);
+            const height = parseNumeric(shape.rectangle.Height, null);
+            if (
+              Number.isFinite(originX) &&
+              Number.isFinite(originY) &&
+              Number.isFinite(width) &&
+              Number.isFinite(height)
+            ) {
+              return { x: originX + width / 2, y: originY + height / 2 };
+            }
+            if (Number.isFinite(originX) && Number.isFinite(originY)) {
+              return { x: originX, y: originY };
+            }
+          }
+          if (shape.type === "Circle" && shape.circle) {
+            const centerX = parseNumeric(shape.circle.CenterX, null);
+            const centerY = parseNumeric(shape.circle.CenterY, null);
+            if (Number.isFinite(centerX) && Number.isFinite(centerY)) {
+              return { x: centerX, y: centerY };
+            }
+          }
+          return null;
+        }
+
+        function computeFieldsetRotationOrigin(fieldset, { includeCutouts } = {}) {
+          if (!fieldset) {
+            return null;
+          }
+          const centroids = [];
+          (fieldset.fields || []).forEach((field) => {
+            (field.shapeRefs || []).forEach((shapeRef) => {
+              const shape = findTriOrbShapeById(shapeRef?.shapeId);
+              if (!shape) {
+                return;
+              }
+              if (!includeCutouts && isCutOutShape(shape)) {
+                return;
+              }
+              const centroid = computeShapeCentroid(shape);
+              if (centroid) {
+                centroids.push(centroid);
+              }
+            });
+          });
+          if (!centroids.length) {
+            return null;
+          }
+          const total = centroids.reduce(
+            (acc, centroid) => {
+              acc.x += centroid.x;
+              acc.y += centroid.y;
+              return acc;
+            },
+            { x: 0, y: 0 }
+          );
+          return { x: total.x / centroids.length, y: total.y / centroids.length };
+        }
+
+        function withRotationOrigin(transform, rotationOrigin) {
+          if (!rotationOrigin) {
+            return transform;
+          }
+          const originX = parseNumeric(rotationOrigin.x ?? rotationOrigin.X, null);
+          const originY = parseNumeric(rotationOrigin.y ?? rotationOrigin.Y, null);
+          if (!Number.isFinite(originX) || !Number.isFinite(originY)) {
+            return transform;
+          }
+          const nextTransform = { ...(transform || {}) };
+          nextTransform.rotationOrigin = { x: originX, y: originY };
+          return nextTransform;
+        }
+
         function applyReplicationTransform(shape, transform = {}) {
           if (!shape) {
             return;
@@ -1840,6 +1941,8 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           const hasRotation = rotation !== 0;
           const hasScale = scale !== 1;
           const preserveOrientation = Boolean(transform.preserveOrientation);
+          const rotationOriginX = parseNumeric(transform.rotationOrigin?.x, 0) || 0;
+          const rotationOriginY = parseNumeric(transform.rotationOrigin?.y, 0) || 0;
           const rotationRadians = hasRotation ? degreesToRadians(rotation) : 0;
           if (!offsetX && !offsetY && !hasRotation && !hasScale) {
             return;
@@ -1851,6 +1954,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               rotation,
               scale,
               preserveOrientation,
+              rotationOrigin: { x: rotationOriginX, y: rotationOriginY },
             });
           } else if (shape.type === "Rectangle" && shape.rectangle) {
             let originX = parseNumeric(shape.rectangle.OriginX, 0);
@@ -1861,7 +1965,13 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               originY *= scale;
             }
             if (hasRotation) {
-              const rotated = rotatePoint(originX, originY, rotationRadians, 0, 0);
+              const rotated = rotatePoint(
+                originX,
+                originY,
+                rotationRadians,
+                rotationOriginX,
+                rotationOriginY
+              );
               originX = rotated.x;
               originY = rotated.y;
             }
@@ -1893,7 +2003,13 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               centerY *= scale;
             }
             if (hasRotation) {
-              const rotated = rotatePoint(centerX, centerY, rotationRadians, 0, 0);
+              const rotated = rotatePoint(
+                centerX,
+                centerY,
+                rotationRadians,
+                rotationOriginX,
+                rotationOriginY
+              );
               centerX = rotated.x;
               centerY = rotated.y;
             }
@@ -2096,11 +2212,13 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           } else {
             attributes.NameLatin9Key = generateLatin9Key();
           }
+          const rotationOrigin = computeFieldsetRotationOrigin(baseFieldset, { includeCutouts });
+          const transformWithOrigin = withRotationOrigin(transform, rotationOrigin);
           const fields = baseFields
             .map((field) =>
               buildReplicatedField(field, {
                 copyIndex,
-                transform,
+                transform: transformWithOrigin,
                 includeCutouts,
               })
             )
@@ -2775,6 +2893,8 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           if (!fieldset || !Array.isArray(fieldset.fields) || !fieldset.fields.length) {
             return [];
           }
+          const rotationOrigin = computeFieldsetRotationOrigin(fieldset, { includeCutouts });
+          const transformWithOrigin = withRotationOrigin(transform, rotationOrigin);
           const traces = [];
           fieldset.fields.forEach((field, fieldIndex) => {
             const fieldType = field.attributes?.Fieldtype || "ProtectiveSafeBlanking";
@@ -2791,7 +2911,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               if (!previewShape) {
                 return;
               }
-              applyReplicationTransform(previewShape, transform);
+              applyReplicationTransform(previewShape, transformWithOrigin);
               const shapeName = baseShape.name || baseShape.type;
               const label = `${labelPrefix} / ${fieldName} / ${shapeName}`;
               let trace = null;
