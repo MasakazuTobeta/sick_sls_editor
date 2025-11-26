@@ -4971,6 +4971,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
         function buildDefaultCaseLayout(caseIndex) {
           return [
             { kind: "node", node: createSimpleTextNode("SleepMode", "false") },
+            { kind: "node", node: createSimpleTextNode("DisplayOrder", String(caseIndex)) },
             { kind: "node", node: createDefaultActivationNode(caseIndex) },
           ];
         }
