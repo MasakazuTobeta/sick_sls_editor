@@ -4306,6 +4306,23 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             </select>`;
         }
 
+        function updateFieldsetAttribute(fieldsetIndex, key, value) {
+          const fieldset = fieldsets[fieldsetIndex];
+          if (!fieldset) return;
+          fieldset.attributes = fieldset.attributes || {};
+          fieldset.attributes[key] = value;
+          if (key === "Name") {
+            const summary = document.querySelector(
+              `.fieldset-card[data-fieldset-index="${fieldsetIndex}"] .fieldset-summary`
+            );
+            if (summary) {
+              summary.textContent = value;
+            }
+          }
+          invalidateFieldsetTraces();
+          renderFigure();
+        }
+
         function updateFieldAttribute(fieldsetIndex, fieldIndex, key, value) {
           const fieldset = fieldsets[fieldsetIndex];
           const field = fieldset?.fields?.[fieldIndex];
