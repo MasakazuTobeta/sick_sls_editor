@@ -2954,16 +2954,39 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           return traces;
         }
 
-        function openCreateFieldModalForCreate() {
+        let createFieldTargetFieldsetIndex = null;
+
+        function openCreateFieldModalForCreate(targetFieldsetIndex = null) {
+          const fieldsetIndex = Number.isFinite(targetFieldsetIndex)
+            ? targetFieldsetIndex
+            : null;
+          createFieldTargetFieldsetIndex = fieldsetIndex;
+          const targetFieldset =
+            fieldsetIndex !== null && fieldsetIndex >= 0 && fieldsetIndex < fieldsets.length
+              ? fieldsets[fieldsetIndex]
+              : null;
+          const isAppendingToExisting = Boolean(targetFieldset);
+
           if (createFieldsetNameInput) {
-            createFieldsetNameInput.value = defaultFieldsetName();
+            const fieldsetName = isAppendingToExisting
+              ? targetFieldset.attributes?.Name || defaultFieldsetName()
+              : defaultFieldsetName();
+            createFieldsetNameInput.value = fieldsetName;
+            createFieldsetNameInput.readOnly = isAppendingToExisting;
           }
           if (createFieldsetLatinInput) {
-            createFieldsetLatinInput.value = generateLatin9Key();
+            const latinKey = isAppendingToExisting
+              ? targetFieldset.attributes?.NameLatin9Key || generateLatin9Key()
+              : generateLatin9Key();
+            createFieldsetLatinInput.value = latinKey;
+            createFieldsetLatinInput.readOnly = isAppendingToExisting;
           }
           createFieldNameInputs.forEach((input, index) => {
             if (input) {
-              input.value = `Field ${index + 1}`;
+              const baseIndex = isAppendingToExisting
+                ? (targetFieldset?.fields?.length || 0) + index + 1
+                : index + 1;
+              input.value = `Field ${baseIndex}`;
             }
           });
           createFieldTypeSelects.forEach((select) => {
@@ -2978,10 +3001,10 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           });
           renderCreateFieldShapeLists();
           if (createFieldModalTitle) {
-            createFieldModalTitle.textContent = "Add Fieldset";
+            createFieldModalTitle.textContent = isAppendingToExisting ? "Add Field" : "Add Fieldset";
           }
           if (createFieldModal) {
-            createFieldModal.dataset.mode = "create";
+            createFieldModal.dataset.mode = isAppendingToExisting ? "append" : "create";
             createFieldModal.classList.add("active");
             createFieldModal.setAttribute("aria-hidden", "false");
           }
@@ -2995,6 +3018,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               setCreateFieldShapeSelections(fieldIndex, kind, []);
             });
           });
+          createFieldTargetFieldsetIndex = null;
           if (createFieldModal) {
             createFieldModal.dataset.mode = "create";
             createFieldModal.classList.remove("active");
@@ -3004,6 +3028,13 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
         }
 
         function persistCreateFieldModal() {
+          const targetFieldset =
+            Number.isFinite(createFieldTargetFieldsetIndex) &&
+            createFieldTargetFieldsetIndex >= 0 &&
+            createFieldTargetFieldsetIndex < fieldsets.length
+              ? fieldsets[createFieldTargetFieldsetIndex]
+              : null;
+          const isAppendingToExisting = Boolean(targetFieldset);
           const fieldsetName =
             createFieldsetNameInput?.value?.trim() || defaultFieldsetName();
           const latinKey = createFieldsetLatinInput?.value?.trim() || generateLatin9Key();
@@ -3028,16 +3059,24 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               shapeRefs: allShapeIds.map((shapeId) => ({ shapeId })),
             });
           });
-          const newFieldset = {
-            attributes: {
-              Name: fieldsetName,
-              NameLatin9Key: latinKey,
-            },
-            fields: entries,
-            visible: true,
-          };
-          fieldsets.push(newFieldset);
-          setStatus(`${fieldsetName} を作成しました。`, "ok");
+          if (isAppendingToExisting) {
+            targetFieldset.fields = Array.isArray(targetFieldset.fields)
+              ? targetFieldset.fields.concat(entries)
+              : [...entries];
+            const targetName = targetFieldset.attributes?.Name || `Fieldset ${createFieldTargetFieldsetIndex + 1}`;
+            setStatus(`${targetName} に Field を追加しました。`, "ok");
+          } else {
+            const newFieldset = {
+              attributes: {
+                Name: fieldsetName,
+                NameLatin9Key: latinKey,
+              },
+              fields: entries,
+              visible: true,
+            };
+            fieldsets.push(newFieldset);
+            setStatus(`${fieldsetName} を作成しました。`, "ok");
+          }
           renderFieldsets();
           return true;
         }
