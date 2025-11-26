@@ -1909,9 +1909,9 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           return null;
         }
 
-        function computeFieldsetRotationOrigin(fieldset, { includeCutouts } = {}) {
+        function collectFieldsetShapeCentroids(fieldset, { includeCutouts } = {}) {
           if (!fieldset) {
-            return null;
+            return [];
           }
           const centroids = [];
           (fieldset.fields || []).forEach((field) => {
@@ -1927,6 +1927,48 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               if (centroid) {
                 centroids.push(centroid);
               }
+            });
+          });
+          return centroids;
+        }
+
+        function computeFieldsetRotationOrigin(fieldset, { includeCutouts } = {}) {
+          if (!fieldset) {
+            return null;
+          }
+          const centroids = collectFieldsetShapeCentroids(fieldset, { includeCutouts });
+          if (!centroids.length) {
+            return null;
+          }
+          const total = centroids.reduce(
+            (acc, centroid) => {
+              acc.x += centroid.x;
+              acc.y += centroid.y;
+              return acc;
+            },
+            { x: 0, y: 0 }
+          );
+          return { x: total.x / centroids.length, y: total.y / centroids.length };
+        }
+
+        function computeCaseRotationOrigin(caseIndexes = [], { includeCutouts } = {}) {
+          if (!Array.isArray(caseIndexes) || !caseIndexes.length) {
+            return null;
+          }
+          const centroids = [];
+          caseIndexes.forEach((caseIndex) => {
+            const fieldsetIndexes = getFieldsetIndexesForCase(caseIndex);
+            fieldsetIndexes.forEach((fieldsetIndex) => {
+              const fieldset = fieldsets[fieldsetIndex];
+              if (!fieldset) {
+                return;
+              }
+              const shapeCentroids = collectFieldsetShapeCentroids(fieldset, { includeCutouts });
+              shapeCentroids.forEach((centroid) => {
+                if (centroid) {
+                  centroids.push(centroid);
+                }
+              });
             });
           });
           if (!centroids.length) {
@@ -2240,7 +2282,9 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           } else {
             attributes.NameLatin9Key = generateLatin9Key();
           }
-          const rotationOrigin = computeFieldsetRotationOrigin(baseFieldset, { includeCutouts });
+          const rotationOrigin = transform?.rotationOrigin
+            ? transform.rotationOrigin
+            : computeFieldsetRotationOrigin(baseFieldset, { includeCutouts });
           const transformWithOrigin = withRotationOrigin(transform, rotationOrigin);
           const fields = baseFields
             .map((field) =>
@@ -2921,7 +2965,9 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           if (!fieldset || !Array.isArray(fieldset.fields) || !fieldset.fields.length) {
             return [];
           }
-          const rotationOrigin = computeFieldsetRotationOrigin(fieldset, { includeCutouts });
+          const rotationOrigin = transform?.rotationOrigin
+            ? transform.rotationOrigin
+            : computeFieldsetRotationOrigin(fieldset, { includeCutouts });
           const transformWithOrigin = withRotationOrigin(transform, rotationOrigin);
           const traces = [];
           fieldset.fields.forEach((field, fieldIndex) => {
@@ -3030,6 +3076,9 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             caseIndexes.forEach((caseIndex) => {
               const caseName = getReplicateCaseName(caseIndex) || `Case ${caseIndex + 1}`;
               const fieldsetIndexes = getFieldsetIndexesForCase(caseIndex);
+              const caseRotationOrigin = computeCaseRotationOrigin([caseIndex], {
+                includeCutouts,
+              });
               fieldsetIndexes.forEach((fieldsetIndex) => {
                 const fieldset = fieldsets[fieldsetIndex];
                 if (!fieldset || !Array.isArray(fieldset.fields) || !fieldset.fields.length) {
@@ -3044,11 +3093,12 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
                     scale: computeReplicationScale(scalePercent, step),
                     preserveOrientation,
                   };
+                  const transformWithOrigin = withRotationOrigin(transform, caseRotationOrigin);
                   const copyLabel = `${caseName} / ${fieldsetName} (Copy ${step})`;
                   const previewTraces = collectFieldsetPreviewTraces(fieldset, {
                     colorSet: previewColorSet,
                     labelPrefix: copyLabel,
-                    transform,
+                    transform: transformWithOrigin,
                     includeCutouts,
                     fieldsetIndex,
                   });
@@ -3670,6 +3720,9 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
                 fieldset: fieldsets[fieldsetIndex],
               }))
               .filter((entry) => Array.isArray(entry.fieldset?.fields) && entry.fieldset.fields.length);
+            const caseRotationOrigin = computeCaseRotationOrigin([sourceCaseIndex], {
+              includeCutouts,
+            });
             const previousFieldsetsBySource = includePreviousFields
               ? new Map(
                   fieldsetSources.map(({ fieldsetIndex, fieldset }) => [fieldsetIndex, fieldset])
@@ -3686,13 +3739,14 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
                 scale: computeReplicationScale(scalePercent, step),
                 preserveOrientation,
               };
+              const transformWithOrigin = withRotationOrigin(transform, caseRotationOrigin);
               const replicatedFieldsetsForCase = [];
               fieldsetSources.forEach(({ fieldset, fieldsetIndex }) => {
                 const nextFieldsetIndex = baseFieldsetCount + createdFieldsets.length + 1;
                 const fieldsetName = `${casePrefix} ${nextFieldsetIndex}`;
                 const replicatedFieldset = buildReplicatedFieldset(fieldset, {
                   copyIndex: step,
-                  transform,
+                  transform: transformWithOrigin,
                   name: fieldsetName,
                   includeCutouts,
                 });
