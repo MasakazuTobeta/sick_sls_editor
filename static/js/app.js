@@ -7065,8 +7065,73 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
           }
 
           function parseSvgPathToPolygons(d = "") {
-            const tokens = [];
+            const trimmed = (d || "").trim();
             const pathWarnings = new Set();
+            if (!trimmed) {
+              return { polygons: [], warnings: [] };
+            }
+
+            const sampled = sampleSvgPathToPolygon(trimmed, pathWarnings);
+            if (sampled.length) {
+              return { polygons: sampled, warnings: Array.from(pathWarnings) };
+            }
+
+            const fallback = parseSvgPathToPolygonsLegacy(trimmed, pathWarnings);
+            const mergedWarnings = new Set([...pathWarnings, ...fallback.warnings]);
+            return { polygons: fallback.polygons, warnings: Array.from(mergedWarnings) };
+          }
+
+          function sampleSvgPathToPolygon(d, pathWarnings) {
+            try {
+              const path = document.createElementNS(
+                "http://www.w3.org/2000/svg",
+                "path"
+              );
+              path.setAttribute("d", d);
+
+              const totalLength = path.getTotalLength();
+              if (!Number.isFinite(totalLength) || totalLength <= 0) {
+                pathWarnings.add("path (empty length)");
+                return [];
+              }
+
+              const moveCommands = (d.match(/[mM]/g) || []).length;
+              if (moveCommands > 1) {
+                pathWarnings.add("path (multiple subpaths approximated)");
+              }
+
+              const sampleCount = Math.min(
+                Math.max(Math.ceil(totalLength / 4), 200),
+                2000
+              );
+              const points = [];
+              for (let i = 0; i <= sampleCount; i += 1) {
+                const distance = (totalLength * i) / sampleCount;
+                const { x, y } = path.getPointAtLength(distance);
+                points.push({ X: String(x), Y: String(y) });
+              }
+
+              const hasCloseCommand = /[Zz]/.test(d);
+              const first = points[0];
+              const last = points[points.length - 1];
+              if (
+                hasCloseCommand &&
+                first &&
+                last &&
+                (first.X !== last.X || first.Y !== last.Y)
+              ) {
+                points.push({ ...first });
+              }
+
+              return points.length >= 3 ? [points] : [];
+            } catch (error) {
+              pathWarnings.add("path (sampling failed)");
+              return [];
+            }
+          }
+
+          function parseSvgPathToPolygonsLegacy(d = "", pathWarnings = new Set()) {
+            const tokens = [];
             const regex = /([MLHVZmlhvz])|([-+]?\d*\.?\d+(?:[eE][-+]?\d+)?)/g;
             let match;
             while ((match = regex.exec(d)) !== null) {
