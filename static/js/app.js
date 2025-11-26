@@ -1951,24 +1951,22 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           return { x: total.x / centroids.length, y: total.y / centroids.length };
         }
 
-        function computeCaseRotationOrigin(caseIndexes = [], { includeCutouts } = {}) {
-          if (!Array.isArray(caseIndexes) || !caseIndexes.length) {
+        function computeRotationOriginFromFieldsets(fieldsetEntries = [], { includeCutouts } = {}) {
+          if (!Array.isArray(fieldsetEntries) || !fieldsetEntries.length) {
             return null;
           }
           const centroids = [];
-          caseIndexes.forEach((caseIndex) => {
-            const fieldsetIndexes = getFieldsetIndexesForCase(caseIndex);
-            fieldsetIndexes.forEach((fieldsetIndex) => {
-              const fieldset = fieldsets[fieldsetIndex];
-              if (!fieldset) {
-                return;
+          fieldsetEntries.forEach((entry) => {
+            const fieldsetIndex = Number.isInteger(entry?.fieldsetIndex) ? entry.fieldsetIndex : entry;
+            const fieldset = entry?.fieldset || fieldsets[fieldsetIndex];
+            if (!fieldset) {
+              return;
+            }
+            const shapeCentroids = collectFieldsetShapeCentroids(fieldset, { includeCutouts });
+            shapeCentroids.forEach((centroid) => {
+              if (centroid) {
+                centroids.push(centroid);
               }
-              const shapeCentroids = collectFieldsetShapeCentroids(fieldset, { includeCutouts });
-              shapeCentroids.forEach((centroid) => {
-                if (centroid) {
-                  centroids.push(centroid);
-                }
-              });
             });
           });
           if (!centroids.length) {
@@ -1983,6 +1981,20 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             { x: 0, y: 0 }
           );
           return { x: total.x / centroids.length, y: total.y / centroids.length };
+        }
+
+        function computeCaseRotationOrigin(caseIndexes = [], { includeCutouts } = {}) {
+          if (!Array.isArray(caseIndexes) || !caseIndexes.length) {
+            return null;
+          }
+          const fieldsetEntries = [];
+          caseIndexes.forEach((caseIndex) => {
+            const fieldsetIndexes = getFieldsetIndexesForCase(caseIndex);
+            fieldsetIndexes.forEach((fieldsetIndex) => {
+              fieldsetEntries.push({ fieldsetIndex });
+            });
+          });
+          return computeRotationOriginFromFieldsets(fieldsetEntries, { includeCutouts });
         }
 
         function withRotationOrigin(transform, rotationOrigin) {
@@ -3076,9 +3088,16 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             caseIndexes.forEach((caseIndex) => {
               const caseName = getReplicateCaseName(caseIndex) || `Case ${caseIndex + 1}`;
               const fieldsetIndexes = getFieldsetIndexesForCase(caseIndex);
-              const caseRotationOrigin = computeCaseRotationOrigin([caseIndex], {
-                includeCutouts,
-              });
+              const fieldsetRotationOrigin = computeRotationOriginFromFieldsets(
+                fieldsetIndexes.map((fieldsetIndex) => ({ fieldsetIndex })),
+                {
+                  includeCutouts,
+                }
+              );
+              const caseRotationOrigin =
+                computeCaseRotationOrigin([caseIndex], {
+                  includeCutouts,
+                }) || fieldsetRotationOrigin;
               fieldsetIndexes.forEach((fieldsetIndex) => {
                 const fieldset = fieldsets[fieldsetIndex];
                 if (!fieldset || !Array.isArray(fieldset.fields) || !fieldset.fields.length) {
@@ -3093,7 +3112,10 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
                     scale: computeReplicationScale(scalePercent, step),
                     preserveOrientation,
                   };
-                  const transformWithOrigin = withRotationOrigin(transform, caseRotationOrigin);
+                  const transformWithOrigin = withRotationOrigin(
+                    transform,
+                    caseRotationOrigin || fieldsetRotationOrigin
+                  );
                   const copyLabel = `${caseName} / ${fieldsetName} (Copy ${step})`;
                   const previewTraces = collectFieldsetPreviewTraces(fieldset, {
                     colorSet: previewColorSet,
@@ -3720,9 +3742,13 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
                 fieldset: fieldsets[fieldsetIndex],
               }))
               .filter((entry) => Array.isArray(entry.fieldset?.fields) && entry.fieldset.fields.length);
-            const caseRotationOrigin = computeCaseRotationOrigin([sourceCaseIndex], {
+            const fieldsetRotationOrigin = computeRotationOriginFromFieldsets(fieldsetSources, {
               includeCutouts,
             });
+            const caseRotationOrigin =
+              computeCaseRotationOrigin([sourceCaseIndex], {
+                includeCutouts,
+              }) || fieldsetRotationOrigin;
             const previousFieldsetsBySource = includePreviousFields
               ? new Map(
                   fieldsetSources.map(({ fieldsetIndex, fieldset }) => [fieldsetIndex, fieldset])
@@ -3739,7 +3765,10 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
                 scale: computeReplicationScale(scalePercent, step),
                 preserveOrientation,
               };
-              const transformWithOrigin = withRotationOrigin(transform, caseRotationOrigin);
+              const transformWithOrigin = withRotationOrigin(
+                transform,
+                caseRotationOrigin || fieldsetRotationOrigin
+              );
               const replicatedFieldsetsForCase = [];
               fieldsetSources.forEach(({ fieldset, fieldsetIndex }) => {
                 const nextFieldsetIndex = baseFieldsetCount + createdFieldsets.length + 1;
