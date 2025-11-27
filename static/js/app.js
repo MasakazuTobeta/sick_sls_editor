@@ -5915,6 +5915,44 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           fieldsetGlobalGeometry[key] = value;
         }
 
+        function ensureTriOrbShapesFromFieldsets() {
+          const mergeShapeRefs = (field, refs) => {
+            if (!refs.length) {
+              return;
+            }
+            const existingRefs = Array.isArray(field.shapeRefs) ? field.shapeRefs : [];
+            const knownIds = new Set(existingRefs.map((ref) => ref.shapeId));
+            const merged = [...existingRefs];
+            refs.forEach((ref) => {
+              if (ref.shapeId && !knownIds.has(ref.shapeId)) {
+                merged.push(ref);
+                knownIds.add(ref.shapeId);
+              }
+            });
+            field.shapeRefs = merged;
+          };
+
+          (fieldsets || []).forEach((fieldset) => {
+            (fieldset.fields || []).forEach((field) => {
+              const refs = collectShapeRefsFromFieldNode(
+                null,
+                {
+                  polygons: field.polygons || [],
+                  rectangles: field.rectangles || [],
+                  circles: field.circles || [],
+                },
+                {
+                  fieldsetName: fieldset.attributes?.Name,
+                  fieldName: field.attributes?.Name,
+                  fieldtype: field.attributes?.Fieldtype,
+                }
+              );
+              mergeShapeRefs(field, refs);
+            });
+          });
+          rebuildTriOrbShapeRegistry();
+        }
+
         function buildBaseSdImportExportLines({
           scanDeviceAttrs = null,
           fieldsetDeviceAttrs = null,
@@ -5922,7 +5960,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
         } = {}) {
           // TriOrb 形状の登録状況が不整合だと Fieldset への割り当てが抜け落ちるため、
           // XML 生成の直前にレジストリとルックアップを再構築してから書き出す。
-          rebuildTriOrbShapeRegistry();
+          ensureTriOrbShapesFromFieldsets();
           const figure = currentFigure || defaultFigure;
           const fileInfoLines = buildFileInfoLines();
           const scanPlaneLines = buildScanPlanesXml(scanDeviceAttrs);
