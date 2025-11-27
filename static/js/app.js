@@ -5915,11 +5915,14 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           fieldsetGlobalGeometry[key] = value;
         }
 
-function buildBaseSdImportExportLines({
+        function buildBaseSdImportExportLines({
           scanDeviceAttrs = null,
           fieldsetDeviceAttrs = null,
           includeUserFieldIds = true,
         } = {}) {
+          // TriOrb 形状の登録状況が不整合だと Fieldset への割り当てが抜け落ちるため、
+          // XML 生成の直前にレジストリとルックアップを再構築してから書き出す。
+          rebuildTriOrbShapeRegistry();
           const figure = currentFigure || defaultFigure;
           const fileInfoLines = buildFileInfoLines();
           const scanPlaneLines = buildScanPlanesXml(scanDeviceAttrs);
