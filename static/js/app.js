@@ -7745,6 +7745,19 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             length: xmlText?.length,
             preview: (xmlText || "").slice(0, 120),
           });
+          const triOrbTagMatches = (xmlText.match(/TriOrb_SICK_SLS_Editor/gi) || []).length;
+          const firstTriOrbMatchIndex = (xmlText || "").search(/TriOrb_SICK_SLS_Editor/i);
+          const triOrbContext = firstTriOrbMatchIndex >= 0
+            ? (xmlText || "").slice(
+                Math.max(0, firstTriOrbMatchIndex - 40),
+                Math.min((xmlText || "").length, firstTriOrbMatchIndex + 80)
+              )
+            : "";
+          console.log("parseXmlToFigure TriOrb tag occurrences", {
+            triOrbTagMatches,
+            firstTriOrbMatchIndex,
+            triOrbContext,
+          });
           let doc = parser.parseFromString(xmlText, "application/xml");
           let sanitized = xmlText.replace(/<\?xml[^>]*\?>/gi, "").trim();
           let wrapperText = `<TriOrbWrapper>${sanitized}</TriOrbWrapper>`;
@@ -7765,6 +7778,12 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             findFirstByTag(doc, "TriOrb_SICK_SLS_Editor");
           console.log("parseXmlToFigure TriOrb root exists", Boolean(triOrbRoot));
           if (!triOrbRoot) {
+            const triOrbNodesByLocalNameFromWrapper = Array.from(
+              (triOrbDoc?.querySelectorAll("*") || []).values()
+            ).filter((node) => node?.localName === "TriOrb_SICK_SLS_Editor");
+            const triOrbNodesByLocalNameFromDoc = Array.from(
+              (doc?.querySelectorAll("*") || []).values()
+            ).filter((node) => node?.localName === "TriOrb_SICK_SLS_Editor");
             const wrapperChildren = Array.from(
               triOrbDoc?.documentElement?.children || []
             ).map((node) => node.tagName || node.localName);
@@ -7786,6 +7805,14 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               triOrbDocError,
               triOrbFromWrapper: Boolean(triOrbFromWrapper),
               triOrbFromDoc: Boolean(triOrbFromDoc),
+              triOrbNodesByLocalNameFromWrapperCount: triOrbNodesByLocalNameFromWrapper.length,
+              triOrbNodesByLocalNameFromDocCount: triOrbNodesByLocalNameFromDoc.length,
+              triOrbNodesByLocalNameSampleFromWrapper: triOrbNodesByLocalNameFromWrapper
+                .slice(0, 2)
+                .map((node) => node?.outerHTML?.slice(0, 200)),
+              triOrbNodesByLocalNameSampleFromDoc: triOrbNodesByLocalNameFromDoc
+                .slice(0, 2)
+                .map((node) => node?.outerHTML?.slice(0, 200)),
               wrapperRoot: triOrbDoc?.documentElement?.tagName,
               docRoot: doc?.documentElement?.tagName,
               wrapperChildren,
