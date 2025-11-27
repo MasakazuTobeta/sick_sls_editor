@@ -7648,6 +7648,15 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           if (matches && matches.length) {
             return matches[0];
           }
+          if (root.localName === tagName || root.tagName === tagName) {
+            return root;
+          }
+          const anyNodes = root.querySelectorAll ? root.querySelectorAll("*") : [];
+          for (const node of anyNodes) {
+            if (node.localName === tagName || node.tagName === tagName) {
+              return node;
+            }
+          }
           return null;
         }
 
@@ -7665,7 +7674,17 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           if (matches && matches.length) {
             return Array.from(matches);
           }
-          return [];
+          const result = [];
+          const anyNodes = root.querySelectorAll ? root.querySelectorAll("*") : [];
+          anyNodes.forEach((node) => {
+            if (node.localName === tagName || node.tagName === tagName) {
+              result.push(node);
+            }
+          });
+          if (root.localName === tagName || root.tagName === tagName) {
+            result.unshift(root);
+          }
+          return result;
         }
 
           function normalizeSvgShapeEntry(entry, index) {
@@ -7737,6 +7756,26 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             findFirstByTag(triOrbDoc, "TriOrb_SICK_SLS_Editor") ||
             findFirstByTag(doc, "TriOrb_SICK_SLS_Editor");
           console.log("parseXmlToFigure TriOrb root exists", Boolean(triOrbRoot));
+          if (!triOrbRoot) {
+            const triOrbDocError = Boolean(triOrbDoc?.querySelector?.("parsererror"));
+            const docError = Boolean(doc?.querySelector?.("parsererror"));
+            const triOrbFromWrapper = findFirstByTag(
+              triOrbDoc?.documentElement || triOrbDoc,
+              "TriOrb_SICK_SLS_Editor"
+            );
+            const triOrbFromDoc = findFirstByTag(
+              doc?.documentElement || doc,
+              "TriOrb_SICK_SLS_Editor"
+            );
+            console.warn("TriOrb root not found", {
+              docError,
+              triOrbDocError,
+              triOrbFromWrapper: Boolean(triOrbFromWrapper),
+              triOrbFromDoc: Boolean(triOrbFromDoc),
+              wrapperRoot: triOrbDoc?.documentElement?.tagName,
+              docRoot: doc?.documentElement?.tagName,
+            });
+          }
 
           triorbShapes = [];
           triorbSource = "";
