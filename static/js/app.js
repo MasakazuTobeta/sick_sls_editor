@@ -5915,11 +5915,15 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           fieldsetGlobalGeometry[key] = value;
         }
 
-function buildBaseSdImportExportLines({
+        function buildBaseSdImportExportLines({
           scanDeviceAttrs = null,
           fieldsetDeviceAttrs = null,
           includeUserFieldIds = true,
         } = {}) {
+          // TriOrb Shapes やフィールド参照は UI 操作で逐次変化するため、
+          // 保存直前にレジストリを再構築して ID → Shape の引き当て漏れを防ぐ。
+          rebuildTriOrbShapeRegistry();
+
           const figure = currentFigure || defaultFigure;
           const fileInfoLines = buildFileInfoLines();
           const scanPlaneLines = buildScanPlanesXml(scanDeviceAttrs);
@@ -6190,7 +6194,10 @@ function buildBaseSdImportExportLines({
                     (Array.isArray(field.rectangles) && field.rectangles.length > 0);
                   const shapeRefs = Array.isArray(field.shapeRefs)
                     ? field.shapeRefs
-                        .map((shapeRef) => findTriOrbShapeById(shapeRef.shapeId))
+                        .map((shapeRef) =>
+                          findTriOrbShapeById(shapeRef.shapeId) ||
+                          triorbShapes.find((shape) => shape.id === shapeRef.shapeId)
+                        )
                         .filter(Boolean)
                     : [];
 
