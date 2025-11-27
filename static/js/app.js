@@ -7921,6 +7921,27 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               doc?.documentElement || doc,
               "TriOrb_SICK_SLS_Editor"
             );
+            const legacySafetyDesignerLikeExport =
+              (doc?.documentElement?.tagName || "") === "SdImportExport" &&
+              exportFieldsetsPresent &&
+              exportScanPlanesPresent &&
+              !triOrbTagMatches &&
+              !triOrbNodesByLocalNameFromDoc.length &&
+              !triOrbNodesByLocalNameFromWrapper.length;
+            if (legacySafetyDesignerLikeExport) {
+              console.warn(
+                "TriOrb section missing; treating as Safety Designer export with inline geometry fallback",
+                {
+                  creationToolName,
+                  creationToolVersion,
+                  exportFieldsetsPresent,
+                  exportScanPlanesPresent,
+                  triOrbTagMatches,
+                  triOrbNodesByLocalNameFromDoc: triOrbNodesByLocalNameFromDoc.length,
+                  triOrbNodesByLocalNameFromWrapper: triOrbNodesByLocalNameFromWrapper.length,
+                }
+              );
+            }
             console.warn("TriOrb root not found", {
               docError,
               triOrbDocError,
