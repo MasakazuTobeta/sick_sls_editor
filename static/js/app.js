@@ -10547,13 +10547,41 @@ function parsePolygonTrace(doc) {
         }
         if (saveSickBtn) {
           saveSickBtn.addEventListener("click", () => {
+            console.debug("Save (SICK) start", {
+              fieldsetDeviceCount: fieldsetDevices.length,
+              fieldsetDevices: fieldsetDevices
+                .slice(0, 4)
+                .map((device, index) => ({
+                  index,
+                  deviceName: device.attributes?.DeviceName,
+                  typekey: device.attributes?.Typekey,
+                })),
+              scanPlaneCount: scanPlanes.length,
+              fieldsetCount: fieldsets.length,
+              triorbShapeCount: triorbShapes.length,
+            });
             if (!fieldsetDevices.length) {
+              console.warn("Save (SICK) without devices; using legacy export", {
+                fieldsetCount: fieldsets.length,
+                scanPlaneCount: scanPlanes.length,
+              });
               const xml = buildLegacyXml();
               downloadXml(xml, `sick_${Date.now()}.sgexml`);
               setStatus("SICK XML downloaded (no devices).");
               return;
             }
             fieldsetDevices.forEach((device, index) => {
+              console.debug("Save (SICK) preparing device export", {
+                index,
+                deviceName: device.attributes?.DeviceName,
+                typekey: device.attributes?.Typekey,
+                scanPlaneMatchByName: Boolean(
+                  findScanPlaneDeviceByName(device.attributes?.DeviceName)
+                ),
+                scanPlaneMatchByTypekey: Boolean(
+                  findScanPlaneDeviceByTypekey(device.attributes?.Typekey)
+                ),
+              });
               const scanDevice =
                 findScanPlaneDeviceByName(device.attributes?.DeviceName) ||
                 findScanPlaneDeviceByTypekey(device.attributes?.Typekey);
@@ -10571,6 +10599,9 @@ function parsePolygonTrace(doc) {
               const xml = xmlLines.join("\n");
               const prefix = formatDeviceFilePrefix(device.attributes, index);
               downloadXml(xml, `${prefix}_${Date.now()}.sgexml`);
+            });
+            console.debug("Save (SICK) complete", {
+              exportedDeviceCount: fieldsetDevices.length,
             });
             setStatus(`SICK XML downloaded for ${fieldsetDevices.length} device(s).`);
           });
