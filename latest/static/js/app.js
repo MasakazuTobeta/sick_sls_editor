@@ -2954,16 +2954,39 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           return traces;
         }
 
-        function openCreateFieldModalForCreate() {
+        let createFieldTargetFieldsetIndex = null;
+
+        function openCreateFieldModalForCreate(targetFieldsetIndex = null) {
+          const fieldsetIndex = Number.isFinite(targetFieldsetIndex)
+            ? targetFieldsetIndex
+            : null;
+          createFieldTargetFieldsetIndex = fieldsetIndex;
+          const targetFieldset =
+            fieldsetIndex !== null && fieldsetIndex >= 0 && fieldsetIndex < fieldsets.length
+              ? fieldsets[fieldsetIndex]
+              : null;
+          const isAppendingToExisting = Boolean(targetFieldset);
+
           if (createFieldsetNameInput) {
-            createFieldsetNameInput.value = defaultFieldsetName();
+            const fieldsetName = isAppendingToExisting
+              ? targetFieldset.attributes?.Name || defaultFieldsetName()
+              : defaultFieldsetName();
+            createFieldsetNameInput.value = fieldsetName;
+            createFieldsetNameInput.readOnly = isAppendingToExisting;
           }
           if (createFieldsetLatinInput) {
-            createFieldsetLatinInput.value = generateLatin9Key();
+            const latinKey = isAppendingToExisting
+              ? targetFieldset.attributes?.NameLatin9Key || generateLatin9Key()
+              : generateLatin9Key();
+            createFieldsetLatinInput.value = latinKey;
+            createFieldsetLatinInput.readOnly = isAppendingToExisting;
           }
           createFieldNameInputs.forEach((input, index) => {
             if (input) {
-              input.value = `Field ${index + 1}`;
+              const baseIndex = isAppendingToExisting
+                ? (targetFieldset?.fields?.length || 0) + index + 1
+                : index + 1;
+              input.value = `Field ${baseIndex}`;
             }
           });
           createFieldTypeSelects.forEach((select) => {
@@ -2978,10 +3001,10 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           });
           renderCreateFieldShapeLists();
           if (createFieldModalTitle) {
-            createFieldModalTitle.textContent = "Add Fieldset";
+            createFieldModalTitle.textContent = isAppendingToExisting ? "Add Field" : "Add Fieldset";
           }
           if (createFieldModal) {
-            createFieldModal.dataset.mode = "create";
+            createFieldModal.dataset.mode = isAppendingToExisting ? "append" : "create";
             createFieldModal.classList.add("active");
             createFieldModal.setAttribute("aria-hidden", "false");
           }
@@ -2995,6 +3018,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               setCreateFieldShapeSelections(fieldIndex, kind, []);
             });
           });
+          createFieldTargetFieldsetIndex = null;
           if (createFieldModal) {
             createFieldModal.dataset.mode = "create";
             createFieldModal.classList.remove("active");
@@ -3004,6 +3028,13 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
         }
 
         function persistCreateFieldModal() {
+          const targetFieldset =
+            Number.isFinite(createFieldTargetFieldsetIndex) &&
+            createFieldTargetFieldsetIndex >= 0 &&
+            createFieldTargetFieldsetIndex < fieldsets.length
+              ? fieldsets[createFieldTargetFieldsetIndex]
+              : null;
+          const isAppendingToExisting = Boolean(targetFieldset);
           const fieldsetName =
             createFieldsetNameInput?.value?.trim() || defaultFieldsetName();
           const latinKey = createFieldsetLatinInput?.value?.trim() || generateLatin9Key();
@@ -3028,16 +3059,24 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               shapeRefs: allShapeIds.map((shapeId) => ({ shapeId })),
             });
           });
-          const newFieldset = {
-            attributes: {
-              Name: fieldsetName,
-              NameLatin9Key: latinKey,
-            },
-            fields: entries,
-            visible: true,
-          };
-          fieldsets.push(newFieldset);
-          setStatus(`${fieldsetName} を作成しました。`, "ok");
+          if (isAppendingToExisting) {
+            targetFieldset.fields = Array.isArray(targetFieldset.fields)
+              ? targetFieldset.fields.concat(entries)
+              : [...entries];
+            const targetName = targetFieldset.attributes?.Name || `Fieldset ${createFieldTargetFieldsetIndex + 1}`;
+            setStatus(`${targetName} に Field を追加しました。`, "ok");
+          } else {
+            const newFieldset = {
+              attributes: {
+                Name: fieldsetName,
+                NameLatin9Key: latinKey,
+              },
+              fields: entries,
+              visible: true,
+            };
+            fieldsets.push(newFieldset);
+            setStatus(`${fieldsetName} を作成しました。`, "ok");
+          }
           renderFieldsets();
           return true;
         }
@@ -4306,6 +4345,23 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             </select>`;
         }
 
+        function updateFieldsetAttribute(fieldsetIndex, key, value) {
+          const fieldset = fieldsets[fieldsetIndex];
+          if (!fieldset) return;
+          fieldset.attributes = fieldset.attributes || {};
+          fieldset.attributes[key] = value;
+          if (key === "Name") {
+            const summary = document.querySelector(
+              `.fieldset-card[data-fieldset-index="${fieldsetIndex}"] .fieldset-summary`
+            );
+            if (summary) {
+              summary.textContent = value;
+            }
+          }
+          invalidateFieldsetTraces();
+          renderFigure();
+        }
+
         function updateFieldAttribute(fieldsetIndex, fieldIndex, key, value) {
           const fieldset = fieldsets[fieldsetIndex];
           const field = fieldset?.fields?.[fieldIndex];
@@ -4868,6 +4924,58 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           return `Case ${index + 1}`;
         }
 
+        function createSimpleTextNode(tag, text = "") {
+          return { tag, attributes: {}, text, children: [] };
+        }
+
+        function createDefaultFollowingCasesNode() {
+          return {
+            tag: "FollowingCases",
+            attributes: {},
+            text: "",
+            children: [
+              {
+                tag: "FollowingCase",
+                attributes: {},
+                text: "",
+                children: [createSimpleTextNode("CaseIndex", "-1")],
+              },
+              {
+                tag: "FollowingCase",
+                attributes: {},
+                text: "",
+                children: [createSimpleTextNode("CaseIndex", "-1")],
+              },
+            ],
+          };
+        }
+
+        function createDefaultActivationNode(caseIndex) {
+          return {
+            tag: "Activation",
+            attributes: {},
+            text: "",
+            children: [
+              { tag: "StaticInputs", attributes: {}, text: "", children: [] },
+              createSimpleTextNode("StaticInputs1ofNIndex", "-1"),
+              { tag: "SpeedActivation", attributes: {}, text: "", children: [] },
+              createSimpleTextNode("MinSpeed", "0"),
+              createSimpleTextNode("MaxSpeed", "0"),
+              createSimpleTextNode("CaseNumber", String(caseIndex + 1)),
+              createDefaultFollowingCasesNode(),
+              createSimpleTextNode("SingleStepSequencePos", "-1"),
+            ],
+          };
+        }
+
+        function buildDefaultCaseLayout(caseIndex) {
+          return [
+            { kind: "node", node: createSimpleTextNode("SleepMode", "false") },
+            { kind: "node", node: createSimpleTextNode("DisplayOrder", String(caseIndex)) },
+            { kind: "node", node: createDefaultActivationNode(caseIndex) },
+          ];
+        }
+
         function createDefaultCasetableCase(index = 0) {
           const attributes = {
             Name: buildCaseName(index),
@@ -4878,16 +4986,21 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             attributes: { Mode: "Off" },
             mode_key: "Mode",
           });
-          const layout = normalizeCaseLayout(null, staticInputs, speedActivation, {
-            staticInputs: "case",
-            speedActivation: "case",
-          });
+          const layout = normalizeCaseLayout(
+            buildDefaultCaseLayout(index),
+            staticInputs,
+            speedActivation,
+            {
+              staticInputs: "activation",
+              speedActivation: "activation",
+            }
+          );
           return {
             attributes,
             staticInputs,
-            staticInputsPlacement: "case",
+            staticInputsPlacement: "activation",
             speedActivation,
-            speedActivationPlacement: "case",
+            speedActivationPlacement: "activation",
             activationMinSpeed: "0",
             activationMaxSpeed: "0",
             layout,
@@ -4954,6 +5067,30 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             )
             .join("");
           return { html: unknownOption + optionHtml, selectedValue: value };
+        }
+
+        function refreshEvalUserFieldOptions(selectElement) {
+          if (!selectElement) {
+            return;
+          }
+          const previousValue = selectElement.value;
+          const { html, selectedValue } = buildEvalUserFieldOptionsHtml(previousValue);
+          if (selectElement.innerHTML === html && previousValue === selectedValue) {
+            return;
+          }
+          selectElement.innerHTML = html;
+          selectElement.value = selectedValue;
+          const evalIndex = Number(selectElement.dataset.evalIndex);
+          const caseIndex = Number(selectElement.dataset.caseIndex);
+          if (!Number.isFinite(evalIndex) || !Number.isFinite(caseIndex)) {
+            applyEvalUserFieldValidation();
+            return;
+          }
+          if (previousValue !== selectedValue) {
+            updateEvalUserFieldId(evalIndex, caseIndex, selectedValue);
+            refreshCaseFieldAssignments({ rerenderCaseToggles: true });
+          }
+          applyEvalUserFieldValidation();
         }
 
         function normalizeEvalReset(entry) {
@@ -5772,11 +5909,17 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           fieldsetGlobalGeometry[key] = value;
         }
 
-function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAttrs = null } = {}) {
+function buildBaseSdImportExportLines({
+          scanDeviceAttrs = null,
+          fieldsetDeviceAttrs = null,
+          includeUserFieldIds = true,
+        } = {}) {
           const figure = currentFigure || defaultFigure;
           const fileInfoLines = buildFileInfoLines();
           const scanPlaneLines = buildScanPlanesXml(scanDeviceAttrs);
-          const fieldsetLines = buildFieldsetsXml(fieldsetDeviceAttrs);
+          const fieldsetLines = buildFieldsetsXml(fieldsetDeviceAttrs, {
+            includeUserFieldIds,
+          });
           const casetableLines = buildCasetablesXml();
           const rootAttrOverrides = {
             ...rootAttributes,
@@ -5807,7 +5950,9 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
         }
 
         function buildLegacyXml() {
-          const lines = buildBaseSdImportExportLines();
+          const lines = buildBaseSdImportExportLines({
+            includeUserFieldIds: false,
+          });
           return lines.join("\n");
         }
 
@@ -5947,7 +6092,7 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
           return merged;
         }
 
-        function buildFieldsetsXml(fieldsetDeviceAttrs = null) {
+        function buildFieldsetsXml(fieldsetDeviceAttrs = null, { includeUserFieldIds = true } = {}) {
           const lines = [];
           lines.push('    <ScanPlane Index="0">');
 
@@ -6002,7 +6147,7 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
             });
             (field.circles || []).forEach((circle) => {
               const circleAttrs = buildAttributeString(
-                circle,
+                sanitizeCircleAttributes(circle),
                 getAttributeOrder("Circle")
               );
               lines.push(
@@ -6033,19 +6178,36 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
               const mergedFields = mergeFieldsByAttributes(fieldset.fields || []);
               if (mergedFields.length) {
                 mergedFields.forEach((field) => {
+                  const hasInlineGeometry =
+                    (Array.isArray(field.polygons) && field.polygons.length > 0) ||
+                    (Array.isArray(field.circles) && field.circles.length > 0) ||
+                    (Array.isArray(field.rectangles) && field.rectangles.length > 0);
+                  const shapeRefs = Array.isArray(field.shapeRefs)
+                    ? field.shapeRefs
+                        .map((shapeRef) => findTriOrbShapeById(shapeRef.shapeId))
+                        .filter(Boolean)
+                    : [];
+
+                  if (!hasInlineGeometry && shapeRefs.length === 0) {
+                    return;
+                  }
+
+                  const fieldAttributes = includeUserFieldIds
+                    ? field.attributes
+                    : (() => {
+                        const attrs = { ...(field.attributes || {}) };
+                        delete attrs.UserFieldId;
+                        return attrs;
+                      })();
                   const fieldAttrs = buildAttributeString(
-                    field.attributes,
+                    fieldAttributes,
                     getAttributeOrder("Field")
                   );
                   lines.push(`          <Field${fieldAttrs ? " " + fieldAttrs : ""}>`);
-                  let wroteShape = writeInlineGeometry(field);
-                  if (!wroteShape && field.shapeRefs && field.shapeRefs.length) {
+                  let wroteShape = hasInlineGeometry ? writeInlineGeometry(field) : false;
+                  if (!wroteShape && shapeRefs.length) {
                     const orderedShapes = { Polygon: [], Circle: [], Rectangle: [] };
-                    field.shapeRefs.forEach((shapeRef) => {
-                      const shape = findTriOrbShapeById(shapeRef.shapeId);
-                      if (!shape) {
-                        return;
-                      }
+                    shapeRefs.forEach((shape) => {
                       const typeKey = shape.type === "Circle"
                         ? "Circle"
                         : shape.type === "Rectangle"
@@ -6077,7 +6239,7 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
                           wroteShape = true;
                         } else if (shape.type === "Circle" && shape.circle) {
                           const circleAttrs = buildAttributeString(
-                            shape.circle,
+                            sanitizeCircleAttributes(shape.circle),
                             getAttributeOrder("Circle")
                           );
                           lines.push(
@@ -6096,9 +6258,6 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
                         }
                       });
                     });
-                  }
-                  if (!wroteShape) {
-                    lines.push("            <!-- No shapes assigned -->");
                   }
                   lines.push("          </Field>");
                 });
@@ -6558,20 +6717,54 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
           const shapeIdLookup = buildShapeIdLookup();
           const seenIds = new Set();
           let counter = 1;
+
+          const reserveId = (rawId) => {
+            const id = String(rawId);
+            if (!id || seenIds.has(id)) {
+              return null;
+            }
+            seenIds.add(id);
+            const numericId = Number.parseInt(id, 10);
+            counter = Number.isFinite(numericId)
+              ? Math.max(counter, numericId + 1)
+              : counter + 1;
+            return id;
+          };
+
+          const allocateId = (...candidates) => {
+            for (const candidate of candidates) {
+              if (candidate === null || typeof candidate === "undefined") {
+                continue;
+              }
+              const id = reserveId(candidate);
+              if (id !== null) {
+                return id;
+              }
+            }
+            while (seenIds.has(String(counter))) {
+              counter += 1;
+            }
+            const fallbackId = reserveId(counter);
+            return fallbackId ?? "";
+          };
+
           if (Array.isArray(fieldsets)) {
             fieldsets.forEach((fieldset, fieldsetIndex) => {
               const fields = Array.isArray(fieldset?.fields) ? fieldset.fields : [];
               fields.forEach((field, fieldIndex) => {
+                const attributes = field?.attributes || {};
+                const explicitId = attributes.UserFieldId ?? attributes.Id ?? null;
                 const primaryShapeId = findPrimaryShapeIdForField(field);
                 const shapeIndex = shapeIdLookup.get(String(primaryShapeId)) || null;
-                const id = shapeIndex ?? counter;
-                counter = Math.max(counter, id + 1);
-                if (seenIds.has(id)) {
+                const id = allocateId(explicitId, shapeIndex);
+                if (!id) {
                   return;
                 }
-                seenIds.add(id);
+                if (attributes.UserFieldId !== id) {
+                  field.attributes = { ...attributes, UserFieldId: id };
+                }
                 entries.push({
-                  id: String(id),
+                  id,
                   fieldsetIndex,
                   fieldIndex,
                   field,
@@ -6694,8 +6887,12 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
             const primaryShapeId = findPrimaryShapeIdForField(field);
             const shapeIdLookup = buildShapeIdLookup();
             const shapeIndex = shapeIdLookup.get(String(primaryShapeId)) || null;
-            const id = shapeIndex ?? counter.value;
-            counter.value = Math.max(counter.value + 1, id + 1);
+            const explicitId = attrs.UserFieldId ?? attrs.Id;
+            const id = explicitId ?? shapeIndex ?? counter.value;
+            const numericId = Number.parseInt(id, 10);
+            counter.value = Number.isFinite(numericId)
+              ? Math.max(counter.value, numericId + 1)
+              : counter.value + 1;
             const fieldName = attrs.Name || `Field ${fieldIndex + 1}`;
             const fieldType = attrs.Fieldtype || "ProtectiveSafeBlanking";
             const multipleSampling = attrs.MultipleSampling || String(globalMultipleSampling || "2");
@@ -6833,6 +7030,27 @@ function buildBaseSdImportExportLines({ scanDeviceAttrs = null, fieldsetDeviceAt
           if (Object.prototype.hasOwnProperty.call(attrs, "Y")) {
             attrs.Y = normalizePointCoordinate(attrs.Y);
           }
+          return attrs;
+        }
+
+        function normalizeCircleCoordinate(value) {
+          if (typeof value === "number" && Number.isFinite(value)) {
+            return String(Math.round(value));
+          }
+          const parsed = Number.parseFloat(value);
+          if (Number.isFinite(parsed)) {
+            return String(Math.round(parsed));
+          }
+          return typeof value === "string" ? value.trim() : String(value ?? "");
+        }
+
+        function sanitizeCircleAttributes(circle) {
+          const attrs = { ...(circle || {}) };
+          ["CenterX", "CenterY", "Radius"].forEach((key) => {
+            if (Object.prototype.hasOwnProperty.call(attrs, key)) {
+              attrs[key] = normalizeCircleCoordinate(attrs[key]);
+            }
+          });
           return attrs;
         }
 
@@ -8149,6 +8367,53 @@ function parsePolygonTrace(doc) {
           return { attributes, evals };
         }
 
+        function applyFieldsConfigurationUserFieldIds(fieldsConfigurationElement) {
+          if (!fieldsConfigurationElement || !Array.isArray(fieldsets)) {
+            return;
+          }
+          const scanPlaneNodes = Array.from(
+            fieldsConfigurationElement.querySelectorAll(":scope > ScanPlanes > ScanPlane")
+          );
+          scanPlaneNodes.forEach((scanPlaneNode) => {
+            const userFieldsetNodes = Array.from(
+              scanPlaneNode.querySelectorAll(":scope > UserFieldsets > UserFieldset")
+            );
+            userFieldsetNodes.forEach((fieldsetNode) => {
+              const fieldsetIndexNode = fieldsetNode.querySelector(":scope > Index");
+              const fieldsetIndex = Number.parseInt(fieldsetIndexNode?.textContent ?? "", 10);
+              if (
+                !Number.isInteger(fieldsetIndex) ||
+                fieldsetIndex < 0 ||
+                fieldsetIndex >= fieldsets.length
+              ) {
+                return;
+              }
+              const targetFieldset = fieldsets[fieldsetIndex];
+              const userFieldNodes = Array.from(
+                fieldsetNode.querySelectorAll(":scope > UserFields > UserField")
+              );
+              userFieldNodes.forEach((userFieldNode) => {
+                const idAttr = userFieldNode.getAttribute("Id");
+                if (!idAttr) {
+                  return;
+                }
+                const fieldIndexNode = userFieldNode.querySelector(":scope > Index");
+                const fieldIndex = Number.parseInt(fieldIndexNode?.textContent ?? "", 10);
+                if (
+                  !Number.isInteger(fieldIndex) ||
+                  fieldIndex < 0 ||
+                  fieldIndex >= targetFieldset.fields.length
+                ) {
+                  return;
+                }
+                const targetField = targetFieldset.fields[fieldIndex];
+                targetField.attributes = targetField.attributes || {};
+                targetField.attributes.UserFieldId = idAttr;
+              });
+            });
+          });
+        }
+
         function populateCasetablesFromDoc(doc) {
           const casetableNodes = Array.from(
             doc.querySelectorAll("Export_CasetablesAndCases > Casetable")
@@ -8170,6 +8435,10 @@ function parsePolygonTrace(doc) {
             renderCasetableFieldsConfiguration();
             return;
           }
+          const fieldsConfigurationElement = casetableNode.querySelector(
+            ":scope > FieldsConfiguration"
+          );
+          applyFieldsConfigurationUserFieldIds(fieldsConfigurationElement);
           casetableAttributes = Array.from(casetableNode.attributes || []).reduce(
             (acc, attr) => {
               acc[attr.name] = attr.value;
@@ -8584,6 +8853,20 @@ function parsePolygonTrace(doc) {
         }
 
         if (casetableEvalsContainer) {
+          casetableEvalsContainer.addEventListener("pointerdown", (event) => {
+            const target = event.target;
+            if (target.classList.contains("eval-userfield-input")) {
+              refreshEvalUserFieldOptions(target);
+            }
+          });
+
+          casetableEvalsContainer.addEventListener("focusin", (event) => {
+            const target = event.target;
+            if (target.classList.contains("eval-userfield-input")) {
+              refreshEvalUserFieldOptions(target);
+            }
+          });
+
           casetableEvalsContainer.addEventListener("input", (event) => {
             const target = event.target;
             if (target.classList.contains("eval-attr-input")) {
@@ -9937,6 +10220,7 @@ function parsePolygonTrace(doc) {
               const xmlLines = buildBaseSdImportExportLines({
                 scanDeviceAttrs: scanAttrs,
                 fieldsetDeviceAttrs: device.attributes,
+                includeUserFieldIds: false,
               });
               const xml = xmlLines.join("\n");
               const prefix = formatDeviceFilePrefix(device.attributes, index);
