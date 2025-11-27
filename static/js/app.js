@@ -10738,7 +10738,7 @@ function parsePolygonTrace(doc) {
               const updatedShape = JSON.parse(JSON.stringify(draft));
               updatedShape.visible = triorbShapes[shapeIndex].visible !== false;
               triorbShapes[shapeIndex] = updatedShape;
-              registerTriOrbShapeLookup(updatedShape, shapeIndex);
+              registerTriOrbShapeInRegistry(updatedShape, shapeIndex);
               invalidateTriOrbShapeCaches();
               const selectedFieldsets = getCreateShapeSelectedFieldsets();
               detachShapeFromAllFieldsets(updatedShape.id);
