@@ -341,6 +341,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const replicateTargetToggle = document.getElementById("replicate-target-toggle");
         const replicateCaseSelect = document.getElementById("replicate-case-select");
         const fieldTypeLabels = ["ProtectiveSafeBlanking", "WarningSafeBlanking"];
+        const defaultFieldNames = ["Protective", "Warning"];
         const createRectOriginXInput = document.getElementById("create-rect-originx");
         const createRectOriginYInput = document.getElementById("create-rect-originy");
         const createRectWidthInput = document.getElementById("create-rect-width");
@@ -1474,6 +1475,10 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           return [];
         }
 
+        function getDefaultFieldName(index) {
+          return defaultFieldNames[index] || `Field ${index + 1}`;
+        }
+
         function initializeFieldsets(data) {
           if (!Array.isArray(data) || !data.length) {
             return [createDefaultFieldset(0)];
@@ -1489,12 +1494,12 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
                 Array.isArray(fieldset.fields) && fieldset.fields.length
                   ? fieldset.fields.map((field, fieldIndex) => ({
                       attributes: {
-                        Name: field.attributes?.Name || `Field ${fieldIndex + 1}`,
+                        Name: field.attributes?.Name || getDefaultFieldName(fieldIndex),
                         ...field.attributes,
                       },
                       shapeRefs: normalizeFieldShapeRefs(field),
                     }))
-                  : [createDefaultField(0)],
+                  : [createDefaultField(0), createDefaultField(1)],
               userVisible,
               visible: userVisible,
               forcedVisibleCount: 0,
@@ -1509,7 +1514,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               Name: isFirst ? "Default" : `Fieldset ${index + 1}`,
               NameLatin9Key: `FS_DEFAULT_${index + 1}`,
             },
-            fields: [createDefaultField(0)],
+            fields: [createDefaultField(0), createDefaultField(1)],
             userVisible: true,
             visible: true,
             forcedVisibleCount: 0,
@@ -1561,10 +1566,11 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           triorbShapes.push(newShape);
           registerTriOrbShapeInRegistry(newShape, triorbShapes.length - 1);
           invalidateTriOrbShapeCaches();
+          const fieldtype = fieldTypeLabels[index] || fieldTypeLabels[0];
           return {
             attributes: {
-              Name: `Field ${index + 1}`,
-              Fieldtype: "ProtectiveSafeBlanking",
+              Name: getDefaultFieldName(index),
+              Fieldtype: fieldtype,
               MultipleSampling: samplingValue,
               Resolution: "70",
               TolerancePositive: "0",
@@ -2687,7 +2693,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             shapeKinds.forEach((kind) => {
               const shapeIds = Array.from(selection[kind] || []);
               const fieldName =
-                createFieldNameInputs[fieldIndex]?.value?.trim() || `Field ${fieldIndex + 1}`;
+                createFieldNameInputs[fieldIndex]?.value?.trim() || getDefaultFieldName(fieldIndex);
               const fieldType = fieldTypeLabels[fieldIndex] || fieldTypeLabels[0];
               entries.push({ fieldName, fieldType, shapeIds, kind });
             });
@@ -2710,7 +2716,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               if (!shape) {
                 return;
               }
-              const fieldLabel = `${entry.fieldName || `Field ${entryIndex + 1}`} (${entry.fieldType})`;
+              const fieldLabel = `${entry.fieldName || getDefaultFieldName(entryIndex)} (${entry.fieldType})`;
               let trace = null;
               switch (shape.type) {
                 case "Rectangle":
@@ -2986,7 +2992,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               const baseIndex = isAppendingToExisting
                 ? (targetFieldset?.fields?.length || 0) + index + 1
                 : index + 1;
-              input.value = `Field ${baseIndex}`;
+              input.value = getDefaultFieldName(baseIndex - 1);
             }
           });
           createFieldTypeSelects.forEach((select) => {
@@ -3046,7 +3052,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               shapeIds.forEach((shapeId) => allShapeIds.push(shapeId));
             });
             const fieldName =
-              createFieldNameInputs[fieldIndex]?.value?.trim() || `Field ${fieldIndex + 1}`;
+              createFieldNameInputs[fieldIndex]?.value?.trim() || getDefaultFieldName(fieldIndex);
             entries.push({
               attributes: {
                 Name: fieldName,
