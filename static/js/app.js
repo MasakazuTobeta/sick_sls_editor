@@ -6201,6 +6201,24 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
                         .filter(Boolean)
                     : [];
 
+                  if (
+                    Array.isArray(field.shapeRefs) &&
+                    field.shapeRefs.length > 0 &&
+                    shapeRefs.length === 0
+                  ) {
+                    const requestedIds = field.shapeRefs
+                      .map((ref) => ref.shapeId)
+                      .filter(Boolean);
+                    console.warn(
+                      "フィールドに割り当てられたShapeを解決できません。XMLに出力されない可能性があります。",
+                      {
+                        fieldAttributes: field.attributes,
+                        requestedShapeIds: requestedIds,
+                        availableShapeIds: triorbShapes.map((shape) => shape.id),
+                      }
+                    );
+                  }
+
                   if (!hasInlineGeometry && shapeRefs.length === 0) {
                     return;
                   }
