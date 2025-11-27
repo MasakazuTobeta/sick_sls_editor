@@ -5916,6 +5916,11 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
         }
 
         function ensureTriOrbShapesFromFieldsets() {
+          const debugSummary = {
+            revivedFromInline: 0,
+            orphanedShapeRefs: 0,
+            fieldsVisited: 0,
+          };
           const mergeShapeRefs = (field, refs) => {
             if (!refs.length) {
               return;
@@ -5932,8 +5937,42 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             field.shapeRefs = merged;
           };
 
+          const reviveMissingShapeRef = (field, context) => {
+            const reviveFromPolygon = () => {
+              if (!field.polygons?.length) return null;
+              const polygon = field.polygons[0];
+              const polygonAttrs = { ...(polygon.attributes || {}) };
+              if (!polygonAttrs.Type && polygon.Type) {
+                polygonAttrs.Type = polygon.Type;
+              }
+              const points = (polygon.points || []).map((point) => ({
+                X: String(point.X ?? "0"),
+                Y: String(point.Y ?? "0"),
+              }));
+              return ensureTriOrbShapeFromGeometry("Polygon", polygonAttrs, points, context);
+            };
+
+            const reviveFromRectangle = () => {
+              if (!field.rectangles?.length) return null;
+              return ensureTriOrbShapeFromGeometry(
+                "Rectangle",
+                field.rectangles[0],
+                null,
+                context
+              );
+            };
+
+            const reviveFromCircle = () => {
+              if (!field.circles?.length) return null;
+              return ensureTriOrbShapeFromGeometry("Circle", field.circles[0], null, context);
+            };
+
+            return reviveFromPolygon() || reviveFromRectangle() || reviveFromCircle() || null;
+          };
+
           (fieldsets || []).forEach((fieldset) => {
             (fieldset.fields || []).forEach((field) => {
+              debugSummary.fieldsVisited += 1;
               const refs = collectShapeRefsFromFieldNode(
                 null,
                 {
@@ -5948,9 +5987,35 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
                 }
               );
               mergeShapeRefs(field, refs);
+
+              if (Array.isArray(field.shapeRefs) && field.shapeRefs.length) {
+                field.shapeRefs.forEach((ref) => {
+                  if (!ref?.shapeId) {
+                    return;
+                  }
+                  const exists = findTriOrbShapeById(ref.shapeId);
+                  if (exists) {
+                    return;
+                  }
+                  debugSummary.orphanedShapeRefs += 1;
+                  const revivedId = reviveMissingShapeRef(field, {
+                    fieldsetName: fieldset.attributes?.Name,
+                    fieldName: field.attributes?.Name,
+                    fieldtype: field.attributes?.Fieldtype,
+                  });
+                  if (revivedId) {
+                    ref.shapeId = revivedId;
+                    debugSummary.revivedFromInline += 1;
+                  }
+                });
+              }
             });
           });
           rebuildTriOrbShapeRegistry();
+          console.log("ensureTriOrbShapesFromFieldsets", {
+            ...debugSummary,
+            triorbShapeCount: triorbShapes.length,
+          });
         }
 
         function buildBaseSdImportExportLines({
