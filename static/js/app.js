@@ -7634,6 +7634,40 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           return candidate;
         }
 
+        function findFirstByTag(root, tagName) {
+          if (!root || !tagName) {
+            return null;
+          }
+          const nsMatches = root.getElementsByTagNameNS
+            ? root.getElementsByTagNameNS("*", tagName)
+            : [];
+          if (nsMatches && nsMatches.length) {
+            return nsMatches[0];
+          }
+          const matches = root.getElementsByTagName(tagName);
+          if (matches && matches.length) {
+            return matches[0];
+          }
+          return null;
+        }
+
+        function findAllByTag(root, tagName) {
+          if (!root || !tagName) {
+            return [];
+          }
+          const nsMatches = root.getElementsByTagNameNS
+            ? root.getElementsByTagNameNS("*", tagName)
+            : [];
+          if (nsMatches && nsMatches.length) {
+            return Array.from(nsMatches);
+          }
+          const matches = root.getElementsByTagName(tagName);
+          if (matches && matches.length) {
+            return Array.from(matches);
+          }
+          return [];
+        }
+
           function normalizeSvgShapeEntry(entry, index) {
             const shapeType = entry.type || "Polygon";
             const shape = createDefaultTriOrbShape(triorbShapes.length + index, shapeType);
@@ -7699,7 +7733,10 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           if (doc.querySelector("parsererror")) {
             throw new Error("Failed to parse XML.");
           }
-          console.log("parseXmlToFigure TriOrb root exists", Boolean(doc.querySelector("TriOrb_SICK_SLS_Editor")));
+          const triOrbRoot =
+            findFirstByTag(triOrbDoc, "TriOrb_SICK_SLS_Editor") ||
+            findFirstByTag(doc, "TriOrb_SICK_SLS_Editor");
+          console.log("parseXmlToFigure TriOrb root exists", Boolean(triOrbRoot));
 
           triorbShapes = [];
           triorbSource = "";
@@ -7707,7 +7744,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
 
           populateFileInfoFromDoc(doc);
           populateScanPlanesFromDoc(doc);
-          populateTriOrbShapesFromDoc(triOrbDoc);
+          populateTriOrbShapesFromDoc(triOrbRoot);
           populateFieldsetsFromDoc(doc);
           populateCasetablesFromDoc(doc);
 
@@ -7859,7 +7896,7 @@ function parsePolygonTrace(doc) {
           const type = shapeNode.getAttribute("Type") || "Polygon";
           const result = { id: shapeNode.getAttribute("ID") || createShapeId(), name: shapeNode.getAttribute("Name") || "", type };
           if (type === "Polygon") {
-            const polygon = shapeNode.querySelector("Polygon");
+            const polygon = findFirstByTag(shapeNode, "Polygon");
             if (polygon) {
               result.polygon = {
                 Type: polygon.getAttribute("Type") || "CutOut",
@@ -7870,7 +7907,7 @@ function parsePolygonTrace(doc) {
               };
             }
           } else if (type === "Rectangle") {
-            const rectangle = shapeNode.querySelector("Rectangle");
+            const rectangle = findFirstByTag(shapeNode, "Rectangle");
             if (rectangle) {
               result.rectangle = Array.from(rectangle.attributes).reduce((acc, attr) => {
                 acc[attr.name] = attr.value;
@@ -7878,7 +7915,7 @@ function parsePolygonTrace(doc) {
               }, {});
             }
           } else if (type === "Circle") {
-            const circle = shapeNode.querySelector("Circle");
+            const circle = findFirstByTag(shapeNode, "Circle");
             if (circle) {
               result.circle = Array.from(circle.attributes).reduce((acc, attr) => {
                 acc[attr.name] = attr.value;
@@ -7889,8 +7926,7 @@ function parsePolygonTrace(doc) {
           return result;
         }
 
-        function populateTriOrbShapesFromDoc(doc) {
-          const triOrbNode = doc.querySelector("TriOrb_SICK_SLS_Editor");
+        function populateTriOrbShapesFromDoc(triOrbNode) {
           console.log("populateTriOrbShapesFromDoc triOrbNode", triOrbNode);
           if (!triOrbNode) {
             triorbSource = "";
@@ -7901,7 +7937,7 @@ function parsePolygonTrace(doc) {
             return;
           }
           triorbSource = triOrbNode.getAttribute("Source") || triorbSource || "";
-          const shapesParent = triOrbNode.querySelector("Shapes");
+          const shapesParent = findFirstByTag(triOrbNode, "Shapes");
           if (!shapesParent) {
             triorbShapes = [];
             rebuildTriOrbShapeRegistry();
@@ -7909,7 +7945,7 @@ function parsePolygonTrace(doc) {
             renderTriOrbShapeCheckboxes();
             return;
           }
-          const nodes = Array.from(shapesParent.querySelectorAll("Shape"));
+          const nodes = findAllByTag(shapesParent, "Shape");
           console.log(
             "populateTriOrbShapesFromDoc TriOrb node",
             shapesParent.parentElement?.tagName,
