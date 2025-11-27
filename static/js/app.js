@@ -7741,10 +7741,18 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
 
         function parseXmlToFigure(xmlText) {
           const parser = new DOMParser();
+          console.log("parseXmlToFigure start", {
+            length: xmlText?.length,
+            preview: (xmlText || "").slice(0, 120),
+          });
           let doc = parser.parseFromString(xmlText, "application/xml");
           let sanitized = xmlText.replace(/<\?xml[^>]*\?>/gi, "").trim();
           let wrapperText = `<TriOrbWrapper>${sanitized}</TriOrbWrapper>`;
           let triOrbDoc = parser.parseFromString(wrapperText, "application/xml");
+          console.log("parseXmlToFigure roots", {
+            docRoot: doc?.documentElement?.tagName,
+            triOrbDocRoot: triOrbDoc?.documentElement?.tagName,
+          });
           if (doc.querySelector("parsererror")) {
             const wrapped = wrapperText;
             doc = parser.parseFromString(wrapped, "application/xml");
@@ -7757,6 +7765,12 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             findFirstByTag(doc, "TriOrb_SICK_SLS_Editor");
           console.log("parseXmlToFigure TriOrb root exists", Boolean(triOrbRoot));
           if (!triOrbRoot) {
+            const wrapperChildren = Array.from(
+              triOrbDoc?.documentElement?.children || []
+            ).map((node) => node.tagName || node.localName);
+            const docChildren = Array.from(doc?.documentElement?.children || []).map(
+              (node) => node.tagName || node.localName
+            );
             const triOrbDocError = Boolean(triOrbDoc?.querySelector?.("parsererror"));
             const docError = Boolean(doc?.querySelector?.("parsererror"));
             const triOrbFromWrapper = findFirstByTag(
@@ -7774,6 +7788,8 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               triOrbFromDoc: Boolean(triOrbFromDoc),
               wrapperRoot: triOrbDoc?.documentElement?.tagName,
               docRoot: doc?.documentElement?.tagName,
+              wrapperChildren,
+              docChildren,
             });
           }
 
@@ -7966,7 +7982,20 @@ function parsePolygonTrace(doc) {
         }
 
         function populateTriOrbShapesFromDoc(triOrbNode) {
-          console.log("populateTriOrbShapesFromDoc triOrbNode", triOrbNode);
+          const describeNode = (node) => {
+            if (!node) return null;
+            return {
+              tag: node.tagName || node.localName,
+              attrs: Array.from(node.attributes || []).reduce((acc, attr) => {
+                acc[attr.name] = attr.value;
+                return acc;
+              }, {}),
+              childTags: Array.from(node.children || []).map(
+                (child) => child.tagName || child.localName
+              ),
+            };
+          };
+          console.log("populateTriOrbShapesFromDoc triOrbNode", describeNode(triOrbNode));
           if (!triOrbNode) {
             triorbSource = "";
             triorbShapes = [];
@@ -7977,6 +8006,7 @@ function parsePolygonTrace(doc) {
           }
           triorbSource = triOrbNode.getAttribute("Source") || triorbSource || "";
           const shapesParent = findFirstByTag(triOrbNode, "Shapes");
+          console.log("populateTriOrbShapesFromDoc shapesParent", describeNode(shapesParent));
           if (!shapesParent) {
             triorbShapes = [];
             rebuildTriOrbShapeRegistry();
@@ -7991,6 +8021,9 @@ function parsePolygonTrace(doc) {
             "shapes count",
             nodes.length
           );
+          nodes.slice(0, 3).forEach((node, idx) => {
+            console.log("shape node sample", idx, describeNode(node));
+          });
           if (!nodes.length) {
             triorbShapes = [];
             rebuildTriOrbShapeRegistry();
