@@ -7843,6 +7843,18 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             const triOrbNodesByLocalNameFromDoc = Array.from(
               (doc?.querySelectorAll("*") || []).values()
             ).filter((node) => node?.localName === "TriOrb_SICK_SLS_Editor");
+            const tagFrequency = Array.from(doc?.querySelectorAll("*") || []).reduce(
+              (acc, node) => {
+                const name = (node.tagName || node.localName || "").replace(/^[^:]*:/, "");
+                acc[name] = (acc[name] || 0) + 1;
+                return acc;
+              },
+              {}
+            );
+            const topTags = Object.entries(tagFrequency)
+              .sort((a, b) => b[1] - a[1])
+              .slice(0, 12)
+              .map(([name, count]) => `${name}:${count}`);
             const wrapperChildren = Array.from(
               triOrbDoc?.documentElement?.children || []
             ).map((node) => node.tagName || node.localName);
@@ -7876,6 +7888,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               docRoot: doc?.documentElement?.tagName,
               wrapperChildren,
               docChildren,
+              tagFrequencyTop12: topTags,
               nodesWithTriOrbInName,
               nodesWithTriOrbAttrs,
               docRootSnippet: doc?.documentElement?.outerHTML?.slice(0, 400),
