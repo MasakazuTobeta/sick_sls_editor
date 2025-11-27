@@ -7755,6 +7755,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
 
         function parseXmlToFigure(xmlText) {
           const parser = new DOMParser();
+          let warningMessage = "";
           console.log("parseXmlToFigure start", {
             length: xmlText?.length,
             preview: (xmlText || "").slice(0, 120),
@@ -7929,6 +7930,14 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               !triOrbNodesByLocalNameFromDoc.length &&
               !triOrbNodesByLocalNameFromWrapper.length;
             if (legacySafetyDesignerLikeExport) {
+              warningMessage =
+                "TriOrb セクションのない Safety Designer 形式を検出しました。Field 座標から形状を復元して読み込みます。";
+              triOrbImportContext = {
+                triOrbRootFound: false,
+                legacySafetyDesignerLikeExport: true,
+                creationToolName,
+                creationToolVersion,
+              };
               console.warn(
                 "TriOrb section missing; treating as Safety Designer export with inline geometry fallback",
                 {
@@ -7989,18 +7998,24 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           const tracesFromPlotData = parsePlotDataTraces(doc);
           if (tracesFromPlotData.length) {
             const triOrbPresent = Boolean(triOrbDoc.querySelector("TriOrb_SICK_SLS_Editor"));
-            return { traces: tracesFromPlotData, warning: "", triOrbPresent };
+            return { traces: tracesFromPlotData, warning: warningMessage, triOrbPresent };
           }
 
           const polygonTrace = parsePolygonTrace(doc);
           if (polygonTrace.length) {
             const triOrbPresent = Boolean(triOrbDoc.querySelector("TriOrb_SICK_SLS_Editor"));
-            return { traces: polygonTrace, warning: "", triOrbPresent };
+            return { traces: polygonTrace, warning: warningMessage, triOrbPresent };
           }
 
+          const combinedWarning = [
+            warningMessage,
+            "Plot data was not found; displaying an empty plot.",
+          ]
+            .filter(Boolean)
+            .join(" ");
           return {
             traces: [],
-            warning: "Plot data was not found; displaying an empty plot.",
+            warning: combinedWarning,
             triOrbPresent: Boolean(triOrbDoc.querySelector("TriOrb_SICK_SLS_Editor")),
           };
         }
