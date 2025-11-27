@@ -7753,10 +7753,21 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
                 Math.min((xmlText || "").length, firstTriOrbMatchIndex + 80)
               )
             : "";
+          const triOrbTextMatches = (xmlText.match(/triorb/gi) || []).length;
+          const firstTriOrbTextIndex = (xmlText || "").search(/triorb/i);
+          const triOrbTextContext = firstTriOrbTextIndex >= 0
+            ? (xmlText || "").slice(
+                Math.max(0, firstTriOrbTextIndex - 40),
+                Math.min((xmlText || "").length, firstTriOrbTextIndex + 80)
+              )
+            : "";
           console.log("parseXmlToFigure TriOrb tag occurrences", {
             triOrbTagMatches,
             firstTriOrbMatchIndex,
             triOrbContext,
+            triOrbTextMatches,
+            firstTriOrbTextIndex,
+            triOrbTextContext,
           });
           let doc = parser.parseFromString(xmlText, "application/xml");
           let sanitized = xmlText.replace(/<\?xml[^>]*\?>/gi, "").trim();
@@ -7778,6 +7789,39 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             findFirstByTag(doc, "TriOrb_SICK_SLS_Editor");
           console.log("parseXmlToFigure TriOrb root exists", Boolean(triOrbRoot));
           if (!triOrbRoot) {
+            const nodesWithTriOrbInName = [];
+            const nodesWithTriOrbAttrs = [];
+            const collectNodeDetails = (node) => ({
+              tag: node?.tagName || node?.localName,
+              attrs: Array.from(node?.attributes || []).reduce((acc, attr) => {
+                acc[attr.name] = attr.value;
+                return acc;
+              }, {}),
+            });
+            Array.from(doc?.querySelectorAll?.("*") || []).some((node) => {
+              const tag = (node.tagName || node.localName || "").toLowerCase();
+              if (
+                tag.includes("triorb") &&
+                nodesWithTriOrbInName.length < 5
+              ) {
+                nodesWithTriOrbInName.push(collectNodeDetails(node));
+              }
+              Array.from(node?.attributes || []).some((attr) => {
+                const inAttr = attr.name.toLowerCase().includes("triorb") ||
+                  (attr.value || "").toLowerCase().includes("triorb");
+                if (inAttr && nodesWithTriOrbAttrs.length < 5) {
+                  nodesWithTriOrbAttrs.push({
+                    tag: node.tagName || node.localName,
+                    attr: { [attr.name]: attr.value },
+                  });
+                }
+                return nodesWithTriOrbAttrs.length >= 5;
+              });
+              return (
+                nodesWithTriOrbInName.length >= 5 &&
+                nodesWithTriOrbAttrs.length >= 5
+              );
+            });
             const triOrbNodesByLocalNameFromWrapper = Array.from(
               (triOrbDoc?.querySelectorAll("*") || []).values()
             ).filter((node) => node?.localName === "TriOrb_SICK_SLS_Editor");
@@ -7817,6 +7861,9 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               docRoot: doc?.documentElement?.tagName,
               wrapperChildren,
               docChildren,
+              nodesWithTriOrbInName,
+              nodesWithTriOrbAttrs,
+              docRootSnippet: doc?.documentElement?.outerHTML?.slice(0, 400),
             });
           }
 
