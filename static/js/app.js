@@ -3746,6 +3746,8 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           const offsetX = parseNumeric(replicateOffsetXInput?.value, 0) || 0;
           const offsetY = parseNumeric(replicateOffsetYInput?.value, 0) || 0;
           const rotation = parseNumeric(replicateRotationInput?.value, 0) || 0;
+          const rotationOriginX = parseNumeric(replicateRotationOriginXInput?.value, 0) || 0;
+          const rotationOriginY = parseNumeric(replicateRotationOriginYInput?.value, 0) || 0;
           const scalePercent = parseNumeric(replicateScalePercentInput?.value, 0) || 0;
           const includeCutouts = Boolean(replicateIncludeCutoutsInput?.checked);
           const preserveOrientation = Boolean(replicatePreserveOrientationInput?.checked);
