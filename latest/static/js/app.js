@@ -326,6 +326,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const replicateOffsetXInput = document.getElementById("replicate-offset-x");
         const replicateOffsetYInput = document.getElementById("replicate-offset-y");
         const replicateRotationInput = document.getElementById("replicate-rotation");
+        const replicateRotationOriginXInput = document.getElementById("replicate-rotation-origin-x");
+        const replicateRotationOriginYInput = document.getElementById("replicate-rotation-origin-y");
         const replicateScalePercentInput = document.getElementById("replicate-scale-percent");
         const replicateIncludeCutoutsInput = document.getElementById("replicate-include-cutouts");
         const replicatePreserveOrientationInput = document.getElementById(
@@ -454,6 +456,8 @@ document.addEventListener("DOMContentLoaded", () => {
           offsetX: 0,
           offsetY: 0,
           rotation: 0,
+          rotationOriginX: 0,
+          rotationOriginY: 0,
           scalePercent: 0,
           casePrefix: "",
           includeCutouts: false,
@@ -1744,7 +1748,15 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
 
         function transformPolygonPoints(
           points,
-          { offsetX = 0, offsetY = 0, rotation = 0, scale = 1, preserveOrientation = false } = {}
+          {
+            offsetX = 0,
+            offsetY = 0,
+            rotation = 0,
+            rotationOriginX = 0,
+            rotationOriginY = 0,
+            scale = 1,
+            preserveOrientation = false,
+          } = {}
         ) {
           const numericPoints = (points || []).map((point) => ({
             x: parseNumeric(point.X, 0),
@@ -1757,6 +1769,8 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           const hasScale = scaleFactor !== 1;
           const hasRotation = rotation !== 0;
           const radians = hasRotation ? degreesToRadians(rotation) : 0;
+          const originX = Number(rotationOriginX) || 0;
+          const originY = Number(rotationOriginY) || 0;
           let transformedPoints = numericPoints.map((point) => {
             let x = point.x;
             let y = point.y;
@@ -1769,7 +1783,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           if (hasRotation && preserveOrientation) {
             const centroid = computePointCentroid(transformedPoints);
             if (centroid) {
-              const rotatedCentroid = rotatePoint(centroid.x, centroid.y, radians, 0, 0);
+              const rotatedCentroid = rotatePoint(centroid.x, centroid.y, radians, originX, originY);
               const deltaX = rotatedCentroid.x - centroid.x;
               const deltaY = rotatedCentroid.y - centroid.y;
               transformedPoints = transformedPoints.map((point) => ({
@@ -1778,12 +1792,12 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               }));
             } else {
               transformedPoints = transformedPoints.map((point) =>
-                rotatePoint(point.x, point.y, radians, 0, 0)
+                rotatePoint(point.x, point.y, radians, originX, originY)
               );
             }
           } else if (hasRotation) {
             transformedPoints = transformedPoints.map((point) =>
-              rotatePoint(point.x, point.y, radians, 0, 0)
+              rotatePoint(point.x, point.y, radians, originX, originY)
             );
           }
           transformedPoints = transformedPoints.map((point) => ({
@@ -1842,6 +1856,8 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           const offsetX = Number(transform.offsetX) || 0;
           const offsetY = Number(transform.offsetY) || 0;
           const rotation = Number(transform.rotation) || 0;
+          const rotationOriginX = Number(transform.rotationOriginX) || 0;
+          const rotationOriginY = Number(transform.rotationOriginY) || 0;
           const rawScale = Number(transform.scale);
           const scale = Number.isFinite(rawScale) && rawScale > 0 ? rawScale : 1;
           const hasRotation = rotation !== 0;
@@ -1856,6 +1872,8 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               offsetX,
               offsetY,
               rotation,
+              rotationOriginX,
+              rotationOriginY,
               scale,
               preserveOrientation,
             });
@@ -1868,7 +1886,13 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               originY *= scale;
             }
             if (hasRotation) {
-              const rotated = rotatePoint(originX, originY, rotationRadians, 0, 0);
+              const rotated = rotatePoint(
+                originX,
+                originY,
+                rotationRadians,
+                rotationOriginX,
+                rotationOriginY
+              );
               originX = rotated.x;
               originY = rotated.y;
             }
@@ -1900,7 +1924,13 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               centerY *= scale;
             }
             if (hasRotation) {
-              const rotated = rotatePoint(centerX, centerY, rotationRadians, 0, 0);
+              const rotated = rotatePoint(
+                centerX,
+                centerY,
+                rotationRadians,
+                rotationOriginX,
+                rotationOriginY
+              );
               centerX = rotated.x;
               centerY = rotated.y;
             }
@@ -2896,13 +2926,15 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
                 }
                 const fieldsetName = fieldset.attributes?.Name || `Fieldset ${fieldsetIndex + 1}`;
                 for (let step = 1; step <= copyCount; step += 1) {
-                  const transform = {
-                    offsetX: offsetX * step,
-                    offsetY: offsetY * step,
-                    rotation: rotation * step,
-                    scale: computeReplicationScale(scalePercent, step),
-                    preserveOrientation,
-                  };
+              const transform = {
+                offsetX: offsetX * step,
+                offsetY: offsetY * step,
+                rotation: rotation * step,
+                rotationOriginX: replicatePreviewState.rotationOriginX,
+                rotationOriginY: replicatePreviewState.rotationOriginY,
+                scale: computeReplicationScale(scalePercent, step),
+                preserveOrientation,
+              };
                   const copyLabel = `${caseName} / ${fieldsetName} (Copy ${step})`;
                   const previewTraces = collectFieldsetPreviewTraces(fieldset, {
                     colorSet: previewColorSet,
@@ -2943,6 +2975,8 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               offsetX: offsetX * step,
               offsetY: offsetY * step,
               rotation: rotation * step,
+              rotationOriginX: replicatePreviewState.rotationOriginX,
+              rotationOriginY: replicatePreviewState.rotationOriginY,
               scale: computeReplicationScale(scalePercent, step),
               preserveOrientation,
             };
@@ -3276,6 +3310,12 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           if (replicateRotationInput) {
             replicateRotationInput.value = replicateFormState.rotation ?? 0;
           }
+          if (replicateRotationOriginXInput) {
+            replicateRotationOriginXInput.value = replicateFormState.rotationOriginX ?? 0;
+          }
+          if (replicateRotationOriginYInput) {
+            replicateRotationOriginYInput.value = replicateFormState.rotationOriginY ?? 0;
+          }
           if (replicateScalePercentInput) {
             replicateScalePercentInput.value = replicateFormState.scalePercent ?? 0;
           }
@@ -3367,6 +3407,8 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           const offsetX = parseNumeric(replicateOffsetXInput?.value, 0) || 0;
           const offsetY = parseNumeric(replicateOffsetYInput?.value, 0) || 0;
           const rotation = parseNumeric(replicateRotationInput?.value, 0) || 0;
+          const rotationOriginX = parseNumeric(replicateRotationOriginXInput?.value, 0) || 0;
+          const rotationOriginY = parseNumeric(replicateRotationOriginYInput?.value, 0) || 0;
           const scalePercent = parseNumeric(replicateScalePercentInput?.value, 0) || 0;
           const includeCutouts = Boolean(replicateIncludeCutoutsInput?.checked);
           const preserveOrientation = Boolean(replicatePreserveOrientationInput?.checked);
@@ -3377,6 +3419,8 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           replicateFormState.offsetX = offsetX;
           replicateFormState.offsetY = offsetY;
           replicateFormState.rotation = rotation;
+          replicateFormState.rotationOriginX = rotationOriginX;
+          replicateFormState.rotationOriginY = rotationOriginY;
           replicateFormState.scalePercent = scalePercent;
           replicateFormState.casePrefix = casePrefix;
           replicateFormState.includeCutouts = includeCutouts;
@@ -3388,6 +3432,8 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               offsetX: offsetX * step,
               offsetY: offsetY * step,
               rotation: rotation * step,
+              rotationOriginX,
+              rotationOriginY,
               scale: computeReplicationScale(scalePercent, step),
               preserveOrientation,
             };
@@ -3470,6 +3516,8 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           const offsetX = parseNumeric(replicateOffsetXInput?.value, 0) || 0;
           const offsetY = parseNumeric(replicateOffsetYInput?.value, 0) || 0;
           const rotation = parseNumeric(replicateRotationInput?.value, 0) || 0;
+          const rotationOriginX = parseNumeric(replicateRotationOriginXInput?.value, 0) || 0;
+          const rotationOriginY = parseNumeric(replicateRotationOriginYInput?.value, 0) || 0;
           const scalePercent = parseNumeric(replicateScalePercentInput?.value, 0) || 0;
           const includeCutouts = Boolean(replicateIncludeCutoutsInput?.checked);
           const preserveOrientation = Boolean(replicatePreserveOrientationInput?.checked);
@@ -3490,6 +3538,8 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           replicateFormState.offsetX = offsetX;
           replicateFormState.offsetY = offsetY;
           replicateFormState.rotation = rotation;
+          replicateFormState.rotationOriginX = rotationOriginX;
+          replicateFormState.rotationOriginY = rotationOriginY;
           replicateFormState.scalePercent = scalePercent;
           replicateFormState.includeCutouts = includeCutouts;
           replicateFormState.preserveOrientation = preserveOrientation;
@@ -3542,6 +3592,8 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
                 offsetX: offsetX * step,
                 offsetY: offsetY * step,
                 rotation: rotation * step,
+                rotationOriginX,
+                rotationOriginY,
                 scale: computeReplicationScale(scalePercent, step),
                 preserveOrientation,
               };
@@ -3694,6 +3746,8 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           const offsetX = parseNumeric(replicateOffsetXInput?.value, 0) || 0;
           const offsetY = parseNumeric(replicateOffsetYInput?.value, 0) || 0;
           const rotation = parseNumeric(replicateRotationInput?.value, 0) || 0;
+          const rotationOriginX = parseNumeric(replicateRotationOriginXInput?.value, 0) || 0;
+          const rotationOriginY = parseNumeric(replicateRotationOriginYInput?.value, 0) || 0;
           const scalePercent = parseNumeric(replicateScalePercentInput?.value, 0) || 0;
           const includeCutouts = Boolean(replicateIncludeCutoutsInput?.checked);
           const preserveOrientation = Boolean(replicatePreserveOrientationInput?.checked);
@@ -3714,6 +3768,8 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               offsetX,
               offsetY,
               rotation,
+              rotationOriginX,
+              rotationOriginY,
               scalePercent,
               includeCutouts,
               preserveOrientation,
@@ -3745,6 +3801,8 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             offsetX,
             offsetY,
             rotation,
+            rotationOriginX,
+            rotationOriginY,
             scalePercent,
             includeCutouts,
             preserveOrientation,
@@ -6029,9 +6087,17 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           return lines.join("\n");
         }
 
-        function buildDeviceAttributeString(attrs, { keepDeviceName = false } = {}) {
+        function buildDeviceAttributeString(
+          attrs,
+          { keepDeviceName = false, includeIndex = true } = {}
+        ) {
           if (!attrs) return "";
           const sanitized = { ...attrs };
+          if (includeIndex) {
+            sanitized.Index = "0";
+          } else {
+            delete sanitized.Index;
+          }
           if (!keepDeviceName) {
             delete sanitized.DeviceName;
           }
@@ -6128,6 +6194,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             devicesToRender.forEach((device) => {
               const deviceAttrs = buildDeviceAttributeString(device.attributes, {
                 keepDeviceName: false,
+                includeIndex: false,
               });
               lines.push(`        <Device${deviceAttrs ? " " + deviceAttrs : ""} />`);
             });
@@ -7338,14 +7405,13 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               return { polygons: [], warnings: [] };
             }
 
-            const sampled = sampleSvgPathToPolygon(trimmed, pathWarnings);
-            if (sampled.length) {
-              return { polygons: sampled, warnings: Array.from(pathWarnings) };
+            const fallback = parseSvgPathToPolygonsLegacy(trimmed, pathWarnings);
+            if (fallback.polygons.length) {
+              return { polygons: fallback.polygons, warnings: Array.from(pathWarnings) };
             }
 
-            const fallback = parseSvgPathToPolygonsLegacy(trimmed, pathWarnings);
-            const mergedWarnings = new Set([...pathWarnings, ...fallback.warnings]);
-            return { polygons: fallback.polygons, warnings: Array.from(mergedWarnings) };
+            const sampled = sampleSvgPathToPolygon(trimmed, pathWarnings);
+            return { polygons: sampled, warnings: Array.from(pathWarnings) };
           }
 
           function sampleSvgPathToPolygon(d, pathWarnings) {
@@ -11335,6 +11401,8 @@ function parsePolygonTrace(doc) {
           replicateOffsetXInput,
           replicateOffsetYInput,
           replicateRotationInput,
+          replicateRotationOriginXInput,
+          replicateRotationOriginYInput,
           replicateScalePercentInput,
           replicateSpeedMinStepInput,
           replicateSpeedMaxStepInput,
