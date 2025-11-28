@@ -6249,8 +6249,8 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
                     getAttributeOrder("Field")
                   );
                   lines.push(`          <Field${fieldAttrs ? " " + fieldAttrs : ""}>`);
-                  let wroteShape = hasInlineGeometry ? writeInlineGeometry(field) : false;
-                  if (!wroteShape && shapeRefs.length) {
+                  let wroteShape = false;
+                  if (shapeRefs.length) {
                     const orderedShapes = { Polygon: [], Circle: [], Rectangle: [] };
                     shapeRefs.forEach((shape) => {
                       const typeKey = shape.type === "Circle"
@@ -6303,6 +6303,10 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
                         }
                       });
                     });
+                  }
+
+                  if (!wroteShape && hasInlineGeometry) {
+                    wroteShape = writeInlineGeometry(field);
                   }
                   lines.push("          </Field>");
                 });
