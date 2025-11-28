@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 from pathlib import Path
+import socket
+import subprocess
 import sys
 import textwrap
+import time
 
 import pytest
 
@@ -34,3 +37,47 @@ def write_sample_xml(tmp_path: Path):
         return sample_path
 
     return _writer
+
+
+FLASK_PORT = 5001
+SERVER_URL = f"http://127.0.0.1:{FLASK_PORT}/?debug=1"
+_SERVER_START_TIMEOUT = 15
+
+
+def _wait_for_port(port: int, host: str = "127.0.0.1", timeout: float = _SERVER_START_TIMEOUT) -> None:
+    start = time.monotonic()
+    while time.monotonic() - start < timeout:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.settimeout(1)
+            try:
+                sock.connect((host, port))
+                return
+            except OSError:
+                time.sleep(0.2)
+    raise TimeoutError(f"Unable to reach {host}:{port} within {timeout:.1f}s")
+
+
+@pytest.fixture(scope="session")
+def flask_server():
+    cmd = [
+        sys.executable,
+        "-u",
+        "-c",
+        "from main import create_app; create_app().run(port=5001)",
+    ]
+    proc = subprocess.Popen(
+        cmd,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        cwd=Path(__file__).resolve().parents[1],
+    )
+    try:
+        _wait_for_port(FLASK_PORT)
+        yield
+    finally:
+        proc.terminate()
+        try:
+            proc.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.wait()

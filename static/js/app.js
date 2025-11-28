@@ -10282,6 +10282,64 @@ function parsePolygonTrace(doc) {
           });
         }
 
+        function ensureInlineGeometryForShape(field, shape) {
+          if (!field || !shape || triOrbImportContext.triOrbRootFound) {
+            return;
+          }
+          const existingKeys = new Set();
+          const addExistingKey = (type, attrs, points = []) => {
+            const key = buildShapeKey(type, attrs, points);
+            if (key) {
+              existingKeys.add(key);
+            }
+          };
+          (field.polygons || []).forEach((polygon) => {
+            const polygonAttrs = polygon.attributes || { Type: polygon.Type };
+            const normalizedPoints = (polygon.points || []).map((point) => ({
+              X: String(point.X ?? point.x ?? "0"),
+              Y: String(point.Y ?? point.y ?? "0"),
+            }));
+            addExistingKey("Polygon", { Type: polygonAttrs.Type || "Field" }, normalizedPoints);
+          });
+          (field.rectangles || []).forEach((rectangle) => {
+            addExistingKey("Rectangle", rectangle, []);
+          });
+          (field.circles || []).forEach((circle) => {
+            addExistingKey("Circle", circle, []);
+          });
+
+          const appendGeometry = (type, attrs, points = []) => {
+            const key = buildShapeKey(type, attrs, points);
+            if (!key || existingKeys.has(key)) {
+              return;
+            }
+            if (type === "Polygon") {
+              field.polygons = field.polygons || [];
+              field.polygons.push({ attributes: attrs, points });
+            } else if (type === "Rectangle") {
+              field.rectangles = field.rectangles || [];
+              field.rectangles.push(attrs);
+            } else if (type === "Circle") {
+              field.circles = field.circles || [];
+              field.circles.push(attrs);
+            }
+            existingKeys.add(key);
+          };
+
+          if (shape.type === "Polygon" && shape.polygon) {
+            const attrs = { Type: getPolygonTypeValue(shape.polygon) || shape.polygon.Type || "Field" };
+            const points = (shape.polygon.points || []).map((point) => ({
+              X: String(point.X ?? point.x ?? "0"),
+              Y: String(point.Y ?? point.y ?? "0"),
+            }));
+            appendGeometry("Polygon", attrs, points);
+          } else if (shape.type === "Rectangle" && shape.rectangle) {
+            appendGeometry("Rectangle", { ...shape.rectangle }, []);
+          } else if (shape.type === "Circle" && shape.circle) {
+            appendGeometry("Circle", { ...shape.circle }, []);
+          }
+        }
+
         function addFieldShapeRef(fieldsetIndex, fieldIndex, shapeId) {
           const field = getFieldEntry(fieldsetIndex, fieldIndex);
           if (!field || !shapeId) {
@@ -10292,6 +10350,9 @@ function parsePolygonTrace(doc) {
             return;
           }
           field.shapeRefs.push({ shapeId });
+          const resolvedShape =
+            findTriOrbShapeById(shapeId) || triorbShapes.find((shape) => shape.id === shapeId);
+          ensureInlineGeometryForShape(field, resolvedShape);
           renderFieldsets();
         }
 
@@ -10887,6 +10948,9 @@ function parsePolygonTrace(doc) {
               field.shapeRefs = field.shapeRefs || [];
               if (!field.shapeRefs.some((ref) => ref.shapeId === shapeId)) {
                 field.shapeRefs.push({ shapeId });
+                const resolvedShape =
+                  findTriOrbShapeById(shapeId) || triorbShapes.find((shape) => shape.id === shapeId);
+                ensureInlineGeometryForShape(field, resolvedShape);
                 attachedCount += 1;
               }
             });
