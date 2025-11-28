@@ -6087,9 +6087,17 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           return lines.join("\n");
         }
 
-        function buildDeviceAttributeString(attrs, { keepDeviceName = false } = {}) {
+        function buildDeviceAttributeString(
+          attrs,
+          { keepDeviceName = false, includeIndex = true } = {}
+        ) {
           if (!attrs) return "";
           const sanitized = { ...attrs };
+          if (includeIndex) {
+            sanitized.Index = "0";
+          } else {
+            delete sanitized.Index;
+          }
           if (!keepDeviceName) {
             delete sanitized.DeviceName;
           }
@@ -6186,6 +6194,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             devicesToRender.forEach((device) => {
               const deviceAttrs = buildDeviceAttributeString(device.attributes, {
                 keepDeviceName: false,
+                includeIndex: false,
               });
               lines.push(`        <Device${deviceAttrs ? " " + deviceAttrs : ""} />`);
             });
