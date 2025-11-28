@@ -341,6 +341,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const replicateTargetToggle = document.getElementById("replicate-target-toggle");
         const replicateCaseSelect = document.getElementById("replicate-case-select");
         const fieldTypeLabels = ["ProtectiveSafeBlanking", "WarningSafeBlanking"];
+        const defaultFieldNames = ["Protective", "Warning"];
         const createRectOriginXInput = document.getElementById("create-rect-originx");
         const createRectOriginYInput = document.getElementById("create-rect-originy");
         const createRectWidthInput = document.getElementById("create-rect-width");
@@ -357,6 +358,7 @@ document.addEventListener("DOMContentLoaded", () => {
         let currentFigure = cloneFigure(defaultFigure);
         let scanPlanes = initializeScanPlanes(initialScanPlanes);
         let triorbShapes = initializeTriOrbShapes(initialTriOrbShapes);
+        let triOrbImportContext = { triOrbRootFound: true };
         const triOrbShapeRegistry = new Map();
         const triOrbShapeLookup = new Map();
         const triOrbShapeIndexLookup = new Map();
@@ -1474,6 +1476,10 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           return [];
         }
 
+        function getDefaultFieldName(index) {
+          return defaultFieldNames[index] || `Field ${index + 1}`;
+        }
+
         function initializeFieldsets(data) {
           if (!Array.isArray(data) || !data.length) {
             return [createDefaultFieldset(0)];
@@ -1489,12 +1495,12 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
                 Array.isArray(fieldset.fields) && fieldset.fields.length
                   ? fieldset.fields.map((field, fieldIndex) => ({
                       attributes: {
-                        Name: field.attributes?.Name || `Field ${fieldIndex + 1}`,
+                        Name: field.attributes?.Name || getDefaultFieldName(fieldIndex),
                         ...field.attributes,
                       },
                       shapeRefs: normalizeFieldShapeRefs(field),
                     }))
-                  : [createDefaultField(0)],
+                  : [createDefaultField(0), createDefaultField(1)],
               userVisible,
               visible: userVisible,
               forcedVisibleCount: 0,
@@ -1509,7 +1515,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               Name: isFirst ? "Default" : `Fieldset ${index + 1}`,
               NameLatin9Key: `FS_DEFAULT_${index + 1}`,
             },
-            fields: [createDefaultField(0)],
+            fields: [createDefaultField(0), createDefaultField(1)],
             userVisible: true,
             visible: true,
             forcedVisibleCount: 0,
@@ -1561,10 +1567,11 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           triorbShapes.push(newShape);
           registerTriOrbShapeInRegistry(newShape, triorbShapes.length - 1);
           invalidateTriOrbShapeCaches();
+          const fieldtype = fieldTypeLabels[index] || fieldTypeLabels[0];
           return {
             attributes: {
-              Name: `Field ${index + 1}`,
-              Fieldtype: "ProtectiveSafeBlanking",
+              Name: getDefaultFieldName(index),
+              Fieldtype: fieldtype,
               MultipleSampling: samplingValue,
               Resolution: "70",
               TolerancePositive: "0",
@@ -2687,7 +2694,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             shapeKinds.forEach((kind) => {
               const shapeIds = Array.from(selection[kind] || []);
               const fieldName =
-                createFieldNameInputs[fieldIndex]?.value?.trim() || `Field ${fieldIndex + 1}`;
+                createFieldNameInputs[fieldIndex]?.value?.trim() || getDefaultFieldName(fieldIndex);
               const fieldType = fieldTypeLabels[fieldIndex] || fieldTypeLabels[0];
               entries.push({ fieldName, fieldType, shapeIds, kind });
             });
@@ -2710,7 +2717,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               if (!shape) {
                 return;
               }
-              const fieldLabel = `${entry.fieldName || `Field ${entryIndex + 1}`} (${entry.fieldType})`;
+              const fieldLabel = `${entry.fieldName || getDefaultFieldName(entryIndex)} (${entry.fieldType})`;
               let trace = null;
               switch (shape.type) {
                 case "Rectangle":
@@ -2986,7 +2993,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               const baseIndex = isAppendingToExisting
                 ? (targetFieldset?.fields?.length || 0) + index + 1
                 : index + 1;
-              input.value = `Field ${baseIndex}`;
+              input.value = getDefaultFieldName(baseIndex - 1);
             }
           });
           createFieldTypeSelects.forEach((select) => {
@@ -3046,7 +3053,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               shapeIds.forEach((shapeId) => allShapeIds.push(shapeId));
             });
             const fieldName =
-              createFieldNameInputs[fieldIndex]?.value?.trim() || `Field ${fieldIndex + 1}`;
+              createFieldNameInputs[fieldIndex]?.value?.trim() || getDefaultFieldName(fieldIndex);
             entries.push({
               attributes: {
                 Name: fieldName,
@@ -3812,7 +3819,11 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           }
           const shapeKey = buildShapeKey(shapeType, keyAttrs, normalizedPoints);
           if (shapeKey && triOrbShapeRegistry.has(shapeKey)) {
-            return triOrbShapeRegistry.get(shapeKey);
+            const existingId = triOrbShapeRegistry.get(shapeKey);
+            if (!triOrbImportContext.triOrbRootFound) {
+              console.debug("reuse shape from registry", { shapeType, existingId, context });
+            }
+            return existingId;
           }
           const nameParts = [];
           if (context.fieldsetName) {
@@ -3849,6 +3860,15 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           triorbShapes.push(shape);
           registerTriOrbShapeInRegistry(shape, triorbShapes.length - 1);
           invalidateTriOrbShapeCaches();
+          if (!triOrbImportContext.triOrbRootFound) {
+            console.debug("ensureTriOrbShapeFromGeometry created", {
+              shapeType,
+              attrs: normalizedAttrs,
+              points: normalizedPoints,
+              context,
+              shapeId: shape.id,
+            });
+          }
           return shape.id;
         }
 
@@ -5909,11 +5929,15 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           fieldsetGlobalGeometry[key] = value;
         }
 
-function buildBaseSdImportExportLines({
+        function buildBaseSdImportExportLines({
           scanDeviceAttrs = null,
           fieldsetDeviceAttrs = null,
           includeUserFieldIds = true,
         } = {}) {
+          // TriOrb Shapes やフィールド参照は UI 操作で逐次変化するため、
+          // 保存直前にレジストリを再構築して ID → Shape の引き当て漏れを防ぐ。
+          rebuildTriOrbShapeRegistry();
+
           const figure = currentFigure || defaultFigure;
           const fileInfoLines = buildFileInfoLines();
           const scanPlaneLines = buildScanPlanesXml(scanDeviceAttrs);
@@ -6184,9 +6208,30 @@ function buildBaseSdImportExportLines({
                     (Array.isArray(field.rectangles) && field.rectangles.length > 0);
                   const shapeRefs = Array.isArray(field.shapeRefs)
                     ? field.shapeRefs
-                        .map((shapeRef) => findTriOrbShapeById(shapeRef.shapeId))
+                        .map((shapeRef) =>
+                          findTriOrbShapeById(shapeRef.shapeId) ||
+                          triorbShapes.find((shape) => shape.id === shapeRef.shapeId)
+                        )
                         .filter(Boolean)
                     : [];
+
+                  if (
+                    Array.isArray(field.shapeRefs) &&
+                    field.shapeRefs.length > 0 &&
+                    shapeRefs.length === 0
+                  ) {
+                    const requestedIds = field.shapeRefs
+                      .map((ref) => ref.shapeId)
+                      .filter(Boolean);
+                    console.warn(
+                      "フィールドに割り当てられたShapeを解決できません。XMLに出力されない可能性があります。",
+                      {
+                        fieldAttributes: field.attributes,
+                        requestedShapeIds: requestedIds,
+                        availableShapeIds: triorbShapes.map((shape) => shape.id),
+                      }
+                    );
+                  }
 
                   if (!hasInlineGeometry && shapeRefs.length === 0) {
                     return;
@@ -6204,8 +6249,8 @@ function buildBaseSdImportExportLines({
                     getAttributeOrder("Field")
                   );
                   lines.push(`          <Field${fieldAttrs ? " " + fieldAttrs : ""}>`);
-                  let wroteShape = hasInlineGeometry ? writeInlineGeometry(field) : false;
-                  if (!wroteShape && shapeRefs.length) {
+                  let wroteShape = false;
+                  if (shapeRefs.length) {
                     const orderedShapes = { Polygon: [], Circle: [], Rectangle: [] };
                     shapeRefs.forEach((shape) => {
                       const typeKey = shape.type === "Circle"
@@ -6258,6 +6303,10 @@ function buildBaseSdImportExportLines({
                         }
                       });
                     });
+                  }
+
+                  if (!wroteShape && hasInlineGeometry) {
+                    wroteShape = writeInlineGeometry(field);
                   }
                   lines.push("          </Field>");
                 });
@@ -7603,6 +7652,59 @@ function buildBaseSdImportExportLines({
           return candidate;
         }
 
+        function findFirstByTag(root, tagName) {
+          if (!root || !tagName) {
+            return null;
+          }
+          const nsMatches = root.getElementsByTagNameNS
+            ? root.getElementsByTagNameNS("*", tagName)
+            : [];
+          if (nsMatches && nsMatches.length) {
+            return nsMatches[0];
+          }
+          const matches = root.getElementsByTagName(tagName);
+          if (matches && matches.length) {
+            return matches[0];
+          }
+          if (root.localName === tagName || root.tagName === tagName) {
+            return root;
+          }
+          const anyNodes = root.querySelectorAll ? root.querySelectorAll("*") : [];
+          for (const node of anyNodes) {
+            if (node.localName === tagName || node.tagName === tagName) {
+              return node;
+            }
+          }
+          return null;
+        }
+
+        function findAllByTag(root, tagName) {
+          if (!root || !tagName) {
+            return [];
+          }
+          const nsMatches = root.getElementsByTagNameNS
+            ? root.getElementsByTagNameNS("*", tagName)
+            : [];
+          if (nsMatches && nsMatches.length) {
+            return Array.from(nsMatches);
+          }
+          const matches = root.getElementsByTagName(tagName);
+          if (matches && matches.length) {
+            return Array.from(matches);
+          }
+          const result = [];
+          const anyNodes = root.querySelectorAll ? root.querySelectorAll("*") : [];
+          anyNodes.forEach((node) => {
+            if (node.localName === tagName || node.tagName === tagName) {
+              result.push(node);
+            }
+          });
+          if (root.localName === tagName || root.tagName === tagName) {
+            result.unshift(root);
+          }
+          return result;
+        }
+
           function normalizeSvgShapeEntry(entry, index) {
             const shapeType = entry.type || "Polygon";
             const shape = createDefaultTriOrbShape(triorbShapes.length + index, shapeType);
@@ -7657,10 +7759,43 @@ function buildBaseSdImportExportLines({
 
         function parseXmlToFigure(xmlText) {
           const parser = new DOMParser();
+          let warningMessage = "";
+          console.log("parseXmlToFigure start", {
+            length: xmlText?.length,
+            preview: (xmlText || "").slice(0, 120),
+          });
+          const triOrbTagMatches = (xmlText.match(/TriOrb_SICK_SLS_Editor/gi) || []).length;
+          const firstTriOrbMatchIndex = (xmlText || "").search(/TriOrb_SICK_SLS_Editor/i);
+          const triOrbContext = firstTriOrbMatchIndex >= 0
+            ? (xmlText || "").slice(
+                Math.max(0, firstTriOrbMatchIndex - 40),
+                Math.min((xmlText || "").length, firstTriOrbMatchIndex + 80)
+              )
+            : "";
+          const triOrbTextMatches = (xmlText.match(/triorb/gi) || []).length;
+          const firstTriOrbTextIndex = (xmlText || "").search(/triorb/i);
+          const triOrbTextContext = firstTriOrbTextIndex >= 0
+            ? (xmlText || "").slice(
+                Math.max(0, firstTriOrbTextIndex - 40),
+                Math.min((xmlText || "").length, firstTriOrbTextIndex + 80)
+              )
+            : "";
+          console.log("parseXmlToFigure TriOrb tag occurrences", {
+            triOrbTagMatches,
+            firstTriOrbMatchIndex,
+            triOrbContext,
+            triOrbTextMatches,
+            firstTriOrbTextIndex,
+            triOrbTextContext,
+          });
           let doc = parser.parseFromString(xmlText, "application/xml");
           let sanitized = xmlText.replace(/<\?xml[^>]*\?>/gi, "").trim();
           let wrapperText = `<TriOrbWrapper>${sanitized}</TriOrbWrapper>`;
           let triOrbDoc = parser.parseFromString(wrapperText, "application/xml");
+          console.log("parseXmlToFigure roots", {
+            docRoot: doc?.documentElement?.tagName,
+            triOrbDocRoot: triOrbDoc?.documentElement?.tagName,
+          });
           if (doc.querySelector("parsererror")) {
             const wrapped = wrapperText;
             doc = parser.parseFromString(wrapped, "application/xml");
@@ -7668,7 +7803,191 @@ function buildBaseSdImportExportLines({
           if (doc.querySelector("parsererror")) {
             throw new Error("Failed to parse XML.");
           }
-          console.log("parseXmlToFigure TriOrb root exists", Boolean(doc.querySelector("TriOrb_SICK_SLS_Editor")));
+          const triOrbRoot =
+            findFirstByTag(triOrbDoc, "TriOrb_SICK_SLS_Editor") ||
+            findFirstByTag(doc, "TriOrb_SICK_SLS_Editor");
+          triOrbImportContext = { triOrbRootFound: Boolean(triOrbRoot) };
+          console.log("parseXmlToFigure TriOrb root exists", Boolean(triOrbRoot));
+          if (!triOrbRoot) {
+            const nodesWithTriOrbInName = [];
+            const nodesWithTriOrbAttrs = [];
+            const collectNodeDetails = (node) => ({
+              tag: node?.tagName || node?.localName,
+              attrs: Array.from(node?.attributes || []).reduce((acc, attr) => {
+                acc[attr.name] = attr.value;
+                return acc;
+              }, {}),
+            });
+            Array.from(doc?.querySelectorAll?.("*") || []).some((node) => {
+              const tag = (node.tagName || node.localName || "").toLowerCase();
+              if (
+                tag.includes("triorb") &&
+                nodesWithTriOrbInName.length < 5
+              ) {
+                nodesWithTriOrbInName.push(collectNodeDetails(node));
+              }
+              Array.from(node?.attributes || []).some((attr) => {
+                const inAttr = attr.name.toLowerCase().includes("triorb") ||
+                  (attr.value || "").toLowerCase().includes("triorb");
+                if (inAttr && nodesWithTriOrbAttrs.length < 5) {
+                  nodesWithTriOrbAttrs.push({
+                    tag: node.tagName || node.localName,
+                    attr: { [attr.name]: attr.value },
+                  });
+                }
+                return nodesWithTriOrbAttrs.length >= 5;
+              });
+              return (
+                nodesWithTriOrbInName.length >= 5 &&
+                nodesWithTriOrbAttrs.length >= 5
+              );
+            });
+            const triOrbNodesByLocalNameFromWrapper = Array.from(
+              (triOrbDoc?.querySelectorAll("*") || []).values()
+            ).filter((node) => node?.localName === "TriOrb_SICK_SLS_Editor");
+            const triOrbNodesByLocalNameFromDoc = Array.from(
+              (doc?.querySelectorAll("*") || []).values()
+            ).filter((node) => node?.localName === "TriOrb_SICK_SLS_Editor");
+            const creationToolName =
+              doc?.querySelector?.("CreationToolName")?.textContent || "";
+            const creationToolVersion =
+              doc?.querySelector?.("CreationToolVersion")?.textContent || "";
+            const fileCompany = doc?.querySelector?.("Company")?.textContent || "";
+            const fileCreationTime =
+              doc?.querySelector?.("CreationTime")?.textContent || "";
+            const exportFieldsetsPresent = Boolean(
+              findFirstByTag(doc, "Export_FieldsetsAndFields")
+            );
+            const exportScanPlanesPresent = Boolean(
+              findFirstByTag(doc, "Export_ScanPlanes")
+            );
+            const exportDevicesPresent = Boolean(
+              findFirstByTag(doc, "Export_Devices")
+            );
+            const countImmediateChildren = (node) =>
+              Array.from(node?.children || []).reduce((acc, child) => {
+                const name = (child.tagName || child.localName || "").replace(
+                  /^[^:]*:/,
+                  ""
+                );
+                acc[name] = (acc[name] || 0) + 1;
+                return acc;
+              }, {});
+            const topEntries = (freq) =>
+              Object.entries(freq)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 12)
+                .map(([name, count]) => `${name}:${count}`);
+            const tagFrequency = Array.from(doc?.querySelectorAll("*") || []).reduce(
+              (acc, node) => {
+                const name = (node.tagName || node.localName || "").replace(/^[^:]*:/, "");
+                acc[name] = (acc[name] || 0) + 1;
+                return acc;
+              },
+              {}
+            );
+            const topTags = Object.entries(tagFrequency)
+              .sort((a, b) => b[1] - a[1])
+              .slice(0, 12)
+              .map(([name, count]) => `${name}:${count}`);
+            const docRootChildFrequency = countImmediateChildren(doc?.documentElement);
+            const triOrbWrapperChildFrequency = countImmediateChildren(
+              triOrbDoc?.documentElement
+            );
+            const docRootChildTop = topEntries(docRootChildFrequency);
+            const triOrbWrapperChildTop = topEntries(triOrbWrapperChildFrequency);
+            const docRootChildSamples = Array.from(
+              doc?.documentElement?.children || []
+            )
+              .slice(0, 6)
+              .map((child) => ({
+                tag: child.tagName || child.localName,
+                attrs: Array.from(child.attributes || [])
+                  .slice(0, 10)
+                  .reduce((acc, attr) => {
+                    acc[attr.name] = attr.value;
+                    return acc;
+                  }, {}),
+                childTagsTop: topEntries(countImmediateChildren(child)),
+              }));
+            const wrapperChildren = Array.from(
+              triOrbDoc?.documentElement?.children || []
+            ).map((node) => node.tagName || node.localName);
+            const docChildren = Array.from(doc?.documentElement?.children || []).map(
+              (node) => node.tagName || node.localName
+            );
+            const triOrbDocError = Boolean(triOrbDoc?.querySelector?.("parsererror"));
+            const docError = Boolean(doc?.querySelector?.("parsererror"));
+            const triOrbFromWrapper = findFirstByTag(
+              triOrbDoc?.documentElement || triOrbDoc,
+              "TriOrb_SICK_SLS_Editor"
+            );
+            const triOrbFromDoc = findFirstByTag(
+              doc?.documentElement || doc,
+              "TriOrb_SICK_SLS_Editor"
+            );
+            const legacySafetyDesignerLikeExport =
+              (doc?.documentElement?.tagName || "") === "SdImportExport" &&
+              exportFieldsetsPresent &&
+              exportScanPlanesPresent &&
+              !triOrbTagMatches &&
+              !triOrbNodesByLocalNameFromDoc.length &&
+              !triOrbNodesByLocalNameFromWrapper.length;
+            if (legacySafetyDesignerLikeExport) {
+              warningMessage =
+                "TriOrb セクションのない Safety Designer 形式を検出しました。Field 座標から形状を復元して読み込みます。";
+              triOrbImportContext = {
+                triOrbRootFound: false,
+                legacySafetyDesignerLikeExport: true,
+                creationToolName,
+                creationToolVersion,
+              };
+              console.warn(
+                "TriOrb section missing; treating as Safety Designer export with inline geometry fallback",
+                {
+                  creationToolName,
+                  creationToolVersion,
+                  exportFieldsetsPresent,
+                  exportScanPlanesPresent,
+                  triOrbTagMatches,
+                  triOrbNodesByLocalNameFromDoc: triOrbNodesByLocalNameFromDoc.length,
+                  triOrbNodesByLocalNameFromWrapper: triOrbNodesByLocalNameFromWrapper.length,
+                }
+              );
+            }
+            console.warn("TriOrb root not found", {
+              docError,
+              triOrbDocError,
+              triOrbFromWrapper: Boolean(triOrbFromWrapper),
+              triOrbFromDoc: Boolean(triOrbFromDoc),
+              triOrbNodesByLocalNameFromWrapperCount: triOrbNodesByLocalNameFromWrapper.length,
+              triOrbNodesByLocalNameFromDocCount: triOrbNodesByLocalNameFromDoc.length,
+              triOrbNodesByLocalNameSampleFromWrapper: triOrbNodesByLocalNameFromWrapper
+                .slice(0, 2)
+                .map((node) => node?.outerHTML?.slice(0, 200)),
+              triOrbNodesByLocalNameSampleFromDoc: triOrbNodesByLocalNameFromDoc
+                .slice(0, 2)
+                .map((node) => node?.outerHTML?.slice(0, 200)),
+              wrapperRoot: triOrbDoc?.documentElement?.tagName,
+              docRoot: doc?.documentElement?.tagName,
+              wrapperChildren,
+              docChildren,
+              wrapperChildTagFrequencyTop12: triOrbWrapperChildTop,
+              docRootChildTagFrequencyTop12: docRootChildTop,
+              docRootChildSamples,
+              tagFrequencyTop12: topTags,
+              nodesWithTriOrbInName,
+              nodesWithTriOrbAttrs,
+              docRootSnippet: doc?.documentElement?.outerHTML?.slice(0, 400),
+              creationToolName,
+              creationToolVersion,
+              fileCompany,
+              fileCreationTime,
+              exportFieldsetsPresent,
+              exportScanPlanesPresent,
+              exportDevicesPresent,
+            });
+          }
 
           triorbShapes = [];
           triorbSource = "";
@@ -7676,25 +7995,31 @@ function buildBaseSdImportExportLines({
 
           populateFileInfoFromDoc(doc);
           populateScanPlanesFromDoc(doc);
-          populateTriOrbShapesFromDoc(triOrbDoc);
+          populateTriOrbShapesFromDoc(triOrbRoot);
           populateFieldsetsFromDoc(doc);
           populateCasetablesFromDoc(doc);
 
           const tracesFromPlotData = parsePlotDataTraces(doc);
           if (tracesFromPlotData.length) {
             const triOrbPresent = Boolean(triOrbDoc.querySelector("TriOrb_SICK_SLS_Editor"));
-            return { traces: tracesFromPlotData, warning: "", triOrbPresent };
+            return { traces: tracesFromPlotData, warning: warningMessage, triOrbPresent };
           }
 
           const polygonTrace = parsePolygonTrace(doc);
           if (polygonTrace.length) {
             const triOrbPresent = Boolean(triOrbDoc.querySelector("TriOrb_SICK_SLS_Editor"));
-            return { traces: polygonTrace, warning: "", triOrbPresent };
+            return { traces: polygonTrace, warning: warningMessage, triOrbPresent };
           }
 
+          const combinedWarning = [
+            warningMessage,
+            "Plot data was not found; displaying an empty plot.",
+          ]
+            .filter(Boolean)
+            .join(" ");
           return {
             traces: [],
-            warning: "Plot data was not found; displaying an empty plot.",
+            warning: combinedWarning,
             triOrbPresent: Boolean(triOrbDoc.querySelector("TriOrb_SICK_SLS_Editor")),
           };
         }
@@ -7828,7 +8153,7 @@ function parsePolygonTrace(doc) {
           const type = shapeNode.getAttribute("Type") || "Polygon";
           const result = { id: shapeNode.getAttribute("ID") || createShapeId(), name: shapeNode.getAttribute("Name") || "", type };
           if (type === "Polygon") {
-            const polygon = shapeNode.querySelector("Polygon");
+            const polygon = findFirstByTag(shapeNode, "Polygon");
             if (polygon) {
               result.polygon = {
                 Type: polygon.getAttribute("Type") || "CutOut",
@@ -7839,7 +8164,7 @@ function parsePolygonTrace(doc) {
               };
             }
           } else if (type === "Rectangle") {
-            const rectangle = shapeNode.querySelector("Rectangle");
+            const rectangle = findFirstByTag(shapeNode, "Rectangle");
             if (rectangle) {
               result.rectangle = Array.from(rectangle.attributes).reduce((acc, attr) => {
                 acc[attr.name] = attr.value;
@@ -7847,7 +8172,7 @@ function parsePolygonTrace(doc) {
               }, {});
             }
           } else if (type === "Circle") {
-            const circle = shapeNode.querySelector("Circle");
+            const circle = findFirstByTag(shapeNode, "Circle");
             if (circle) {
               result.circle = Array.from(circle.attributes).reduce((acc, attr) => {
                 acc[attr.name] = attr.value;
@@ -7858,9 +8183,21 @@ function parsePolygonTrace(doc) {
           return result;
         }
 
-        function populateTriOrbShapesFromDoc(doc) {
-          const triOrbNode = doc.querySelector("TriOrb_SICK_SLS_Editor");
-          console.log("populateTriOrbShapesFromDoc triOrbNode", triOrbNode);
+        function populateTriOrbShapesFromDoc(triOrbNode) {
+          const describeNode = (node) => {
+            if (!node) return null;
+            return {
+              tag: node.tagName || node.localName,
+              attrs: Array.from(node.attributes || []).reduce((acc, attr) => {
+                acc[attr.name] = attr.value;
+                return acc;
+              }, {}),
+              childTags: Array.from(node.children || []).map(
+                (child) => child.tagName || child.localName
+              ),
+            };
+          };
+          console.log("populateTriOrbShapesFromDoc triOrbNode", describeNode(triOrbNode));
           if (!triOrbNode) {
             triorbSource = "";
             triorbShapes = [];
@@ -7870,7 +8207,8 @@ function parsePolygonTrace(doc) {
             return;
           }
           triorbSource = triOrbNode.getAttribute("Source") || triorbSource || "";
-          const shapesParent = triOrbNode.querySelector("Shapes");
+          const shapesParent = findFirstByTag(triOrbNode, "Shapes");
+          console.log("populateTriOrbShapesFromDoc shapesParent", describeNode(shapesParent));
           if (!shapesParent) {
             triorbShapes = [];
             rebuildTriOrbShapeRegistry();
@@ -7878,13 +8216,16 @@ function parsePolygonTrace(doc) {
             renderTriOrbShapeCheckboxes();
             return;
           }
-          const nodes = Array.from(shapesParent.querySelectorAll("Shape"));
+          const nodes = findAllByTag(shapesParent, "Shape");
           console.log(
             "populateTriOrbShapesFromDoc TriOrb node",
             shapesParent.parentElement?.tagName,
             "shapes count",
             nodes.length
           );
+          nodes.slice(0, 3).forEach((node, idx) => {
+            console.log("shape node sample", idx, describeNode(node));
+          });
           if (!nodes.length) {
             triorbShapes = [];
             rebuildTriOrbShapeRegistry();
@@ -7940,14 +8281,20 @@ function parsePolygonTrace(doc) {
           }));
         }
 
-        function collectShapeRefsFromFieldNode(fieldNode, inlineGeometry, context) {
+        function collectShapeRefsFromFieldNode(fieldNode, inlineGeometry, context, diag) {
           const refs = [];
           if (fieldNode) {
             const shapeNodes = Array.from(fieldNode.querySelectorAll(":scope > Shapes > Shape"));
+            if (diag) {
+              diag.shapeNodes += shapeNodes.length;
+            }
             shapeNodes.forEach((shapeNode) => {
               const referencedId = shapeNode.getAttribute("ID") || shapeNode.getAttribute("ShapeId");
               if (referencedId) {
                 refs.push({ shapeId: referencedId });
+                if (diag) {
+                  diag.shapeRefsFromId += 1;
+                }
                 return;
               }
               const nodeType =
@@ -7959,17 +8306,26 @@ function parsePolygonTrace(doc) {
                 const rectAttrs = elementAttributesToObject(rectangleNode || shapeNode);
                 const shapeId = ensureTriOrbShapeFromGeometry("Rectangle", rectAttrs, null, context);
                 refs.push({ shapeId });
+                if (diag) {
+                  diag.shapeRefsFromShapes += 1;
+                }
               } else if (nodeType === "Circle") {
                 const circleNode = shapeNode.querySelector("Circle");
                 const circleAttrs = elementAttributesToObject(circleNode || shapeNode);
                 const shapeId = ensureTriOrbShapeFromGeometry("Circle", circleAttrs, null, context);
                 refs.push({ shapeId });
+                if (diag) {
+                  diag.shapeRefsFromShapes += 1;
+                }
               } else {
                 const polygonNode = shapeNode.querySelector("Polygon") || shapeNode;
                 const polygonAttrs = elementAttributesToObject(polygonNode);
                 const points = collectPolygonPointsFromNode(polygonNode);
                 const shapeId = ensureTriOrbShapeFromGeometry("Polygon", polygonAttrs, points, context);
                 refs.push({ shapeId });
+                if (diag) {
+                  diag.shapeRefsFromShapes += 1;
+                }
               }
             });
           }
@@ -7988,14 +8344,23 @@ function parsePolygonTrace(doc) {
             }));
             const shapeId = ensureTriOrbShapeFromGeometry("Polygon", polygonAttrs, points, context);
             fallbackRefs.push({ shapeId });
+            if (diag) {
+              diag.shapeRefsFromInline += 1;
+            }
           });
           (inlineGeometry.rectangles || []).forEach((rectangle) => {
             const shapeId = ensureTriOrbShapeFromGeometry("Rectangle", rectangle, null, context);
             fallbackRefs.push({ shapeId });
+            if (diag) {
+              diag.shapeRefsFromInline += 1;
+            }
           });
           (inlineGeometry.circles || []).forEach((circle) => {
             const shapeId = ensureTriOrbShapeFromGeometry("Circle", circle, null, context);
             fallbackRefs.push({ shapeId });
+            if (diag) {
+              diag.shapeRefsFromInline += 1;
+            }
           });
           return fallbackRefs;
         }
@@ -8051,11 +8416,20 @@ function parsePolygonTrace(doc) {
           if (!fieldsetNodes.length) {
             fieldsets = [createDefaultFieldset(0)];
           } else {
-          fieldsets = Array.from(fieldsetNodes).map((fieldsetNode, fieldsetIndex) => {
-            const attributes = {};
-            Array.from(fieldsetNode.attributes).forEach((attr) => {
-              attributes[attr.name] = attr.value;
-            });
+            const fieldImportDiag = {
+              fieldsetCount: fieldsetNodes.length,
+              fieldCount: 0,
+              shapeNodes: 0,
+              shapeRefsFromId: 0,
+              shapeRefsFromShapes: 0,
+              shapeRefsFromInline: 0,
+              inlineGeometryFields: 0,
+            };
+            fieldsets = Array.from(fieldsetNodes).map((fieldsetNode, fieldsetIndex) => {
+              const attributes = {};
+              Array.from(fieldsetNode.attributes).forEach((attr) => {
+                attributes[attr.name] = attr.value;
+              });
               if (!("Name" in attributes)) {
                 attributes.Name = `Fieldset ${fieldsetIndex + 1}`;
               }
@@ -8065,6 +8439,7 @@ function parsePolygonTrace(doc) {
               );
 
               const fields = fieldNodes.map((fieldNode, fieldIndex) => {
+                fieldImportDiag.fieldCount += 1;
                 const fieldAttrs = {};
                 Array.from(fieldNode.attributes).forEach((attr) => {
                   fieldAttrs[attr.name] = attr.value;
@@ -8122,8 +8497,15 @@ function parsePolygonTrace(doc) {
                 const shapeRefs = collectShapeRefsFromFieldNode(
                   fieldNode,
                   { polygons, rectangles, circles },
-                  shapeContext
+                  shapeContext,
+                  fieldImportDiag
                 );
+                if (
+                  fieldImportDiag &&
+                  ((polygons && polygons.length) || rectangles.length || circles.length)
+                ) {
+                  fieldImportDiag.inlineGeometryFields += 1;
+                }
 
                 return {
                   attributes: fieldAttrs,
@@ -8139,6 +8521,10 @@ function parsePolygonTrace(doc) {
                 fields,
                 visible: true,
               };
+            });
+            console.log("populateFieldsetsFromDoc import summary", {
+              ...fieldImportDiag,
+              triOrbRootFound: triOrbImportContext.triOrbRootFound,
             });
           }
 
@@ -9896,6 +10282,64 @@ function parsePolygonTrace(doc) {
           });
         }
 
+        function ensureInlineGeometryForShape(field, shape) {
+          if (!field || !shape || triOrbImportContext.triOrbRootFound) {
+            return;
+          }
+          const existingKeys = new Set();
+          const addExistingKey = (type, attrs, points = []) => {
+            const key = buildShapeKey(type, attrs, points);
+            if (key) {
+              existingKeys.add(key);
+            }
+          };
+          (field.polygons || []).forEach((polygon) => {
+            const polygonAttrs = polygon.attributes || { Type: polygon.Type };
+            const normalizedPoints = (polygon.points || []).map((point) => ({
+              X: String(point.X ?? point.x ?? "0"),
+              Y: String(point.Y ?? point.y ?? "0"),
+            }));
+            addExistingKey("Polygon", { Type: polygonAttrs.Type || "Field" }, normalizedPoints);
+          });
+          (field.rectangles || []).forEach((rectangle) => {
+            addExistingKey("Rectangle", rectangle, []);
+          });
+          (field.circles || []).forEach((circle) => {
+            addExistingKey("Circle", circle, []);
+          });
+
+          const appendGeometry = (type, attrs, points = []) => {
+            const key = buildShapeKey(type, attrs, points);
+            if (!key || existingKeys.has(key)) {
+              return;
+            }
+            if (type === "Polygon") {
+              field.polygons = field.polygons || [];
+              field.polygons.push({ attributes: attrs, points });
+            } else if (type === "Rectangle") {
+              field.rectangles = field.rectangles || [];
+              field.rectangles.push(attrs);
+            } else if (type === "Circle") {
+              field.circles = field.circles || [];
+              field.circles.push(attrs);
+            }
+            existingKeys.add(key);
+          };
+
+          if (shape.type === "Polygon" && shape.polygon) {
+            const attrs = { Type: getPolygonTypeValue(shape.polygon) || shape.polygon.Type || "Field" };
+            const points = (shape.polygon.points || []).map((point) => ({
+              X: String(point.X ?? point.x ?? "0"),
+              Y: String(point.Y ?? point.y ?? "0"),
+            }));
+            appendGeometry("Polygon", attrs, points);
+          } else if (shape.type === "Rectangle" && shape.rectangle) {
+            appendGeometry("Rectangle", { ...shape.rectangle }, []);
+          } else if (shape.type === "Circle" && shape.circle) {
+            appendGeometry("Circle", { ...shape.circle }, []);
+          }
+        }
+
         function addFieldShapeRef(fieldsetIndex, fieldIndex, shapeId) {
           const field = getFieldEntry(fieldsetIndex, fieldIndex);
           if (!field || !shapeId) {
@@ -9906,6 +10350,9 @@ function parsePolygonTrace(doc) {
             return;
           }
           field.shapeRefs.push({ shapeId });
+          const resolvedShape =
+            findTriOrbShapeById(shapeId) || triorbShapes.find((shape) => shape.id === shapeId);
+          ensureInlineGeometryForShape(field, resolvedShape);
           renderFieldsets();
         }
 
@@ -10201,13 +10648,41 @@ function parsePolygonTrace(doc) {
         }
         if (saveSickBtn) {
           saveSickBtn.addEventListener("click", () => {
+            console.debug("Save (SICK) start", {
+              fieldsetDeviceCount: fieldsetDevices.length,
+              fieldsetDevices: fieldsetDevices
+                .slice(0, 4)
+                .map((device, index) => ({
+                  index,
+                  deviceName: device.attributes?.DeviceName,
+                  typekey: device.attributes?.Typekey,
+                })),
+              scanPlaneCount: scanPlanes.length,
+              fieldsetCount: fieldsets.length,
+              triorbShapeCount: triorbShapes.length,
+            });
             if (!fieldsetDevices.length) {
+              console.warn("Save (SICK) without devices; using legacy export", {
+                fieldsetCount: fieldsets.length,
+                scanPlaneCount: scanPlanes.length,
+              });
               const xml = buildLegacyXml();
               downloadXml(xml, `sick_${Date.now()}.sgexml`);
               setStatus("SICK XML downloaded (no devices).");
               return;
             }
             fieldsetDevices.forEach((device, index) => {
+              console.debug("Save (SICK) preparing device export", {
+                index,
+                deviceName: device.attributes?.DeviceName,
+                typekey: device.attributes?.Typekey,
+                scanPlaneMatchByName: Boolean(
+                  findScanPlaneDeviceByName(device.attributes?.DeviceName)
+                ),
+                scanPlaneMatchByTypekey: Boolean(
+                  findScanPlaneDeviceByTypekey(device.attributes?.Typekey)
+                ),
+              });
               const scanDevice =
                 findScanPlaneDeviceByName(device.attributes?.DeviceName) ||
                 findScanPlaneDeviceByTypekey(device.attributes?.Typekey);
@@ -10225,6 +10700,9 @@ function parsePolygonTrace(doc) {
               const xml = xmlLines.join("\n");
               const prefix = formatDeviceFilePrefix(device.attributes, index);
               downloadXml(xml, `${prefix}_${Date.now()}.sgexml`);
+            });
+            console.debug("Save (SICK) complete", {
+              exportedDeviceCount: fieldsetDevices.length,
             });
             setStatus(`SICK XML downloaded for ${fieldsetDevices.length} device(s).`);
           });
@@ -10470,6 +10948,9 @@ function parsePolygonTrace(doc) {
               field.shapeRefs = field.shapeRefs || [];
               if (!field.shapeRefs.some((ref) => ref.shapeId === shapeId)) {
                 field.shapeRefs.push({ shapeId });
+                const resolvedShape =
+                  findTriOrbShapeById(shapeId) || triorbShapes.find((shape) => shape.id === shapeId);
+                ensureInlineGeometryForShape(field, resolvedShape);
                 attachedCount += 1;
               }
             });
