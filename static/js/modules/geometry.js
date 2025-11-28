@@ -19,9 +19,11 @@ export function normalizeDegrees(value) {
 export function rotatePoint(x, y, radians, originX, originY) {
   const cos = Math.cos(radians);
   const sin = Math.sin(radians);
+  const translatedX = x - originX;
+  const translatedY = y - originY;
   return {
-    x: originX + x * cos - y * sin,
-    y: originY + x * sin + y * cos,
+    x: originX + translatedX * cos - translatedY * sin,
+    y: originY + translatedX * sin + translatedY * cos,
   };
 }
 
