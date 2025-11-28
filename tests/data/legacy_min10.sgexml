@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="utf-8"?>
+<SdImportExport Timestamp="2025-11-28T00:00:22.831Z" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Commentary="" Hash="F6DD52BFA24B880C2098B043D94361A5BDA97A2D739267475F75A9B371A8B2B42B9A499E3C790B2A37265396EAD12D6447E34EFE3DC6FD8537A722E50798E69B">
+  <FileInfo>
+    <ContentId>Scanner Complete Export</ContentId>
+    <ContentVersion>1.6</ContentVersion>
+    <Company>SICK AG</Company>
+    <CreationToolName>SAFETY DESIGNER ENGINEERING TOOL</CreationToolName>
+    <CreationToolVersion>2025.02</CreationToolVersion>
+    <CreationComponentName>nanoScan3</CreationComponentName>
+    <CreationComponentVersion>1.19.23369.0</CreationComponentVersion>
+  </FileInfo>
+  <Export_ScanPlanes>
+    <ScanPlane Index="0" Name="Monitoring plane 1" ScanPlaneDirection="Horizontal" UseReferenceContour="false" ObjectSize="70" MultipleSampling="2" MultipleSamplingOff2OnActivated="false" SelectedCaseSwitching="Fast">
+      <Devices>
+        <Device Index="1" Typekey="NANS3-CAAZ30ZA1P02" TypekeyVersion="1.0" TypekeyDisplayVersion="V 1.0.0" DeviceName="Left" ResponseTime="30" ScanResolutionAddition="0" />
+      </Devices>
+    </ScanPlane>
+  </Export_ScanPlanes>
+  <Export_FieldsetsAndFields>
+    <ScanPlane Index="0">
+      <Devices>
+        <Device Typekey="NANS3-CAAZ30ZA1P02" TypekeyVersion="1.0" TypekeyDisplayVersion="V 1.0.0" PositionX="-170" PositionY="102" Rotation="70" StandingUpsideDown="true" />
+      </Devices>
+      <GlobalGeometry UseGlobalGeometry="false" />
+      <Fieldsets>
+        <Fieldset Name="Min10">
+          <Field Name="Protective" Fieldtype="ProtectiveSafeBlanking" MultipleSampling="2" Resolution="70" TolerancePositive="0" ToleranceNegative="0">
+          <Circle Type="Field" CenterX="0" CenterY="0" Radius="100" />
+          </Field>
+        </Fieldset>
+      </Fieldsets>
+    </ScanPlane>
+  </Export_FieldsetsAndFields>
+  <Export_CasetablesAndCases>
+    <Casetable Index="0">
+      <Configuration>
+        <Name>Monitoring case table 1</Name>
+        <StaticInputSource>
+          <Source>Assembly_EIPEPRGWRX_105_with_StopAlarmDetection_and_Speed</Source>
+          <StaticActivation>Antivalent</StaticActivation>
+        </StaticInputSource>
+        <StaticInputs>
+          <StaticInput>
+            <Ranking>1</Ranking>
+            <Evaluate>true</Evaluate>
+          </StaticInput>
+          <StaticInput>
+            <Ranking>2</Ranking>
+            <Evaluate>true</Evaluate>
+          </StaticInput>
+          <StaticInput>
+            <Ranking>3</Ranking>
+            <Evaluate>true</Evaluate>
+          </StaticInput>
+          <StaticInput>
+            <Ranking>4</Ranking>
+            <Evaluate>true</Evaluate>
+          </StaticInput>
+          <StaticInput>
+            <Ranking>5</Ranking>
+            <Evaluate>true</Evaluate>
+          </StaticInput>
+          <StaticInput>
+            <Ranking>6</Ranking>
+            <Evaluate>true</Evaluate>
+          </StaticInput>
+          <StaticInput>
+            <Ranking>7</Ranking>
+            <Evaluate>true</Evaluate>
+          </StaticInput>
+          <StaticInput>
+            <Ranking>8</Ranking>
+            <Evaluate>true</Evaluate>
+          </StaticInput>
+        </StaticInputs>
+        <UseSpeed>true</UseSpeed>
+        <InputDelay>12</InputDelay>
+        <CaseSequenceEnabled>false</CaseSequenceEnabled>
+        <ShowPermanentPreset>false</ShowPermanentPreset>
+      </Configuration>
+      <Cases>
+        <Case Id="0">
+          <Name>Case 1</Name>
+          <SleepMode>false</SleepMode>
+          <DisplayOrder>0</DisplayOrder>
+          <Activation>
+            <StaticInputs>
+              <StaticInput>
+                <Match>DontCare</Match>
+              </StaticInput>
+              <StaticInput>
+                <Match>DontCare</Match>
+              </StaticInput>
+              <StaticInput>
+                <Match>DontCare</Match>
+              </StaticInput>
+              <StaticInput>
+                <Match>DontCare</Match>
+              </StaticInput>
+              <StaticInput>
+                <Match>DontCare</Match>
+              </StaticInput>
+              <StaticInput>
+                <Match>DontCare</Match>
+              </StaticInput>
+              <StaticInput>
+                <Match>DontCare</Match>
+              </StaticInput>
+              <StaticInput>
+                <Match>DontCare</Match>
+              </StaticInput>
+            </StaticInputs>
+            <StaticInputs1ofNIndex>-1</StaticInputs1ofNIndex>
+            <SpeedActivation>Off</SpeedActivation>
+            <MinSpeed>0</MinSpeed>
+            <MaxSpeed>0</MaxSpeed>
+            <CaseNumber>1</CaseNumber>
+            <FollowingCases>
+              <FollowingCase>
+                <CaseIndex>-1</CaseIndex>
+              </FollowingCase>
+              <FollowingCase>
+                <CaseIndex>-1</CaseIndex>
+              </FollowingCase>
+            </FollowingCases>
+            <SingleStepSequencePos>-1</SingleStepSequencePos>
+          </Activation>
+        </Case>
+      </Cases>
+      <Evals>
+        <Eval Id="1">
+          <Name>遮断パス 1</Name>
+          <NameLatin9Key>_COPN01_8A74</NameLatin9Key>
+          <Q>1</Q>
+          <Reset>
+            <ResetType>NoReset</ResetType>
+            <AutoResetTime>2</AutoResetTime>
+            <EvalResetSource>Assembly_EIPEPRGWRX_105_with_StopAlarmDetection_and_Speed</EvalResetSource>
+          </Reset>
+          <Cases>
+            <Case Id="0">
+              <ScanPlanes>
+                <ScanPlane Id="1">
+                  <UserFieldId>1</UserFieldId>
+                  <IsSplitted>true</IsSplitted>
+                </ScanPlane>
+              </ScanPlanes>
+            </Case>
+          </Cases>
+          <PermanentPreset>
+            <ScanPlanes>
+              <ScanPlane Id="1">
+                <FieldMode>2</FieldMode>
+              </ScanPlane>
+            </ScanPlanes>
+          </PermanentPreset>
+        </Eval>
+      </Evals>
+      <FieldsConfiguration>
+        <ScanPlanes>
+          <ScanPlane Id="1">
+            <Index>0</Index>
+            <Name>Monitoring plane 1</Name>
+            <UserFieldsets>
+              <UserFieldset Id="1">
+                <Index>0</Index>
+                <Name>Min10</Name>
+                <UserFields>
+                  <UserField Id="1">
+                    <Index>0</Index>
+                    <Name>Protective</Name>
+                    <FieldType>ProtectiveSafeBlanking</FieldType>
+                    <MultipleSampling>2</MultipleSampling>
+                    <ObjectResolution>70</ObjectResolution>
+                    <ContourNegative>0</ContourNegative>
+                    <ContourPositive>0</ContourPositive>
+                  </UserField>
+                </UserFields>
+              </UserFieldset>
+            </UserFieldsets>
+          </ScanPlane>
+        </ScanPlanes>
+        <StatFields>
+          <PermRed Id="59" />
+          <PermGreen Id="60" />
+          <PermGreenWf Id="61" />
+        </StatFields>
+      </FieldsConfiguration>
+    </Casetable>
+  </Export_CasetablesAndCases>
+</SdImportExport>

@@ -1,13 +1,15 @@
 from playwright.sync_api import sync_playwright
 import sys
 
+from tests.conftest import launch_chromium
+
 
 def run_playwright_test():
     # Flask サーバーを別プロセスで起動している前提で、
     # TriOrb のグローバル入力が Fieldset に伝播するかを最小限確認する。
     server_url = "http://127.0.0.1:5000/?debug=1"
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
+        browser = launch_chromium(p)
         page = browser.new_page()
         errors = []
         page.on("console", lambda msg: errors.append(msg) if msg.type == "error" else None)

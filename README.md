@@ -42,6 +42,10 @@ XML 生成・読み込み時には `<SdImportExport xmlns:xsd="http://www.w3.org
 - 単体: `pytest` をプロジェクトルートで実行すると Flask レイヤーの基本的なパスを確認できます。
 - E2E: `pip install playwright` で Playwright を追加し、`playwright install` でブラウザをインストールしたうえで `python tests/playwright/test_shapes.py` を実行してください。Playwright は現在 `console` にエラーが出ないことや TriOrb Shape 編集との同期をあわせて確認します。PowerShell ユーザーは `run_playwright.ps1` でサーバー起動からテスト実行までを一気通貫で行えます（起動済みサーバーにアクセスする場合は Query パラメータ `?debug=1` を付加して詳細 UI を開いてください）。
 
+### 回帰テストの観点
+- `tests/test_legacy_shape_attachment.py`: Safety Designer 形式（TriOrb セクションなし）で読み込んだファイルに「+ Shape」で Fieldset へアタッチした Shape が、`Save (SICK)` で生成される XML に含まれることを自動検証します。
+- `tests/test_save_load_roundtrip.py`: TriOrb 形式を含む入出力を通して Fieldset/Shape の整合性を確認します（環境に Playwright のブラウザが無い場合、Playwright 依存のケースはスキップされます）。
+
 ## デプロイ
 - `freeze.py` で静的ファイル出力（`docs/`）。`mkdocs.yml` に `mike` 注記があるので GitHub Pages は `mike deploy` + `mike set-default` で管理します。
 - `.github/workflows/test.yml` で `pytest` を実行、`.github/workflows/deploy.yml` で `mike deploy --push --branch gh-pages latest --update-aliases` を走らせます。
