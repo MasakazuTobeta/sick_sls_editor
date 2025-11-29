@@ -36,6 +36,8 @@ TriOrb 登録済みの Shape 情報は `TriOrb_SICK_SLS_Editor/Shapes` 配下で
 
 XML 生成・読み込み時には `<SdImportExport xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">` を維持し、TriOrb データは `<TriOrb_SICK_SLS_Editor>` 内だけに保存します。`Save (TriOrb)` と `Save (SICK)` で TriOrb 形式／SICK 形式を切り替え、ファイル名には `{DeviceName}_` プレフィクスを付与して複数 Device のファイルを分割します。
 
+詳細な操作手順は [Manual.md](Manual.md) の利用マニュアルにまとめています。初期設定から SVG 取り込み、Fieldset 作成、複製、保存までの流れを参照してください。
+
 ## フロントエンド構成
 - Flask 側から渡される Plotly 図・TriOrb・Casetable 等の初期データは `templates/index.html` で `window.appBootstrapData` にまとめ、`static/js/app.js` から参照します。
 - `static/js/app.js` は UI 全体のイベントと状態管理を担うエントリーポイントで、機能別に `static/js/modules/` 以下のモジュールを読み込みます。
