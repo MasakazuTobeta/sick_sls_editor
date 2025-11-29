@@ -1,0 +1,14 @@
+{
+  "name": "sick-sls-editor",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Helper scripts for the SICK SLS Editor Flask/Plotly tooling.",
+  "license": "Apache-2.0",
+  "scripts": {
+    "setup": "bash run/setup.sh",
+    "start": "python main.py",
+    "test": "pytest",
+    "test:playwright": "python tests/playwright/test_shapes.py",
+    "playwright:install": "python -m playwright install chromium"
+  }
+}

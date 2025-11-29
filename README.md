@@ -14,6 +14,12 @@ TriOrb メニュー、Structure メニュー、Plotly 上の図形・扇形表�
    ```
 3. http://localhost:5000/ または http://127.0.0.1:5000/ をブラウザで開いて UI を確認します。
 
+`npm install` で `package.json` の npm スクリプトが利用できるようになります。セットアップを自動化したい場合は以下を実行して venv 作成・依存関係インストール・Playwright ブラウザの準備をまとめて行えます。
+
+```bash
+npm run setup
+```
+
 `run_playwright.ps1` を使えば PowerShell（.venv 内）から Flask サーバーの起動と Playwright テストの実行をまとめて行えます。実行には `domains` の実行ポリシーを `RemoteSigned` など適切に設定してください。
 
 ### 依存ライブラリ補足
