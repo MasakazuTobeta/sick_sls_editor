@@ -294,6 +294,11 @@ document.addEventListener("DOMContentLoaded", () => {
         const replicateModalApply = document.getElementById("replicate-modal-apply");
         const replicateModalHeader = replicateModalWindow?.querySelector(".modal-header");
         const replicateModalBody = replicateModalWindow?.querySelector(".modal-body");
+        const svgImportModal = document.getElementById("svg-import-modal");
+        const svgImportDuplicateList = document.getElementById("svg-import-duplicate-list");
+        const svgImportApplyBtn = document.getElementById("svg-import-apply");
+        const svgImportCancelBtn = document.getElementById("svg-import-cancel");
+        const svgImportCloseBtn = document.getElementById("svg-import-close");
         const createFieldsetNameInput = document.getElementById("create-field-fieldset-name");
         const createFieldsetLatinInput = document.getElementById("create-field-fieldset-latin9");
         const createFieldNameInputs = [
@@ -366,6 +371,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const triOrbShapeIndexLookup = new Map();
         const triOrbShapeCardCache = new Map();
         let triOrbShapesListInitialized = false;
+        let pendingSvgImportContext = null;
         let triorbSource = bootstrapData.triorbSource || "";
         let fieldsets = initializeFieldsets(initialFieldsets);
         let fieldsetDevices = initializeFieldsetDevices(initialFieldsetDevices);
@@ -7771,34 +7777,34 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           return result;
         }
 
-          function normalizeSvgShapeEntry(entry, index) {
-            const shapeType = entry.type || "Polygon";
-            const shape = createDefaultTriOrbShape(triorbShapes.length + index, shapeType);
-            shape.id = entry.id || shape.id || createShapeId();
-            shape.name = entry.name || `SVG ${shapeType} ${index + 1}`;
-            shape.fieldtype = "ProtectiveSafeBlanking";
-            shape.kind = "Field";
-            shape.type = shapeType;
-            if (shapeType === "Polygon" && entry.polygon) {
-              shape.polygon = {
-                Type: "Field",
-                points: invertSvgPoints(entry.polygon.points || []),
-              };
-            } else if (shapeType === "Rectangle" && entry.rectangle) {
-              shape.rectangle = {
-                ...shape.rectangle,
-                ...entry.rectangle,
-                OriginY: invertSvgNumber(entry.rectangle?.OriginY),
-                Type: "Field",
-              };
-            } else if (shapeType === "Circle" && entry.circle) {
-              shape.circle = {
-                ...shape.circle,
-                ...entry.circle,
-                CenterY: invertSvgNumber(entry.circle?.CenterY),
-                Type: "Field",
-              };
-            }
+        function normalizeSvgShapeEntry(entry, index) {
+          const shapeType = entry.type || "Polygon";
+          const shape = createDefaultTriOrbShape(triorbShapes.length + index, shapeType);
+          shape.id = entry.id || shape.id || createShapeId();
+          shape.name = entry.name || `SVG ${shapeType} ${index + 1}`;
+          shape.fieldtype = "ProtectiveSafeBlanking";
+          shape.kind = "Field";
+          shape.type = shapeType;
+          if (shapeType === "Polygon" && entry.polygon) {
+            shape.polygon = {
+              Type: "Field",
+              points: invertSvgPoints(entry.polygon.points || []),
+            };
+          } else if (shapeType === "Rectangle" && entry.rectangle) {
+            shape.rectangle = {
+              ...shape.rectangle,
+              ...entry.rectangle,
+              OriginY: invertSvgNumber(entry.rectangle?.OriginY),
+              Type: "Field",
+            };
+          } else if (shapeType === "Circle" && entry.circle) {
+            shape.circle = {
+              ...shape.circle,
+              ...entry.circle,
+              CenterY: invertSvgNumber(entry.circle?.CenterY),
+              Type: "Field",
+            };
+          }
           applyShapeKind(shape, "Field");
           return shape;
         }
@@ -7821,6 +7827,151 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           });
           invalidateTriOrbShapeCaches();
           return normalizedShapes.length;
+        }
+
+        function partitionSvgShapesByName(entries = []) {
+          const existingByName = new Map(
+            triorbShapes.map((shape) => [shape?.name, shape]).filter(([name]) => Boolean(name))
+          );
+          const duplicates = [];
+          const uniques = [];
+          (entries || []).forEach((entry) => {
+            const existing = entry?.name ? existingByName.get(entry.name) : null;
+            if (existing) {
+              duplicates.push({ entry, existing });
+            } else {
+              uniques.push(entry);
+            }
+          });
+          return { duplicates, uniques };
+        }
+
+        function overwriteTriOrbShapeWithSvgEntry(existingShape, entry) {
+          if (!existingShape || !entry) {
+            return false;
+          }
+          const shapeIndex = triorbShapes.indexOf(existingShape);
+          if (shapeIndex < 0) {
+            return false;
+          }
+          const normalized = normalizeSvgShapeEntry(entry, shapeIndex);
+          const mergedShape = {
+            ...normalized,
+            id: existingShape.id,
+            name: existingShape.name,
+            fieldtype: existingShape.fieldtype,
+            kind: existingShape.kind || normalized.kind,
+            visible: existingShape.visible !== false,
+          };
+          applyShapeKind(mergedShape, mergedShape.kind);
+          triorbShapes[shapeIndex] = mergedShape;
+          registerTriOrbShapeLookup(mergedShape, shapeIndex);
+          return true;
+        }
+
+        function applySvgImportChanges({ additions = [], overwrites = [], warnings = [], fileName = "" } = {}) {
+          let overwrittenCount = 0;
+          overwrites.forEach(({ entry, existing }) => {
+            if (overwriteTriOrbShapeWithSvgEntry(existing, entry)) {
+              overwrittenCount += 1;
+            }
+          });
+          const addedCount = addSvgShapesToState(additions);
+          rebuildTriOrbShapeRegistry();
+          renderTriOrbShapes();
+          renderTriOrbShapeCheckboxes();
+          renderFieldsets();
+          renderFigure();
+          if (warnings.length) {
+            alert(`未対応の SVG 要素: ${warnings.join(", ")}`);
+          }
+          const warningSuffix = warnings.length ? `（未対応: ${warnings.join(", ")}）` : "";
+          setStatus(
+            `${fileName} から ${overwrittenCount} 件を上書きし、${addedCount} 件の Shape をインポートしました${warningSuffix}。`,
+            warnings.length ? "warning" : "ok"
+          );
+        }
+
+        function openSvgImportModal({ fileName, warnings = [], duplicates = [], uniques = [] } = {}) {
+          if (!svgImportModal || !svgImportDuplicateList) {
+            applySvgImportChanges({ additions: uniques.concat(duplicates.map((item) => item.entry)), warnings, fileName });
+            return;
+          }
+          pendingSvgImportContext = { fileName, warnings, duplicates, additions: uniques };
+          svgImportDuplicateList.innerHTML = duplicates
+            .map(({ entry, existing }) => {
+              const shapeName = entry?.name || existing?.name || "Shape";
+              const importedType = entry?.type || "Polygon";
+              const existingType = existing?.type || "Polygon";
+              return `
+                <label class="svg-import-duplicate-item">
+                  <input type="checkbox" data-shape-name="${escapeHtml(existing?.name || "")}" checked />
+                  <div>
+                    <div class="svg-import-duplicate-name">${escapeHtml(shapeName)}</div>
+                    <div class="svg-import-duplicate-desc">既存: ${escapeHtml(existingType)} / インポート: ${escapeHtml(importedType)}</div>
+                  </div>
+                </label>
+              `;
+            })
+            .join("");
+          svgImportModal.classList.add("active");
+          svgImportModal.setAttribute("aria-hidden", "false");
+          setStatus(
+            `${fileName || "SVG"} のインポート: 同名の Shape が見つかりました。上書き対象を選択してください。`,
+            "warning"
+          );
+        }
+
+        function closeSvgImportModal() {
+          if (svgImportModal) {
+            svgImportModal.classList.remove("active");
+            svgImportModal.setAttribute("aria-hidden", "true");
+          }
+          if (svgImportDuplicateList) {
+            svgImportDuplicateList.innerHTML = "";
+          }
+          pendingSvgImportContext = null;
+        }
+
+        function applyPendingSvgImport() {
+          if (!pendingSvgImportContext) {
+            closeSvgImportModal();
+            return;
+          }
+          const { duplicates = [], additions = [], warnings = [], fileName = "" } = pendingSvgImportContext;
+          const overwriteNames = new Set(
+            Array.from(svgImportDuplicateList?.querySelectorAll("input[type='checkbox']") || [])
+              .filter((input) => input.checked)
+              .map((input) => input.dataset.shapeName || "")
+          );
+          const overwriteTargets = [];
+          const additionTargets = [...additions];
+          duplicates.forEach((item) => {
+            const existingName = item?.existing?.name || "";
+            if (existingName && overwriteNames.has(existingName)) {
+              overwriteTargets.push(item);
+            } else {
+              additionTargets.push(item.entry);
+            }
+          });
+          applySvgImportChanges({ additions: additionTargets, overwrites: overwriteTargets, warnings, fileName });
+          closeSvgImportModal();
+        }
+
+        function handleSvgImportResult(fileName, shapes, warnings) {
+          if (!Array.isArray(shapes) || !shapes.length) {
+            setStatus(
+              `${fileName} に取り込める Polygon / Rectangle / Circle が見つかりませんでした。`,
+              "warning"
+            );
+            return;
+          }
+          const { duplicates, uniques } = partitionSvgShapesByName(shapes);
+          if (duplicates.length) {
+            openSvgImportModal({ fileName, warnings, duplicates, uniques });
+            return;
+          }
+          applySvgImportChanges({ additions: shapes, warnings, fileName });
         }
 
         function parseXmlToFigure(xmlText) {
@@ -11732,26 +11883,7 @@ function parsePolygonTrace(doc) {
             reader.onload = () => {
               try {
                 const { shapes, warnings } = parseSvgToShapes(reader.result || "");
-                if (!shapes.length) {
-                  setStatus(
-                    `${file.name} に取り込める Polygon / Rectangle / Circle が見つかりませんでした。`,
-                    "warning"
-                  );
-                  return;
-                }
-                const importedCount = addSvgShapesToState(shapes);
-                renderTriOrbShapes();
-                renderTriOrbShapeCheckboxes();
-                renderFieldsets();
-                renderFigure();
-                if (warnings.length) {
-                  alert(`未対応の SVG 要素: ${warnings.join(", ")}`);
-                }
-                const warningSuffix = warnings.length ? `（未対応: ${warnings.join(", ")}）` : "";
-                setStatus(
-                  `${file.name} から ${importedCount} 件の Shape をインポートしました${warningSuffix}。`,
-                  warnings.length ? "warning" : "ok"
-                );
+                handleSvgImportResult(file.name, shapes, warnings);
               } catch (error) {
                 console.error(error);
                 setStatus(error.message || "SVG の読み込みに失敗しました。", "error");
@@ -11760,6 +11892,26 @@ function parsePolygonTrace(doc) {
               }
             };
             reader.readAsText(file, "utf-8");
+          });
+        }
+
+        if (svgImportApplyBtn) {
+          svgImportApplyBtn.addEventListener("click", applyPendingSvgImport);
+        }
+        if (svgImportCancelBtn) {
+          svgImportCancelBtn.addEventListener("click", () => {
+            closeSvgImportModal();
+            setStatus("SVG インポートをキャンセルしました。", "warning");
+          });
+        }
+        if (svgImportCloseBtn) {
+          svgImportCloseBtn.addEventListener("click", closeSvgImportModal);
+        }
+        if (svgImportModal) {
+          svgImportModal.addEventListener("click", (event) => {
+            if (event.target?.dataset?.action === "close-svg-import") {
+              closeSvgImportModal();
+            }
           });
         }
 

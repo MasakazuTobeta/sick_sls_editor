@@ -1185,6 +1185,32 @@
       gap: 0.6rem;
     }
 
+    .svg-import-duplicate-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .svg-import-duplicate-item {
+      display: flex;
+      gap: 0.6rem;
+      align-items: center;
+      padding: 0.65rem 0.75rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      background: #f8fafc;
+    }
+
+    .svg-import-duplicate-name {
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .svg-import-duplicate-desc {
+      color: #475569;
+      font-size: 0.95rem;
+    }
+
     .modal-footer {
       margin-top: 1rem;
       display: flex;
@@ -1796,6 +1822,25 @@
       <div class="modal-footer">
         <button type="button" class="inline-btn secondary" id="replicate-modal-cancel">Cancel</button>
         <button type="button" class="inline-btn" id="replicate-modal-apply">Apply</button>
+      </div>
+    </div>
+  </div>
+  <div id="svg-import-modal" class="modal" aria-hidden="true">
+    <div class="modal-backdrop" data-action="close-svg-import"></div>
+    <div class="modal-window" role="dialog" aria-modal="true">
+      <div class="modal-header">
+        <span class="modal-title">SVG Import</span>
+        <button type="button" class="inline-btn inline-danger shape-mini-btn" id="svg-import-close">
+          ×
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>同じ名前の Shape が既に存在します。上書きする項目にチェックを入れてください。</p>
+        <div class="modal-section svg-import-duplicate-list" id="svg-import-duplicate-list"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="inline-btn secondary" id="svg-import-cancel">Cancel</button>
+        <button type="button" class="inline-btn" id="svg-import-apply">Import</button>
       </div>
     </div>
   </div>
