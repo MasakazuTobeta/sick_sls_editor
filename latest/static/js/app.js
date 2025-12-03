@@ -294,6 +294,20 @@ document.addEventListener("DOMContentLoaded", () => {
         const replicateModalApply = document.getElementById("replicate-modal-apply");
         const replicateModalHeader = replicateModalWindow?.querySelector(".modal-header");
         const replicateModalBody = replicateModalWindow?.querySelector(".modal-body");
+        const bulkEditModalWindow = document.querySelector("#bulk-edit-modal .modal-window");
+        const bulkEditModalHeader = bulkEditModalWindow?.querySelector(".modal-header");
+        const bulkEditBtn = document.getElementById("btn-bulk-edit");
+        const bulkEditModal = document.getElementById("bulk-edit-modal");
+        const bulkEditModalClose = document.getElementById("bulk-edit-modal-close");
+        const bulkEditModalCancel = document.getElementById("bulk-edit-modal-cancel");
+        const bulkEditModalApply = document.getElementById("bulk-edit-modal-apply");
+        const bulkEditCaseToggles = document.getElementById("bulk-edit-case-toggles");
+        const bulkEditShapeToggles = document.getElementById("bulk-edit-shape-toggles");
+        const bulkStaticNumberInput = document.getElementById("bulk-static-number");
+        const bulkStaticValueSelect = document.getElementById("bulk-static-value");
+        const bulkShapeOutsetInput = document.getElementById("bulk-shape-outset");
+        const bulkShapeMoveXInput = document.getElementById("bulk-shape-move-x");
+        const bulkShapeMoveYInput = document.getElementById("bulk-shape-move-y");
         const svgImportModal = document.getElementById("svg-import-modal");
         const svgImportDuplicateList = document.getElementById("svg-import-duplicate-list");
         const svgImportApplyBtn = document.getElementById("svg-import-apply");
@@ -473,6 +487,12 @@ document.addEventListener("DOMContentLoaded", () => {
           speedRangeMaxStep: 0,
           includePreviousFields: false,
         };
+        const bulkEditState = {
+          selectedCases: new Set(),
+          selectedShapes: new Set(),
+          lastCaseIndex: null,
+          lastShapeIndex: null,
+        };
         let replicatePreviewState = null;
         const plotTraceCache = {
           baseFigure: { version: -1, traces: [] },
@@ -601,6 +621,7 @@ document.addEventListener("DOMContentLoaded", () => {
           const previewTraces = buildCreateShapePreviewTraces();
           const fieldModalPreviewTraces = buildFieldModalPreviewTraces();
           const replicatePreviewTraces = buildReplicatePreviewTraces();
+          const bulkEditPreviewTraces = buildBulkEditPreviewTraces();
           const layout = {
             ...(currentFigure.layout || {}),
             uirevision: `${baseFigureVersion}:${triOrbShapeTraceVersion}:${fieldsetTraceVersion}:${deviceOverlayVersion}`,
@@ -650,6 +671,9 @@ document.addEventListener("DOMContentLoaded", () => {
           }
           if (replicatePreviewTraces.length) {
             combinedTraces.push(...replicatePreviewTraces);
+          }
+          if (bulkEditPreviewTraces.length) {
+            combinedTraces.push(...bulkEditPreviewTraces);
           }
           Plotly.react(plotNode, combinedTraces, layout, figureConfig);
         }
@@ -803,6 +827,142 @@ document.addEventListener("DOMContentLoaded", () => {
           )}<extra></extra>`;
           previewTrace.meta = { ...(previewTrace.meta || {}), preview: true };
           return [previewTrace];
+        }
+
+        function cloneTriOrbShape(shape) {
+          return shape ? JSON.parse(JSON.stringify(shape)) : null;
+        }
+
+          function resolveBulkShapeTransform() {
+            const delta = parseNumeric(bulkShapeOutsetInput?.value, 0) || 0;
+            const moveX = parseNumeric(bulkShapeMoveXInput?.value, 0) || 0;
+            const moveY = parseNumeric(bulkShapeMoveYInput?.value, 0) || 0;
+            return {
+              delta,
+              offsetX: moveX,
+              offsetY: moveY,
+            };
+          }
+
+        function buildBulkShapePreviewTrace(shape, colorSet, label, options = {}) {
+          if (!shape) {
+            return null;
+          }
+          let trace = null;
+          switch (shape.type) {
+            case "Rectangle":
+              if (shape.rectangle) {
+                trace = buildRectangleTrace(
+                  shape.rectangle,
+                  colorSet,
+                  label,
+                  shape.fieldtype || "ProtectiveSafeBlanking",
+                  0,
+                  0,
+                  0
+                );
+              }
+              break;
+            case "Circle":
+              if (shape.circle) {
+                trace = buildCircleTrace(
+                  shape.circle,
+                  colorSet,
+                  label,
+                  shape.fieldtype || "ProtectiveSafeBlanking",
+                  0,
+                  0,
+                  0
+                );
+              }
+              break;
+            case "Polygon":
+            default:
+              if (shape.polygon) {
+                trace = buildPolygonTrace(
+                  shape.polygon,
+                  colorSet,
+                  label,
+                  shape.fieldtype || "ProtectiveSafeBlanking",
+                  0,
+                  0,
+                  0
+                );
+              }
+              break;
+          }
+          if (!trace) {
+            return null;
+          }
+          const lineWidth = Math.max((trace.line && trace.line.width) || 2, options.minLineWidth || 3);
+          trace.line = {
+            ...(trace.line || {}),
+            color: colorSet.stroke,
+            width: lineWidth,
+            dash: options.lineDash || "solid",
+          };
+          trace.fillcolor = colorSet.fill;
+          trace.name = label;
+          trace.showlegend = false;
+          trace.hovertemplate = `<b>${escapeHtml(label)}</b><extra></extra>`;
+          trace.meta = { ...(trace.meta || {}), bulkEditPreview: true };
+          return trace;
+        }
+
+        function buildBulkEditPreviewTraces() {
+          if (!bulkEditState.selectedShapes.size) {
+            return [];
+          }
+          syncBulkEditSelections();
+          const { delta, offsetX, offsetY } = resolveBulkShapeTransform();
+          const colorSets = {
+            selected: {
+              stroke: "rgba(14, 165, 233, 0.9)",
+              fill: withAlpha("#0ea5e9", 0.12),
+            },
+            preview: {
+              stroke: "rgba(239, 68, 68, 0.95)",
+              fill: withAlpha("#ef4444", 0.08),
+            },
+          };
+          const traces = [];
+          bulkEditState.selectedShapes.forEach((shapeIndex) => {
+            const shape = triorbShapes[shapeIndex];
+            if (!shape) {
+              return;
+            }
+            const labelBase = shape.name || `Shape ${shapeIndex + 1}`;
+            const selectedTrace = buildBulkShapePreviewTrace(
+              shape,
+              colorSets.selected,
+              `${labelBase} (選択中)`,
+              { lineDash: "dot" }
+            );
+            if (selectedTrace) {
+              traces.push(selectedTrace);
+            }
+            const previewShape = cloneTriOrbShape(shape);
+            let previewChanged = false;
+            if (delta !== 0) {
+              previewChanged = applyShapeInsetOutset(previewShape, delta) || previewChanged;
+            }
+            if (offsetX || offsetY) {
+              applyReplicationTransform(previewShape, { offsetX, offsetY });
+              previewChanged = true;
+            }
+            if (previewChanged) {
+              const previewTrace = buildBulkShapePreviewTrace(
+                previewShape,
+                colorSets.preview,
+                `${labelBase} (適用後プレビュー)`,
+                { minLineWidth: 4 }
+              );
+              if (previewTrace) {
+                traces.push(previewTrace);
+              }
+            }
+          });
+          return traces;
         }
 
 function buildPolygonTrace(polygon, colorSet, label, fieldType, fieldsetIndex, fieldIndex, polygonIndex) {
@@ -1951,6 +2111,78 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               }
             }
           }
+        }
+
+        function offsetPolygonPoints(points, delta) {
+          if (!Array.isArray(points) || !points.length || delta === 0) {
+            return null;
+          }
+          const numericPoints = points.map((point) => ({
+            x: parseNumeric(point.X, 0),
+            y: parseNumeric(point.Y, 0),
+          }));
+          const centroid = computePointCentroid(numericPoints);
+          if (!centroid) {
+            return null;
+          }
+          return numericPoints.map((point) => {
+            const deltaX = point.x - centroid.x;
+            const deltaY = point.y - centroid.y;
+            const adjustAxis = (component) => {
+              if (!Number.isFinite(component)) {
+                return 0;
+              }
+              const magnitude = Math.abs(component);
+              const nextMagnitude = Math.max(0, magnitude + delta);
+              const sign = component >= 0 ? 1 : -1;
+              return sign * nextMagnitude;
+            };
+            return {
+              X: formatReplicateNumber(centroid.x + adjustAxis(deltaX)),
+              Y: formatReplicateNumber(centroid.y + adjustAxis(deltaY)),
+            };
+          });
+        }
+
+        function applyShapeInsetOutset(shape, delta) {
+          if (!shape || delta === 0) {
+            return false;
+          }
+          if (shape.type === "Rectangle" && shape.rectangle) {
+            const width = parseNumeric(shape.rectangle.Width, NaN);
+            const height = parseNumeric(shape.rectangle.Height, NaN);
+            if (!Number.isFinite(width) || !Number.isFinite(height)) {
+              return false;
+            }
+            const originX = parseNumeric(shape.rectangle.OriginX, 0);
+            const originY = parseNumeric(shape.rectangle.OriginY, 0);
+            const centerX = originX + width / 2;
+            const centerY = originY - height / 2;
+            const nextWidth = Math.max(0, width + 2 * delta);
+            const nextHeight = Math.max(0, height + 2 * delta);
+            shape.rectangle.Width = formatReplicateNumber(nextWidth);
+            shape.rectangle.Height = formatReplicateNumber(nextHeight);
+            shape.rectangle.OriginX = formatReplicateNumber(centerX - nextWidth / 2);
+            shape.rectangle.OriginY = formatReplicateNumber(centerY + nextHeight / 2);
+            return true;
+          }
+          if (shape.type === "Circle" && shape.circle) {
+            const radius = parseNumeric(shape.circle.Radius, NaN);
+            if (!Number.isFinite(radius)) {
+              return false;
+            }
+            const nextRadius = Math.max(0, radius + delta);
+            shape.circle.Radius = formatReplicateNumber(nextRadius);
+            return true;
+          }
+          if (shape.type === "Polygon" && shape.polygon) {
+            const adjustedPoints = offsetPolygonPoints(shape.polygon.points || [], delta);
+            if (adjustedPoints) {
+              shape.polygon.points = adjustedPoints;
+              return true;
+            }
+          }
+          return false;
         }
 
         function duplicateShapeForReplication(shapeId, transform, context = {}) {
@@ -3940,6 +4172,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           if (!triorbShapesContainer) {
             return;
           }
+          syncBulkEditSelections();
           if (!triorbShapes.length) {
             triOrbShapeCardCache.clear();
             triOrbShapesListInitialized = false;
@@ -10059,6 +10292,7 @@ function parsePolygonTrace(doc) {
 
         function renderCasetableCases() {
           syncEvalCaseAssignments();
+          syncBulkEditSelections();
           if (casetableCaseCountLabel) {
             casetableCaseCountLabel.textContent = `${casetableCases.length} / ${casetableCasesLimit}`;
           }
@@ -10250,6 +10484,239 @@ function parsePolygonTrace(doc) {
               <span class="casetable-static-label">${escapeHtml(label)}</span>
               <div class="toggle-group">${buttons}</div>
             </div>`;
+        }
+
+        function syncBulkEditSelections() {
+          const maxCaseIndex = casetableCases.length - 1;
+          bulkEditState.selectedCases.forEach((caseIndex) => {
+            if (caseIndex < 0 || caseIndex > maxCaseIndex) {
+              bulkEditState.selectedCases.delete(caseIndex);
+            }
+          });
+          const maxShapeIndex = triorbShapes.length - 1;
+          bulkEditState.selectedShapes.forEach((shapeIndex) => {
+            if (shapeIndex < 0 || shapeIndex > maxShapeIndex) {
+              bulkEditState.selectedShapes.delete(shapeIndex);
+            }
+          });
+        }
+
+        function renderBulkEditCaseToggles() {
+          if (!bulkEditCaseToggles) {
+            return;
+          }
+          if (!casetableCases.length) {
+            bulkEditCaseToggles.innerHTML = '<p class="toggle-pill-empty">No cases available.</p>';
+            return;
+          }
+          bulkEditCaseToggles.innerHTML = casetableCases
+            .map((caseData, caseIndex) => {
+              const isActive = bulkEditState.selectedCases.has(caseIndex);
+              const name = caseData.attributes?.Name || buildCaseName(caseIndex);
+              return `
+                <button
+                  type="button"
+                  class="toggle-pill-btn${isActive ? " active" : ""}"
+                  data-bulk-toggle="case"
+                  data-index="${caseIndex}"
+                  aria-pressed="${isActive}"
+                >
+                  ${escapeHtml(name)}
+                </button>`;
+            })
+            .join("");
+        }
+
+        function renderBulkEditShapeToggles() {
+          if (!bulkEditShapeToggles) {
+            return;
+          }
+          if (!triorbShapes.length) {
+            bulkEditShapeToggles.innerHTML = '<p class="toggle-pill-empty">No shapes available.</p>';
+            return;
+          }
+          bulkEditShapeToggles.innerHTML = triorbShapes
+            .map((shape, shapeIndex) => {
+              const isActive = bulkEditState.selectedShapes.has(shapeIndex);
+              const name = shape.name || shape.id || `Shape ${shapeIndex + 1}`;
+              return `
+                <button
+                  type="button"
+                  class="toggle-pill-btn${isActive ? " active" : ""}"
+                  data-bulk-toggle="shape"
+                  data-index="${shapeIndex}"
+                  aria-pressed="${isActive}"
+                >
+                  ${shapeIndex + 1}. ${escapeHtml(name)}
+                </button>`;
+            })
+            .join("");
+        }
+
+          function resetBulkEditForm() {
+            bulkEditState.selectedCases.clear();
+            bulkEditState.selectedShapes.clear();
+            bulkEditState.lastCaseIndex = null;
+            bulkEditState.lastShapeIndex = null;
+            if (bulkStaticNumberInput) {
+              bulkStaticNumberInput.value = "1";
+            }
+            if (bulkStaticValueSelect) {
+              bulkStaticValueSelect.value = "DontCare";
+            }
+            [
+              bulkShapeOutsetInput,
+              bulkShapeMoveXInput,
+              bulkShapeMoveYInput,
+            ].forEach((input) => {
+              if (input) {
+                input.value = "0";
+            }
+          });
+          renderBulkEditCaseToggles();
+          renderBulkEditShapeToggles();
+          renderFigure();
+        }
+
+        function handleBulkToggleClick(event) {
+          const button = event.target.closest("[data-bulk-toggle]");
+          if (!button) {
+            return;
+          }
+          const targetType = button.dataset.bulkToggle;
+          const index = Number(button.dataset.index);
+          if (!Number.isInteger(index)) {
+            return;
+          }
+          const isCase = targetType === "case";
+          const maxIndex = isCase ? casetableCases.length - 1 : triorbShapes.length - 1;
+          if (index < 0 || index > maxIndex) {
+            return;
+          }
+          const selection = isCase ? bulkEditState.selectedCases : bulkEditState.selectedShapes;
+          const lastKey = isCase ? "lastCaseIndex" : "lastShapeIndex";
+          const lastIndex = bulkEditState[lastKey];
+          if (event.shiftKey && Number.isInteger(lastIndex)) {
+            const start = Math.max(0, Math.min(lastIndex, index));
+            const end = Math.min(maxIndex, Math.max(lastIndex, index));
+            for (let cursor = start; cursor <= end; cursor += 1) {
+              selection.add(cursor);
+            }
+          } else if (selection.has(index)) {
+            selection.delete(index);
+          } else {
+            selection.add(index);
+          }
+          bulkEditState[lastKey] = index;
+          if (isCase) {
+            renderBulkEditCaseToggles();
+          } else {
+            renderBulkEditShapeToggles();
+          }
+          renderFigure();
+        }
+
+        function applyBulkCaseStaticInputs(staticIndex, staticValue) {
+          let updated = 0;
+          bulkEditState.selectedCases.forEach((caseIndex) => {
+            const caseData = casetableCases[caseIndex];
+            if (!caseData) {
+              return;
+            }
+            caseData.staticInputs = normalizeStaticInputs(caseData.staticInputs);
+            updateStaticInputValue(caseIndex, staticIndex, staticValue);
+            updated += 1;
+          });
+          return updated;
+        }
+
+        function applyBulkShapeAdjustments(delta, offsetX, offsetY) {
+          let changedCount = 0;
+          bulkEditState.selectedShapes.forEach((shapeIndex) => {
+            const shape = triorbShapes[shapeIndex];
+            if (!shape) {
+              return;
+            }
+            let changed = false;
+            if (delta !== 0) {
+              changed = applyShapeInsetOutset(shape, delta) || changed;
+            }
+            if (offsetX || offsetY) {
+              applyReplicationTransform(shape, { offsetX, offsetY });
+              changed = true;
+            }
+            if (changed) {
+              changedCount += 1;
+            }
+          });
+          if (changedCount) {
+            invalidateTriOrbShapeCaches();
+            renderTriOrbShapes();
+            renderTriOrbShapeCheckboxes();
+            renderFieldsets();
+            renderFigure();
+          }
+          return changedCount;
+        }
+
+        function applyBulkEditChanges() {
+          syncBulkEditSelections();
+          let staticNumber = Math.round(parseNumeric(bulkStaticNumberInput?.value, 1) || 1);
+          staticNumber = Math.min(casetableConfigurationStaticInputsCount, Math.max(1, staticNumber));
+          if (bulkStaticNumberInput) {
+            bulkStaticNumberInput.value = String(staticNumber);
+          }
+          const staticValue = bulkStaticValueSelect?.value || "DontCare";
+          const { delta, offsetX: moveX, offsetY: moveY } = resolveBulkShapeTransform();
+          const updatedCases = applyBulkCaseStaticInputs(staticNumber - 1, staticValue);
+          const updatedShapes = applyBulkShapeAdjustments(delta, moveX, moveY);
+          if (!updatedCases && !updatedShapes) {
+            setStatus("一括編集の対象が選択されていません。", "warning");
+            return;
+          }
+          if (updatedCases) {
+            renderCasetableCases();
+          }
+          const messages = [];
+          if (updatedCases) {
+            messages.push(`Cases: ${updatedCases} 件更新`);
+          }
+          if (updatedShapes) {
+            messages.push(`Shapes: ${updatedShapes} 件更新`);
+          }
+          setStatus(messages.join(" / "), "ok");
+          closeBulkEditModal();
+        }
+
+        function resetBulkEditModalTransform() {
+          bulkEditModalOffsetX = 0;
+          bulkEditModalOffsetY = 0;
+          bulkEditModalLastDx = 0;
+          bulkEditModalLastDy = 0;
+          if (bulkEditModalWindow) {
+            bulkEditModalWindow.style.transform = "translate(0px, 0px)";
+            bulkEditModalWindow.style.width = "";
+            bulkEditModalWindow.style.height = "";
+          }
+        }
+
+        function openBulkEditModal() {
+          if (!bulkEditModal) {
+            return;
+          }
+          resetBulkEditForm();
+          resetBulkEditModalTransform();
+          bulkEditModal.classList.add("active");
+          bulkEditModal.setAttribute("aria-hidden", "false");
+        }
+
+        function closeBulkEditModal() {
+          if (!bulkEditModal) {
+            return;
+          }
+          resetBulkEditForm();
+          bulkEditModal.classList.remove("active");
+          bulkEditModal.setAttribute("aria-hidden", "true");
         }
 
         function renderFieldsetCheckboxes() {
@@ -11008,6 +11475,16 @@ function parsePolygonTrace(doc) {
         let replicateModalLastDy = 0;
         let isReplicateModalDragging = false;
         let isReplicateModalResizing = false;
+        let bulkEditModalOffsetX = 0;
+        let bulkEditModalOffsetY = 0;
+        let bulkEditModalDragStartX = 0;
+        let bulkEditModalDragStartY = 0;
+        let bulkEditModalInitialWidth = 0;
+        let bulkEditModalInitialHeight = 0;
+        let bulkEditModalLastDx = 0;
+        let bulkEditModalLastDy = 0;
+        let isBulkEditModalDragging = false;
+        let isBulkEditModalResizing = false;
         function ensureCreateShapePosition() {
           if (createShapeModalWindow) {
             createShapeModalWindow.style.transform = `translate(${createShapeModalOffsetX}px, ${createShapeModalOffsetY}px)`;
@@ -11432,6 +11909,9 @@ function parsePolygonTrace(doc) {
         if (replicateFieldBtn) {
           replicateFieldBtn.addEventListener("click", openReplicateModal);
         }
+        if (bulkEditBtn) {
+          bulkEditBtn.addEventListener("click", openBulkEditModal);
+        }
         if (createShapeTypeSelect) {
           createShapeTypeSelect.addEventListener("change", () => {
             updateCreateShapeDimensionVisibility();
@@ -11545,6 +12025,35 @@ function parsePolygonTrace(doc) {
         if (replicateModalApply) {
           replicateModalApply.addEventListener("click", handleReplicateApply);
         }
+        if (bulkEditModal) {
+          bulkEditModal.addEventListener("click", (event) => {
+            if (event.target?.dataset?.action === "close-bulk-edit") {
+              closeBulkEditModal();
+            }
+          });
+        }
+        if (bulkEditModalClose) {
+          bulkEditModalClose.addEventListener("click", closeBulkEditModal);
+        }
+        if (bulkEditModalCancel) {
+          bulkEditModalCancel.addEventListener("click", closeBulkEditModal);
+        }
+        if (bulkEditModalApply) {
+          bulkEditModalApply.addEventListener("click", applyBulkEditChanges);
+        }
+        if (bulkEditCaseToggles) {
+          bulkEditCaseToggles.addEventListener("click", handleBulkToggleClick);
+        }
+        if (bulkEditShapeToggles) {
+          bulkEditShapeToggles.addEventListener("click", handleBulkToggleClick);
+        }
+          [bulkShapeOutsetInput, bulkShapeMoveXInput, bulkShapeMoveYInput].forEach((input) => {
+            if (input) {
+              input.addEventListener("input", () => {
+                renderFigure();
+              });
+          }
+        });
         createFieldShapeLists.forEach((listObj) => {
           Object.values(listObj).forEach((list) => {
             if (list) {
@@ -11808,6 +12317,70 @@ function parsePolygonTrace(doc) {
             replicateModalWindow.style.transition = "";
           }
         }
+
+        function startBulkEditModalDrag(event) {
+          if (!bulkEditModalWindow) {
+            return;
+          }
+          isBulkEditModalDragging = true;
+          bulkEditModalDragStartX = event.clientX;
+          bulkEditModalDragStartY = event.clientY;
+          bulkEditModalWindow.style.transition = "none";
+        }
+
+        function updateBulkEditModalDrag(event) {
+          if (!isBulkEditModalDragging || !bulkEditModalWindow) {
+            return;
+          }
+          const dx = event.clientX - bulkEditModalDragStartX;
+          const dy = event.clientY - bulkEditModalDragStartY;
+          bulkEditModalWindow.style.transform = `translate(${bulkEditModalOffsetX + dx}px, ${bulkEditModalOffsetY + dy}px)`;
+          bulkEditModalLastDx = dx;
+          bulkEditModalLastDy = dy;
+        }
+
+        function endBulkEditModalDrag() {
+          if (!isBulkEditModalDragging) {
+            return;
+          }
+          bulkEditModalOffsetX += bulkEditModalLastDx;
+          bulkEditModalOffsetY += bulkEditModalLastDy;
+          isBulkEditModalDragging = false;
+          if (bulkEditModalWindow) {
+            bulkEditModalWindow.style.transition = "";
+          }
+        }
+
+        function startBulkEditModalResize(event) {
+          if (!bulkEditModalWindow) {
+            return;
+          }
+          isBulkEditModalResizing = true;
+          bulkEditModalDragStartX = event.clientX;
+          bulkEditModalDragStartY = event.clientY;
+          bulkEditModalInitialWidth = bulkEditModalWindow.offsetWidth;
+          bulkEditModalInitialHeight = bulkEditModalWindow.offsetHeight;
+          bulkEditModalWindow.style.transition = "none";
+        }
+
+        function updateBulkEditModalResize(event) {
+          if (!isBulkEditModalResizing || !bulkEditModalWindow) {
+            return;
+          }
+          const dx = event.clientX - bulkEditModalDragStartX;
+          const dy = event.clientY - bulkEditModalDragStartY;
+          const width = Math.max(360, bulkEditModalInitialWidth + dx);
+          const height = Math.max(320, bulkEditModalInitialHeight + dy);
+          bulkEditModalWindow.style.width = `${width}px`;
+          bulkEditModalWindow.style.height = `${height}px`;
+        }
+
+        function endBulkEditModalResize() {
+          isBulkEditModalResizing = false;
+          if (bulkEditModalWindow) {
+            bulkEditModalWindow.style.transition = "";
+          }
+        }
         if (createShapeModalHeader) {
           createShapeModalHeader.addEventListener("pointerdown", startCreateShapeDrag);
         }
@@ -11849,6 +12422,21 @@ function parsePolygonTrace(doc) {
             startReplicateModalResize(event);
           });
         }
+        if (bulkEditModalHeader) {
+          bulkEditModalHeader.addEventListener("pointerdown", (event) => {
+            event.preventDefault();
+            startBulkEditModalDrag(event);
+          });
+        }
+        if (bulkEditModalWindow) {
+          const bulkEditResizeHandle = document.createElement("div");
+          bulkEditResizeHandle.className = "modal-resize-handle";
+          bulkEditModalWindow.appendChild(bulkEditResizeHandle);
+          bulkEditResizeHandle.addEventListener("pointerdown", (event) => {
+            event.preventDefault();
+            startBulkEditModalResize(event);
+          });
+        }
         document.addEventListener("pointermove", (event) => {
           updateCreateShapeDrag(event);
           updateCreateShapeResize(event);
@@ -11856,6 +12444,8 @@ function parsePolygonTrace(doc) {
           updateCreateFieldModalResize(event);
           updateReplicateModalDrag(event);
           updateReplicateModalResize(event);
+          updateBulkEditModalDrag(event);
+          updateBulkEditModalResize(event);
         });
         document.addEventListener("pointerup", () => {
           endCreateShapeDrag();
@@ -11864,6 +12454,8 @@ function parsePolygonTrace(doc) {
           endCreateFieldModalResize();
           endReplicateModalDrag();
           endReplicateModalResize();
+          endBulkEditModalDrag();
+          endBulkEditModalResize();
         });
 
         if (toggleLegendBtn) {
