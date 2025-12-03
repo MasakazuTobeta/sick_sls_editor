@@ -294,6 +294,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const replicateModalApply = document.getElementById("replicate-modal-apply");
         const replicateModalHeader = replicateModalWindow?.querySelector(".modal-header");
         const replicateModalBody = replicateModalWindow?.querySelector(".modal-body");
+        const bulkEditModalWindow = document.querySelector("#bulk-edit-modal .modal-window");
+        const bulkEditModalHeader = bulkEditModalWindow?.querySelector(".modal-header");
         const bulkEditBtn = document.getElementById("btn-bulk-edit");
         const bulkEditModal = document.getElementById("bulk-edit-modal");
         const bulkEditModalClose = document.getElementById("bulk-edit-modal-close");
@@ -10550,11 +10552,24 @@ function parsePolygonTrace(doc) {
           closeBulkEditModal();
         }
 
+        function resetBulkEditModalTransform() {
+          bulkEditModalOffsetX = 0;
+          bulkEditModalOffsetY = 0;
+          bulkEditModalLastDx = 0;
+          bulkEditModalLastDy = 0;
+          if (bulkEditModalWindow) {
+            bulkEditModalWindow.style.transform = "translate(0px, 0px)";
+            bulkEditModalWindow.style.width = "";
+            bulkEditModalWindow.style.height = "";
+          }
+        }
+
         function openBulkEditModal() {
           if (!bulkEditModal) {
             return;
           }
           resetBulkEditForm();
+          resetBulkEditModalTransform();
           bulkEditModal.classList.add("active");
           bulkEditModal.setAttribute("aria-hidden", "false");
         }
@@ -11323,6 +11338,16 @@ function parsePolygonTrace(doc) {
         let replicateModalLastDy = 0;
         let isReplicateModalDragging = false;
         let isReplicateModalResizing = false;
+        let bulkEditModalOffsetX = 0;
+        let bulkEditModalOffsetY = 0;
+        let bulkEditModalDragStartX = 0;
+        let bulkEditModalDragStartY = 0;
+        let bulkEditModalInitialWidth = 0;
+        let bulkEditModalInitialHeight = 0;
+        let bulkEditModalLastDx = 0;
+        let bulkEditModalLastDy = 0;
+        let isBulkEditModalDragging = false;
+        let isBulkEditModalResizing = false;
         function ensureCreateShapePosition() {
           if (createShapeModalWindow) {
             createShapeModalWindow.style.transform = `translate(${createShapeModalOffsetX}px, ${createShapeModalOffsetY}px)`;
@@ -12148,6 +12173,70 @@ function parsePolygonTrace(doc) {
             replicateModalWindow.style.transition = "";
           }
         }
+
+        function startBulkEditModalDrag(event) {
+          if (!bulkEditModalWindow) {
+            return;
+          }
+          isBulkEditModalDragging = true;
+          bulkEditModalDragStartX = event.clientX;
+          bulkEditModalDragStartY = event.clientY;
+          bulkEditModalWindow.style.transition = "none";
+        }
+
+        function updateBulkEditModalDrag(event) {
+          if (!isBulkEditModalDragging || !bulkEditModalWindow) {
+            return;
+          }
+          const dx = event.clientX - bulkEditModalDragStartX;
+          const dy = event.clientY - bulkEditModalDragStartY;
+          bulkEditModalWindow.style.transform = `translate(${bulkEditModalOffsetX + dx}px, ${bulkEditModalOffsetY + dy}px)`;
+          bulkEditModalLastDx = dx;
+          bulkEditModalLastDy = dy;
+        }
+
+        function endBulkEditModalDrag() {
+          if (!isBulkEditModalDragging) {
+            return;
+          }
+          bulkEditModalOffsetX += bulkEditModalLastDx;
+          bulkEditModalOffsetY += bulkEditModalLastDy;
+          isBulkEditModalDragging = false;
+          if (bulkEditModalWindow) {
+            bulkEditModalWindow.style.transition = "";
+          }
+        }
+
+        function startBulkEditModalResize(event) {
+          if (!bulkEditModalWindow) {
+            return;
+          }
+          isBulkEditModalResizing = true;
+          bulkEditModalDragStartX = event.clientX;
+          bulkEditModalDragStartY = event.clientY;
+          bulkEditModalInitialWidth = bulkEditModalWindow.offsetWidth;
+          bulkEditModalInitialHeight = bulkEditModalWindow.offsetHeight;
+          bulkEditModalWindow.style.transition = "none";
+        }
+
+        function updateBulkEditModalResize(event) {
+          if (!isBulkEditModalResizing || !bulkEditModalWindow) {
+            return;
+          }
+          const dx = event.clientX - bulkEditModalDragStartX;
+          const dy = event.clientY - bulkEditModalDragStartY;
+          const width = Math.max(360, bulkEditModalInitialWidth + dx);
+          const height = Math.max(320, bulkEditModalInitialHeight + dy);
+          bulkEditModalWindow.style.width = `${width}px`;
+          bulkEditModalWindow.style.height = `${height}px`;
+        }
+
+        function endBulkEditModalResize() {
+          isBulkEditModalResizing = false;
+          if (bulkEditModalWindow) {
+            bulkEditModalWindow.style.transition = "";
+          }
+        }
         if (createShapeModalHeader) {
           createShapeModalHeader.addEventListener("pointerdown", startCreateShapeDrag);
         }
@@ -12189,6 +12278,21 @@ function parsePolygonTrace(doc) {
             startReplicateModalResize(event);
           });
         }
+        if (bulkEditModalHeader) {
+          bulkEditModalHeader.addEventListener("pointerdown", (event) => {
+            event.preventDefault();
+            startBulkEditModalDrag(event);
+          });
+        }
+        if (bulkEditModalWindow) {
+          const bulkEditResizeHandle = document.createElement("div");
+          bulkEditResizeHandle.className = "modal-resize-handle";
+          bulkEditModalWindow.appendChild(bulkEditResizeHandle);
+          bulkEditResizeHandle.addEventListener("pointerdown", (event) => {
+            event.preventDefault();
+            startBulkEditModalResize(event);
+          });
+        }
         document.addEventListener("pointermove", (event) => {
           updateCreateShapeDrag(event);
           updateCreateShapeResize(event);
@@ -12196,6 +12300,8 @@ function parsePolygonTrace(doc) {
           updateCreateFieldModalResize(event);
           updateReplicateModalDrag(event);
           updateReplicateModalResize(event);
+          updateBulkEditModalDrag(event);
+          updateBulkEditModalResize(event);
         });
         document.addEventListener("pointerup", () => {
           endCreateShapeDrag();
@@ -12204,6 +12310,8 @@ function parsePolygonTrace(doc) {
           endCreateFieldModalResize();
           endReplicateModalDrag();
           endReplicateModalResize();
+          endBulkEditModalDrag();
+          endBulkEditModalResize();
         });
 
         if (toggleLegendBtn) {
