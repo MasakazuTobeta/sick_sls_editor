@@ -53,7 +53,7 @@ def test_shape_added_to_legacy_export_is_saved(flask_server):
             page.wait_for_selector("#create-shape-modal[aria-hidden='false']")
             page.fill("#create-shape-name", "Playwright Polygon")
             page.fill("#create-shape-points", "(0,0),(100,0),(0,50)")
-            page.get_by_role("button", name="Min10").click()
+            page.locator("#create-shape-fieldset-list").get_by_role("button", name="Min10").click()
             page.click("#create-shape-modal-save")
 
             xml_text = _capture_sick_xml(page)
