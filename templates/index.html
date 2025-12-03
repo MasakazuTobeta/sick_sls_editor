@@ -1152,10 +1152,13 @@
       background: #fff;
       border-radius: 12px;
       width: min(480px, 90vw);
+      min-height: 50vh;
       max-height: 85vh;
       overflow-y: auto;
       padding: 1rem;
       box-shadow: 0 10px 40px rgba(15, 23, 42, 0.35);
+      display: flex;
+      flex-direction: column;
     }
 
     #create-shape-modal #create-shape-modal-delete {
@@ -1183,6 +1186,8 @@
       display: flex;
       flex-direction: column;
       gap: 0.6rem;
+      flex: 1 1 auto;
+      min-height: 0;
     }
 
     .svg-import-duplicate-list {
@@ -1549,6 +1554,61 @@
       font-size: 0.9rem;
     }
 
+    .bulk-edit-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.5rem;
+      align-items: flex-end;
+      flex-shrink: 0;
+    }
+
+    .bulk-edit-section {
+      border: 1px solid #e2e8f0;
+      background: #f8fafc;
+      border-radius: 10px;
+      padding: 0.85rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      flex: 1 1 0;
+      min-height: 0;
+    }
+
+    .bulk-edit-section h4 {
+      margin: 0;
+      font-size: 1rem;
+      color: #0f172a;
+    }
+
+    .bulk-edit-description {
+      margin: 0;
+      color: #475569;
+      font-size: 0.9rem;
+    }
+
+    .bulk-toggle-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      flex: 1 1 0;
+      min-height: 0;
+      overflow-y: auto;
+    }
+
+    .bulk-edit-modal-body {
+      display: flex;
+      flex-direction: column;
+      gap: 0.9rem;
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+
+    .bulk-edit-note {
+      margin: 0;
+      color: #64748b;
+      font-size: 0.9rem;
+    }
+
     .preview-note {
       font-size: 0.85rem;
       color: #c53030;
@@ -1740,6 +1800,63 @@
       </div>
     </div>
   </div>
+  <div id="bulk-edit-modal" class="modal" aria-hidden="true">
+    <div class="modal-backdrop" data-action="close-bulk-edit"></div>
+    <div class="modal-window" role="dialog" aria-modal="true">
+      <div class="modal-header">
+        <span class="modal-title">Bulk Edit</span>
+        <button type="button" class="inline-btn inline-danger shape-mini-btn" id="bulk-edit-modal-close">
+          ×
+        </button>
+      </div>
+      <div class="modal-body bulk-edit-modal-body">
+        <div class="bulk-edit-section">
+          <h4>Cases</h4>
+          <p class="bulk-edit-description">StaticInput をまとめて更新します。</p>
+          <div class="bulk-toggle-grid" id="bulk-edit-case-toggles"></div>
+          <div class="bulk-edit-grid">
+            <label>
+              StaticInput No.
+              <input type="number" id="bulk-static-number" min="1" max="8" step="1" value="1" />
+            </label>
+            <label>
+              Value
+              <select id="bulk-static-value">
+                <option value="DontCare">DontCare</option>
+                <option value="Low">Low</option>
+                <option value="High">High</option>
+              </select>
+            </label>
+          </div>
+          <p class="bulk-edit-note">Shift + クリックで範囲選択をまとめて ON にします。</p>
+        </div>
+        <div class="bulk-edit-section">
+          <h4>Shapes</h4>
+          <p class="bulk-edit-description">位置とサイズをまとめて更新します。</p>
+          <div class="bulk-toggle-grid" id="bulk-edit-shape-toggles"></div>
+          <div class="bulk-edit-grid">
+            <label>
+              Outset / Inset (mm)
+              <input type="number" id="bulk-shape-outset" step="1" value="0" />
+            </label>
+            <label>
+              Move X (mm)
+              <input type="number" id="bulk-shape-move-x" step="1" value="0" />
+            </label>
+            <label>
+              Move Y (mm)
+              <input type="number" id="bulk-shape-move-y" step="1" value="0" />
+            </label>
+          </div>
+          <p class="bulk-edit-note">正の値でOutset、負の値でInsetとして選択した Shape を個別に拡張・縮小します。</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="inline-btn secondary" id="bulk-edit-modal-cancel">Cancel</button>
+        <button type="button" class="inline-btn" id="bulk-edit-modal-apply">Apply</button>
+      </div>
+    </div>
+  </div>
   <div id="replicate-modal" class="modal" aria-hidden="true">
     <div class="modal-backdrop" data-action="close-replicate-modal"></div>
     <div class="modal-window replicate-modal-window" role="dialog" aria-modal="true" data-replicate-target="fieldset">
@@ -1886,14 +2003,15 @@
           <button id="btn-toggle-legend" type="button" class="legend-toggle-btn">Hide Legend</button>
         </div>
       </div>
-      <div class="plot-wrapper">
-        <div id="plot"></div>
-        <div class="plot-overlay-controls">
-          <button id="btn-add-shape-overlay" type="button">+ Shape</button>
-          <button id="btn-add-field-overlay" type="button">+ Field</button>
-          <button id="btn-replicate-field" type="button">Replicate</button>
+        <div class="plot-wrapper">
+          <div id="plot"></div>
+          <div class="plot-overlay-controls">
+            <button id="btn-add-shape-overlay" type="button">+ Shape</button>
+            <button id="btn-add-field-overlay" type="button">+ Field</button>
+            <button id="btn-replicate-field" type="button">Replicate</button>
+            <button id="btn-bulk-edit" type="button">Bulk Edit</button>
+          </div>
         </div>
-      </div>
       <div class="case-filter">
         <div class="fieldset-filter-controls">
           <button type="button" class="inline-btn" id="btn-case-check-all">Show All Cases</button>
