@@ -930,7 +930,7 @@ document.addEventListener("DOMContentLoaded", () => {
           const traces = [];
           bulkEditState.selectedShapes.forEach((shapeIndex) => {
             const shape = triorbShapes[shapeIndex];
-            if (!shape || shape.visible === false) {
+            if (!shape) {
               return;
             }
             const labelBase = shape.name || `Shape ${shapeIndex + 1}`;
