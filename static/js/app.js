@@ -6232,6 +6232,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           includeUserFieldIds = true,
           deviceIndexStrategy = "zero",
         } = {}) {
+          normalizeScanPlaneDeviceIndexes(deviceIndexStrategy);
           // TriOrb Shapes やフィールド参照は UI 操作で逐次変化するため、
           // 保存直前にレジストリを再構築して ID → Shape の引き当て漏れを防ぐ。
           rebuildTriOrbShapeRegistry();
@@ -6271,6 +6272,23 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             "</SdImportExport>",
           ];
           return lines;
+        }
+
+        function normalizeScanPlaneDeviceIndexes(strategy = "zero") {
+          scanPlanes.forEach((plane) => {
+            (plane.devices || []).forEach((device, deviceIndex) => {
+              if (!device || typeof device !== "object") {
+                return;
+              }
+              const attrs = device.attributes || {};
+              if (strategy === "sequential") {
+                attrs.Index = String(deviceIndex);
+              } else if (strategy === "zero") {
+                attrs.Index = "0";
+              }
+              device.attributes = attrs;
+            });
+          });
         }
 
         function buildLegacyXml() {
