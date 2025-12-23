@@ -12624,6 +12624,10 @@ function parsePolygonTrace(doc) {
         setupLayoutObservers();
         renderFigure();
 
+        window.__triorbTestApi = {
+          buildTriOrbXml: () => buildTriOrbXml(),
+        };
+
         function setupLayoutObservers() {
           if (typeof ResizeObserver === "undefined") {
             return;
