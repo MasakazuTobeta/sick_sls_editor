@@ -38,6 +38,11 @@ XML 生成・読み込み時には `<SdImportExport xmlns:xsd="http://www.w3.org
 
 詳細な操作手順は [Manual.md](Manual.md) の利用マニュアルにまとめています。初期設定から SVG 取り込み、Fieldset 作成、複製、保存までの流れを参照してください。
 
+## Fusion 360 から SVG を書き出す TypeScript サンプル
+- `tools/fusion360_svg_export.ts` に、Sketch を SVG へエクスポートする Fusion 360 アドイン（TypeScript 版）の最小実装を追加しました。
+- Scripts/Add-Ins 配下にコピーし、`tsc --target ES5 --module commonjs tools/fusion360_svg_export.ts --outDir ./dist` などでコンパイルした JS を配置して実行してください。
+- コマンド実行後に Sketch を 1 件選び、出力先フォルダーとファイル名を指定すると SVG を保存できます。SICK SLS Editor 側の SVG インポートと同じワークフローで利用できます。
+
 ## フロントエンド構成
 - Flask 側から渡される Plotly 図・TriOrb・Casetable 等の初期データは `templates/index.html` で `window.appBootstrapData` にまとめ、`static/js/app.js` から参照します。
 - `static/js/app.js` は UI 全体のイベントと状態管理を担うエントリーポイントで、機能別に `static/js/modules/` 以下のモジュールを読み込みます。
