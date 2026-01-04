@@ -42,6 +42,7 @@ XML 生成・読み込み時には `<SdImportExport xmlns:xsd="http://www.w3.org
 - `tools/fusion360_svg_export.ts` に、Sketch を SVG へエクスポートする Fusion 360 アドイン（TypeScript 版）の最小実装を追加しました。
 - Scripts/Add-Ins 配下にコピーし、`tsc --target ES5 --module commonjs tools/fusion360_svg_export.ts --outDir ./dist` などでコンパイルした JS を配置して実行してください。
 - コマンド実行後に Sketch を 1 件選び、出力先フォルダーとファイル名を指定すると SVG を保存できます。SICK SLS Editor 側の SVG インポートと同じワークフローで利用できます。
+- ポリゴンの切れ目（パス分割）は Fusion 360 標準の SVG Export がスケッチ内のクローズドプロファイル単位で自動分割します。エッジごとに分けたい場合はスケッチを複数の独立したプロファイルに描き分けてください。
 
 ## フロントエンド構成
 - Flask 側から渡される Plotly 図・TriOrb・Casetable 等の初期データは `templates/index.html` で `window.appBootstrapData` にまとめ、`static/js/app.js` から参照します。

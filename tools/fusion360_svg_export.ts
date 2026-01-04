@@ -106,6 +106,10 @@ function exportSketch(args: any) {
   options.isSingleLayer = Boolean(singleLayerInput.value);
   options.isFitToPage = Boolean(fitToPageInput.value);
   options.isViewScaled = true;
+  // Polygon の切れ目（パス分割）はスケッチ内のクローズドプロファイルごとに
+  // Fusion 標準の SVG Export が自動で区切る。個別の頂点を分割する処理は
+  // 行っていないため、エッジを明示的に分けたい場合はスケッチ側で輪郭を
+  // それぞれ独立したプロファイルとして作図する。
 
   const succeeded = exportManager.execute(options);
   if (succeeded) {
