@@ -3481,13 +3481,16 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           replicateCasePrefixInput.placeholder = resolveReplicatePrefixPlaceholderLabel();
         }
 
-        function updateReplicateSineGainAvailability() {
+        function updateReplicateSineGainAvailability({ syncPreview = false } = {}) {
           const enabled = Boolean(replicatePreserveOrientationInput?.checked);
           [replicateWidthSineGainInput, replicateHeightSineGainInput].forEach((input) => {
             if (input) {
               input.disabled = !enabled;
             }
           });
+          if (syncPreview) {
+            updateReplicatePreview();
+          }
         }
 
         function populateReplicateFieldsetOptions(preferredIndex = 0) {
@@ -12390,6 +12393,11 @@ function parsePolygonTrace(doc) {
             });
           }
         });
+        [replicateWidthSineGainInput, replicateHeightSineGainInput].forEach((input) => {
+          if (input) {
+            input.addEventListener("change", updateReplicatePreview);
+          }
+        });
         if (replicateTargetToggle) {
           replicateTargetToggle.addEventListener("click", (event) => {
             const button = event.target.closest("[data-replicate-target]");
@@ -12414,8 +12422,7 @@ function parsePolygonTrace(doc) {
         }
         if (replicatePreserveOrientationInput) {
           replicatePreserveOrientationInput.addEventListener("change", () => {
-            updateReplicateSineGainAvailability();
-            updateReplicatePreview();
+            updateReplicateSineGainAvailability({ syncPreview: true });
           });
         }
         if (replicateStaticInputsAutoInput) {
