@@ -39,8 +39,8 @@ XML 生成・読み込み時には `<SdImportExport xmlns:xsd="http://www.w3.org
 詳細な操作手順は [Manual.md](Manual.md) の利用マニュアルにまとめています。初期設定から SVG 取り込み、Fieldset 作成、複製、保存までの流れを参照してください。
 
 ## Fusion 360 から SVG を書き出す TypeScript サンプル
-- `tools/fusion360_svg_export.ts` に、Sketch を SVG へエクスポートする Fusion 360 アドイン（TypeScript 版）の最小実装を追加しました。
-- Scripts/Add-Ins 配下にコピーし、`tsc --target ES5 --module commonjs tools/fusion360_svg_export.ts --outDir ./dist` などでコンパイルした JS を配置して実行してください。アドイン用マニフェストは `tools/.manifest` を同じフォルダーに置いてください。
+- `tools/fusion360_svg_export/fusion360_svg_export.ts` に、Sketch を SVG へエクスポートする Fusion 360 アドイン（TypeScript 版）の最小実装を追加しました。
+- Scripts/Add-Ins 配下に `fusion360_svg_export` フォルダーごとコピーし、`tsc --target ES5 --module commonjs tools/fusion360_svg_export/fusion360_svg_export.ts --outDir ./dist` などでコンパイルした JS を配置して実行してください。アドイン用マニフェストは `tools/fusion360_svg_export/fusion360_svg_export.manifest` を同じフォルダーに置いてください。
 - コマンド実行後に Sketch を 1 件選び、出力先フォルダーとファイル名を指定すると SVG を保存できます。SICK SLS Editor 側の SVG インポートと同じワークフローで利用できます。
 - ポリゴンの切れ目（パス分割）は Fusion 360 標準の SVG Export がスケッチ内のクローズドプロファイル単位で自動分割します。エッジごとに分けたい場合はスケッチを複数の独立したプロファイルに描き分けてください。
 

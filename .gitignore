@@ -41,8 +41,8 @@ venv.bak/
 # PyInstaller
 *.manifest
 *.spec
-# Fusion 360 add-in manifest (tools/.manifest) は管理対象
-!/tools/.manifest
+# Fusion 360 add-in manifest は管理対象
+!/tools/fusion360_svg_export/fusion360_svg_export.manifest
 
 # Installer logs
 pip-log.txt
