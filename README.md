@@ -61,7 +61,7 @@ XML 生成・読み込み時には `<SdImportExport xmlns:xsd="http://www.w3.org
 - `tests/test_save_load_roundtrip.py`: TriOrb 形式を含む入出力を通して Fieldset/Shape の整合性を確認します（環境に Playwright のブラウザが無い場合、Playwright 依存のケースはスキップされます）。
 
 ## デプロイ
-- `freeze.py` で静的ファイル出力（`docs/`）。
+- `python freeze.py` で静的ファイル出力（`docs/`）。
 - `mike deploy --push --branch gh-pages latest --update-aliases` で公開。
 
 ## チェックポイント
