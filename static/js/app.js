@@ -1935,6 +1935,8 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             scale = 1,
             preserveOrientation = false,
             ellipseRatio = 1,
+            widthSineGain = 0,
+            heightSineGain = 0,
           } = {}
         ) {
           const numericPoints = (points || []).map((point) => ({
@@ -1952,6 +1954,8 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           const originY = Number(rotationOriginY) || 0;
           const safeEllipseRatio =
             Number.isFinite(ellipseRatio) && ellipseRatio > 0 ? ellipseRatio : 1;
+          const applySineGain =
+            preserveOrientation && hasRotation && (widthSineGain !== 0 || heightSineGain !== 0);
           let transformedPoints = numericPoints.map((point) => {
             let x = point.x;
             let y = point.y;
@@ -2001,6 +2005,43 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
                 safeEllipseRatio
               )
             );
+          }
+          if (applySineGain) {
+            const centroid = computePointCentroid(transformedPoints);
+            if (centroid) {
+              const extent = transformedPoints.reduce(
+                (acc, point) => {
+                  acc.minX = Math.min(acc.minX, point.x);
+                  acc.maxX = Math.max(acc.maxX, point.x);
+                  acc.minY = Math.min(acc.minY, point.y);
+                  acc.maxY = Math.max(acc.maxY, point.y);
+                  return acc;
+                },
+                {
+                  minX: Number.POSITIVE_INFINITY,
+                  maxX: Number.NEGATIVE_INFINITY,
+                  minY: Number.POSITIVE_INFINITY,
+                  maxY: Number.NEGATIVE_INFINITY,
+                }
+              );
+              const width = extent.maxX - extent.minX;
+              const height = extent.maxY - extent.minY;
+              const sineComponent = Math.sin(radians);
+              const scaleX =
+                Number.isFinite(width) && width !== 0
+                  ? Math.max(0, width + widthSineGain * sineComponent) / width
+                  : 1;
+              const scaleY =
+                Number.isFinite(height) && height !== 0
+                  ? Math.max(0, height + heightSineGain * sineComponent) / height
+                  : 1;
+              if (scaleX !== 1 || scaleY !== 1) {
+                transformedPoints = transformedPoints.map((point) => ({
+                  x: centroid.x + (point.x - centroid.x) * scaleX,
+                  y: centroid.y + (point.y - centroid.y) * scaleY,
+                }));
+              }
+            }
           }
           transformedPoints = transformedPoints.map((point) => ({
             x: point.x + offsetX,
@@ -2091,6 +2132,8 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               scale,
               preserveOrientation,
               ellipseRatio,
+              widthSineGain,
+              heightSineGain,
             });
           } else if (shape.type === "Rectangle" && shape.rectangle) {
             let originX = parseNumeric(shape.rectangle.OriginX, 0);
