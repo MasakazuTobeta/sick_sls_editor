@@ -232,7 +232,7 @@ def _export_bodies_to_svg(
         commands.append("Z")
         return " ".join(commands)
 
-    paths = []
+    polygons = []
     all_points = []
     skipped = 0
     for body in bodies:
@@ -240,12 +240,10 @@ def _export_bodies_to_svg(
         if len(points) < 2:
             skipped += 1
             continue
-        path = points_to_path(points)
-        if path:
-            paths.append((path, body.name))
-            all_points.extend(points)
+        polygons.append((points, body.name))
+        all_points.extend(points)
 
-    if not paths:
+    if not polygons:
         return False, "SVG に出力できる Body がありません。"
 
     min_x = min(p[0] for p in all_points)
@@ -261,6 +259,13 @@ def _export_bodies_to_svg(
         height = 1.0
 
     stroke_width = 1.0
+    paths: list[tuple[str, str]] = []
+    for points, name in polygons:
+        translated = [(p[0] - min_x, p[1] - min_y) for p in points]
+        path = points_to_path(translated)
+        if path:
+            paths.append((path, name))
+
     svg_lines = [
         '<?xml version="1.0" encoding="UTF-8"?>',
         (
