@@ -27,6 +27,20 @@ export function rotatePoint(x, y, radians, originX, originY) {
   };
 }
 
+export function rotatePointWithEllipse(x, y, radians, originX, originY, ellipseRatio = 1) {
+  const ratio = Number.isFinite(ellipseRatio) && ellipseRatio > 0 ? ellipseRatio : 1;
+  const cos = Math.cos(radians);
+  const sin = Math.sin(radians);
+  const translatedX = x - originX;
+  const translatedY = (y - originY) / ratio;
+  const rotatedX = translatedX * cos - translatedY * sin;
+  const rotatedY = translatedX * sin + translatedY * cos;
+  return {
+    x: originX + rotatedX,
+    y: originY + rotatedY * ratio,
+  };
+}
+
 export function rotateAroundCorner(point, radians, origin) {
   const translatedX = point.x - origin.x;
   const translatedY = point.y - origin.y;

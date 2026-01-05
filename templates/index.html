@@ -1912,6 +1912,18 @@
             <input type="number" id="replicate-rotation-origin-y" step="1" value="0" />
           </label>
           <label>
+            Rotation ellipse ratio (Y / X)
+            <input type="number" id="replicate-ellipse-ratio" min="0.01" step="0.1" value="1" />
+          </label>
+          <label>
+            Width + a·sin(θ) (姿勢維持時のみ)
+            <input type="number" id="replicate-width-sine-gain" step="0.1" value="0" />
+          </label>
+          <label>
+            Height + a·sin(θ) (姿勢維持時のみ)
+            <input type="number" id="replicate-height-sine-gain" step="0.1" value="0" />
+          </label>
+          <label>
             Scale (％ / copy)
             <input type="number" id="replicate-scale-percent" step="1" value="0" />
           </label>
@@ -2016,6 +2028,9 @@
         <div class="fieldset-filter-controls">
           <button type="button" class="inline-btn" id="btn-case-check-all">Show All Cases</button>
           <button type="button" class="inline-btn" id="btn-case-uncheck-all">Hide All Cases</button>
+          <button type="button" class="inline-btn inline-danger" id="btn-case-delete-visible">
+            Delete shown Cases
+          </button>
         </div>
         <div id="case-checkboxes"></div>
       </div>
@@ -2023,6 +2038,9 @@
         <div class="fieldset-filter-controls">
           <button type="button" class="inline-btn" id="btn-fieldset-check-all">All check</button>
           <button type="button" class="inline-btn" id="btn-fieldset-uncheck-all">All uncheck</button>
+          <button type="button" class="inline-btn inline-danger" id="btn-field-delete-visible">
+            Delete shown Fields
+          </button>
         </div>
         <div id="fieldset-checkboxes"></div>
       </div>
@@ -2030,6 +2048,13 @@
         <div class="fieldset-filter-controls">
           <button type="button" class="inline-btn" id="btn-triorb-shape-check-all">Show All Shapes</button>
           <button type="button" class="inline-btn" id="btn-triorb-shape-uncheck-all">Hide All Shapes</button>
+          <button
+            type="button"
+            class="inline-btn inline-danger"
+            id="btn-triorb-shape-delete-visible"
+          >
+            Delete shown Shapes
+          </button>
         </div>
         <div id="triorb-shape-checkboxes"></div>
       </div>
