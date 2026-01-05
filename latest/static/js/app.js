@@ -3,6 +3,7 @@ import {
   degreesToRadians,
   getRectangleCornerPoints,
   rotatePoint,
+  rotatePointWithEllipse,
   normalizeDegrees,
   parseNumeric,
 } from "./modules/geometry.js";
@@ -234,8 +235,10 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         const caseCheckAllBtn = document.getElementById("btn-case-check-all");
         const caseUncheckAllBtn = document.getElementById("btn-case-uncheck-all");
+        const caseDeleteVisibleBtn = document.getElementById("btn-case-delete-visible");
         const checkAllBtn = document.getElementById("btn-fieldset-check-all");
         const uncheckAllBtn = document.getElementById("btn-fieldset-uncheck-all");
+        const fieldDeleteVisibleBtn = document.getElementById("btn-field-delete-visible");
         const toggleLegendBtn = document.getElementById("btn-toggle-legend");
         const fieldOfViewInput = document.getElementById("triorb-field-of-view");
         const globalResolutionInput = document.getElementById("global-resolution");
@@ -249,6 +252,9 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         const triorbShapeCheckAllBtn = document.getElementById("btn-triorb-shape-check-all");
         const triorbShapeUncheckAllBtn = document.getElementById("btn-triorb-shape-uncheck-all");
+        const triorbShapeDeleteVisibleBtn = document.getElementById(
+          "btn-triorb-shape-delete-visible"
+        );
         const overlayShapeBtn = document.getElementById("btn-add-shape-overlay");
         const overlayFieldBtn = document.getElementById("btn-add-field-overlay");
         const replicateFieldBtn = document.getElementById("btn-replicate-field");
@@ -347,6 +353,9 @@ document.addEventListener("DOMContentLoaded", () => {
         const replicateRotationInput = document.getElementById("replicate-rotation");
         const replicateRotationOriginXInput = document.getElementById("replicate-rotation-origin-x");
         const replicateRotationOriginYInput = document.getElementById("replicate-rotation-origin-y");
+        const replicateEllipseRatioInput = document.getElementById("replicate-ellipse-ratio");
+        const replicateWidthSineGainInput = document.getElementById("replicate-width-sine-gain");
+        const replicateHeightSineGainInput = document.getElementById("replicate-height-sine-gain");
         const replicateScalePercentInput = document.getElementById("replicate-scale-percent");
         const replicateIncludeCutoutsInput = document.getElementById("replicate-include-cutouts");
         const replicatePreserveOrientationInput = document.getElementById(
@@ -478,6 +487,9 @@ document.addEventListener("DOMContentLoaded", () => {
           rotation: 0,
           rotationOriginX: 0,
           rotationOriginY: 0,
+          ellipseRatio: 1,
+          widthSineGain: 0,
+          heightSineGain: 0,
           scalePercent: 0,
           casePrefix: "",
           includeCutouts: false,
@@ -1922,6 +1934,9 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             rotationOriginY = 0,
             scale = 1,
             preserveOrientation = false,
+            ellipseRatio = 1,
+            widthSineGain = 0,
+            heightSineGain = 0,
           } = {}
         ) {
           const numericPoints = (points || []).map((point) => ({
@@ -1937,6 +1952,10 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           const radians = hasRotation ? degreesToRadians(rotation) : 0;
           const originX = Number(rotationOriginX) || 0;
           const originY = Number(rotationOriginY) || 0;
+          const safeEllipseRatio =
+            Number.isFinite(ellipseRatio) && ellipseRatio > 0 ? ellipseRatio : 1;
+          const applySineGain =
+            preserveOrientation && hasRotation && (widthSineGain !== 0 || heightSineGain !== 0);
           let transformedPoints = numericPoints.map((point) => {
             let x = point.x;
             let y = point.y;
@@ -1949,7 +1968,14 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           if (hasRotation && preserveOrientation) {
             const centroid = computePointCentroid(transformedPoints);
             if (centroid) {
-              const rotatedCentroid = rotatePoint(centroid.x, centroid.y, radians, originX, originY);
+              const rotatedCentroid = rotatePointWithEllipse(
+                centroid.x,
+                centroid.y,
+                radians,
+                originX,
+                originY,
+                safeEllipseRatio
+              );
               const deltaX = rotatedCentroid.x - centroid.x;
               const deltaY = rotatedCentroid.y - centroid.y;
               transformedPoints = transformedPoints.map((point) => ({
@@ -1958,13 +1984,64 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               }));
             } else {
               transformedPoints = transformedPoints.map((point) =>
-                rotatePoint(point.x, point.y, radians, originX, originY)
+                rotatePointWithEllipse(
+                  point.x,
+                  point.y,
+                  radians,
+                  originX,
+                  originY,
+                  safeEllipseRatio
+                )
               );
             }
           } else if (hasRotation) {
             transformedPoints = transformedPoints.map((point) =>
-              rotatePoint(point.x, point.y, radians, originX, originY)
+              rotatePointWithEllipse(
+                point.x,
+                point.y,
+                radians,
+                originX,
+                originY,
+                safeEllipseRatio
+              )
             );
+          }
+          if (applySineGain) {
+            const centroid = computePointCentroid(transformedPoints);
+            if (centroid) {
+              const extent = transformedPoints.reduce(
+                (acc, point) => {
+                  acc.minX = Math.min(acc.minX, point.x);
+                  acc.maxX = Math.max(acc.maxX, point.x);
+                  acc.minY = Math.min(acc.minY, point.y);
+                  acc.maxY = Math.max(acc.maxY, point.y);
+                  return acc;
+                },
+                {
+                  minX: Number.POSITIVE_INFINITY,
+                  maxX: Number.NEGATIVE_INFINITY,
+                  minY: Number.POSITIVE_INFINITY,
+                  maxY: Number.NEGATIVE_INFINITY,
+                }
+              );
+              const width = extent.maxX - extent.minX;
+              const height = extent.maxY - extent.minY;
+              const sineComponent = Math.sin(radians);
+              const scaleX =
+                Number.isFinite(width) && width !== 0
+                  ? Math.max(0, width + widthSineGain * sineComponent) / width
+                  : 1;
+              const scaleY =
+                Number.isFinite(height) && height !== 0
+                  ? Math.max(0, height + heightSineGain * sineComponent) / height
+                  : 1;
+              if (scaleX !== 1 || scaleY !== 1) {
+                transformedPoints = transformedPoints.map((point) => ({
+                  x: centroid.x + (point.x - centroid.x) * scaleX,
+                  y: centroid.y + (point.y - centroid.y) * scaleY,
+                }));
+              }
+            }
           }
           transformedPoints = transformedPoints.map((point) => ({
             x: point.x + offsetX,
@@ -2026,9 +2103,21 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           const rotationOriginY = Number(transform.rotationOriginY) || 0;
           const rawScale = Number(transform.scale);
           const scale = Number.isFinite(rawScale) && rawScale > 0 ? rawScale : 1;
+          const ellipseRatio =
+            Number.isFinite(transform.ellipseRatio) && transform.ellipseRatio > 0
+              ? Number(transform.ellipseRatio)
+              : 1;
           const hasRotation = rotation !== 0;
           const hasScale = scale !== 1;
           const preserveOrientation = Boolean(transform.preserveOrientation);
+          const widthSineGain =
+            preserveOrientation && Number.isFinite(transform.widthSineGain)
+              ? Number(transform.widthSineGain)
+              : 0;
+          const heightSineGain =
+            preserveOrientation && Number.isFinite(transform.heightSineGain)
+              ? Number(transform.heightSineGain)
+              : 0;
           const rotationRadians = hasRotation ? degreesToRadians(rotation) : 0;
           if (!offsetX && !offsetY && !hasRotation && !hasScale) {
             return;
@@ -2042,22 +2131,34 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               rotationOriginY,
               scale,
               preserveOrientation,
+              ellipseRatio,
+              widthSineGain,
+              heightSineGain,
             });
           } else if (shape.type === "Rectangle" && shape.rectangle) {
             let originX = parseNumeric(shape.rectangle.OriginX, 0);
             let originY = parseNumeric(shape.rectangle.OriginY, 0);
             const baseRotation = parseNumeric(shape.rectangle.Rotation, 0);
+            let width = parseNumeric(shape.rectangle.Width, NaN);
+            let height = parseNumeric(shape.rectangle.Height, NaN);
             if (hasScale) {
               originX *= scale;
               originY *= scale;
+              if (Number.isFinite(width)) {
+                width *= scale;
+              }
+              if (Number.isFinite(height)) {
+                height *= scale;
+              }
             }
             if (hasRotation) {
-              const rotated = rotatePoint(
+              const rotated = rotatePointWithEllipse(
                 originX,
                 originY,
                 rotationRadians,
                 rotationOriginX,
-                rotationOriginY
+                rotationOriginY,
+                ellipseRatio
               );
               originX = rotated.x;
               originY = rotated.y;
@@ -2066,15 +2167,22 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             originY += offsetY;
             shape.rectangle.OriginX = formatReplicateNumber(originX);
             shape.rectangle.OriginY = formatReplicateNumber(originY);
-            if (hasScale) {
-              const width = parseNumeric(shape.rectangle.Width, NaN);
-              const height = parseNumeric(shape.rectangle.Height, NaN);
-              if (Number.isFinite(width)) {
-                shape.rectangle.Width = formatReplicateNumber(width * scale);
+            const applySineGain =
+              preserveOrientation && hasRotation && (widthSineGain !== 0 || heightSineGain !== 0);
+            if (applySineGain) {
+              const sineComponent = Math.sin(rotationRadians);
+              if (Number.isFinite(width) && widthSineGain !== 0) {
+                width += widthSineGain * sineComponent;
               }
-              if (Number.isFinite(height)) {
-                shape.rectangle.Height = formatReplicateNumber(height * scale);
+              if (Number.isFinite(height) && heightSineGain !== 0) {
+                height += heightSineGain * sineComponent;
               }
+            }
+            if (Number.isFinite(width) && (hasScale || applySineGain)) {
+              shape.rectangle.Width = formatReplicateNumber(width);
+            }
+            if (Number.isFinite(height) && (hasScale || applySineGain)) {
+              shape.rectangle.Height = formatReplicateNumber(height);
             }
             if (hasRotation) {
               const nextRotation = preserveOrientation
@@ -2090,12 +2198,13 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               centerY *= scale;
             }
             if (hasRotation) {
-              const rotated = rotatePoint(
+              const rotated = rotatePointWithEllipse(
                 centerX,
                 centerY,
                 rotationRadians,
                 rotationOriginX,
-                rotationOriginY
+                rotationOriginY,
+                ellipseRatio
               );
               centerX = rotated.x;
               centerY = rotated.y;
@@ -3170,6 +3279,9 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
                 rotation: rotation * step,
                 rotationOriginX: replicatePreviewState.rotationOriginX,
                 rotationOriginY: replicatePreviewState.rotationOriginY,
+                ellipseRatio: replicatePreviewState.ellipseRatio,
+                widthSineGain: replicatePreviewState.widthSineGain,
+                heightSineGain: replicatePreviewState.heightSineGain,
                 scale: computeReplicationScale(scalePercent, step),
                 preserveOrientation,
               };
@@ -3215,6 +3327,9 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               rotation: rotation * step,
               rotationOriginX: replicatePreviewState.rotationOriginX,
               rotationOriginY: replicatePreviewState.rotationOriginY,
+              ellipseRatio: replicatePreviewState.ellipseRatio,
+              widthSineGain: replicatePreviewState.widthSineGain,
+              heightSineGain: replicatePreviewState.heightSineGain,
               scale: computeReplicationScale(scalePercent, step),
               preserveOrientation,
             };
@@ -3409,6 +3524,18 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           replicateCasePrefixInput.placeholder = resolveReplicatePrefixPlaceholderLabel();
         }
 
+        function updateReplicateSineGainAvailability({ syncPreview = false } = {}) {
+          const enabled = Boolean(replicatePreserveOrientationInput?.checked);
+          [replicateWidthSineGainInput, replicateHeightSineGainInput].forEach((input) => {
+            if (input) {
+              input.disabled = !enabled;
+            }
+          });
+          if (syncPreview) {
+            updateReplicatePreview();
+          }
+        }
+
         function populateReplicateFieldsetOptions(preferredIndex = 0) {
           if (!replicateFieldsetSelect) {
             return -1;
@@ -3554,6 +3681,15 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           if (replicateRotationOriginYInput) {
             replicateRotationOriginYInput.value = replicateFormState.rotationOriginY ?? 0;
           }
+          if (replicateEllipseRatioInput) {
+            replicateEllipseRatioInput.value = replicateFormState.ellipseRatio ?? 1;
+          }
+          if (replicateWidthSineGainInput) {
+            replicateWidthSineGainInput.value = replicateFormState.widthSineGain ?? 0;
+          }
+          if (replicateHeightSineGainInput) {
+            replicateHeightSineGainInput.value = replicateFormState.heightSineGain ?? 0;
+          }
           if (replicateScalePercentInput) {
             replicateScalePercentInput.value = replicateFormState.scalePercent ?? 0;
           }
@@ -3567,6 +3703,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               replicateFormState.preserveOrientation
             );
           }
+          updateReplicateSineGainAvailability();
           if (replicateStaticInputsAutoInput) {
             replicateStaticInputsAutoInput.checked = Boolean(
               replicateFormState.autoStaticInputs
@@ -3647,9 +3784,17 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           const rotation = parseNumeric(replicateRotationInput?.value, 0) || 0;
           const rotationOriginX = parseNumeric(replicateRotationOriginXInput?.value, 0) || 0;
           const rotationOriginY = parseNumeric(replicateRotationOriginYInput?.value, 0) || 0;
+          const ellipseRatio = Math.max(
+            0.01,
+            parseNumeric(replicateEllipseRatioInput?.value, 1) || 1
+          );
+          const preserveOrientation = Boolean(replicatePreserveOrientationInput?.checked);
+          const rawWidthSineGain = parseNumeric(replicateWidthSineGainInput?.value, 0) || 0;
+          const rawHeightSineGain = parseNumeric(replicateHeightSineGainInput?.value, 0) || 0;
+          const widthSineGain = preserveOrientation ? rawWidthSineGain : 0;
+          const heightSineGain = preserveOrientation ? rawHeightSineGain : 0;
           const scalePercent = parseNumeric(replicateScalePercentInput?.value, 0) || 0;
           const includeCutouts = Boolean(replicateIncludeCutoutsInput?.checked);
-          const preserveOrientation = Boolean(replicatePreserveOrientationInput?.checked);
           const prefixInput = replicateCasePrefixInput?.value?.trim();
           const casePrefix = prefixInput || resolveReplicatePrefixFallback();
           replicateFormState.fieldsetIndex = fieldsetIndex;
@@ -3659,6 +3804,9 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           replicateFormState.rotation = rotation;
           replicateFormState.rotationOriginX = rotationOriginX;
           replicateFormState.rotationOriginY = rotationOriginY;
+          replicateFormState.ellipseRatio = ellipseRatio;
+          replicateFormState.widthSineGain = widthSineGain;
+          replicateFormState.heightSineGain = heightSineGain;
           replicateFormState.scalePercent = scalePercent;
           replicateFormState.casePrefix = casePrefix;
           replicateFormState.includeCutouts = includeCutouts;
@@ -3672,6 +3820,9 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               rotation: rotation * step,
               rotationOriginX,
               rotationOriginY,
+              ellipseRatio,
+              widthSineGain,
+              heightSineGain,
               scale: computeReplicationScale(scalePercent, step),
               preserveOrientation,
             };
@@ -3756,9 +3907,17 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           const rotation = parseNumeric(replicateRotationInput?.value, 0) || 0;
           const rotationOriginX = parseNumeric(replicateRotationOriginXInput?.value, 0) || 0;
           const rotationOriginY = parseNumeric(replicateRotationOriginYInput?.value, 0) || 0;
+          const ellipseRatio = Math.max(
+            0.01,
+            parseNumeric(replicateEllipseRatioInput?.value, 1) || 1
+          );
           const scalePercent = parseNumeric(replicateScalePercentInput?.value, 0) || 0;
           const includeCutouts = Boolean(replicateIncludeCutoutsInput?.checked);
           const preserveOrientation = Boolean(replicatePreserveOrientationInput?.checked);
+          const rawWidthSineGain = parseNumeric(replicateWidthSineGainInput?.value, 0) || 0;
+          const rawHeightSineGain = parseNumeric(replicateHeightSineGainInput?.value, 0) || 0;
+          const widthSineGain = preserveOrientation ? rawWidthSineGain : 0;
+          const heightSineGain = preserveOrientation ? rawHeightSineGain : 0;
           const autoStaticInputs = Boolean(replicateStaticInputsAutoInput?.checked);
           const includePreviousFields = Boolean(replicateIncludePreviousFieldsInput?.checked);
           let speedRangeMinStep = parseInt(replicateSpeedMinStepInput?.value ?? "0", 10);
@@ -3778,6 +3937,9 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           replicateFormState.rotation = rotation;
           replicateFormState.rotationOriginX = rotationOriginX;
           replicateFormState.rotationOriginY = rotationOriginY;
+          replicateFormState.ellipseRatio = ellipseRatio;
+          replicateFormState.widthSineGain = widthSineGain;
+          replicateFormState.heightSineGain = heightSineGain;
           replicateFormState.scalePercent = scalePercent;
           replicateFormState.includeCutouts = includeCutouts;
           replicateFormState.preserveOrientation = preserveOrientation;
@@ -3832,6 +3994,9 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
                 rotation: rotation * step,
                 rotationOriginX,
                 rotationOriginY,
+                ellipseRatio,
+                widthSineGain,
+                heightSineGain,
                 scale: computeReplicationScale(scalePercent, step),
                 preserveOrientation,
               };
@@ -3986,9 +4151,15 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           const rotation = parseNumeric(replicateRotationInput?.value, 0) || 0;
           const rotationOriginX = parseNumeric(replicateRotationOriginXInput?.value, 0) || 0;
           const rotationOriginY = parseNumeric(replicateRotationOriginYInput?.value, 0) || 0;
+          const ellipseRatio = Math.max(
+            0.01,
+            parseNumeric(replicateEllipseRatioInput?.value, 1) || 1
+          );
           const scalePercent = parseNumeric(replicateScalePercentInput?.value, 0) || 0;
           const includeCutouts = Boolean(replicateIncludeCutoutsInput?.checked);
           const preserveOrientation = Boolean(replicatePreserveOrientationInput?.checked);
+          const widthSineGain = parseNumeric(replicateWidthSineGainInput?.value, 0) || 0;
+          const heightSineGain = parseNumeric(replicateHeightSineGainInput?.value, 0) || 0;
           let speedRangeMinStep = parseInt(replicateSpeedMinStepInput?.value ?? "0", 10);
           let speedRangeMaxStep = parseInt(replicateSpeedMaxStepInput?.value ?? "0", 10);
           if (!Number.isFinite(speedRangeMinStep)) {
@@ -3997,6 +4168,8 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           if (!Number.isFinite(speedRangeMaxStep)) {
             speedRangeMaxStep = 0;
           }
+          const effectiveWidthSineGain = preserveOrientation ? widthSineGain : 0;
+          const effectiveHeightSineGain = preserveOrientation ? heightSineGain : 0;
           if (target === "case") {
             const caseIndexes = captureSelectedReplicateCases();
             return {
@@ -4008,6 +4181,9 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               rotation,
               rotationOriginX,
               rotationOriginY,
+              ellipseRatio,
+              widthSineGain: effectiveWidthSineGain,
+              heightSineGain: effectiveHeightSineGain,
               scalePercent,
               includeCutouts,
               preserveOrientation,
@@ -4041,6 +4217,9 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             rotation,
             rotationOriginX,
             rotationOriginY,
+            ellipseRatio,
+            widthSineGain: effectiveWidthSineGain,
+            heightSineGain: effectiveHeightSineGain,
             scalePercent,
             includeCutouts,
             preserveOrientation,
@@ -10936,6 +11115,36 @@ function parsePolygonTrace(doc) {
           );
         }
 
+        function deleteVisibleCases() {
+          ensureCaseToggleStateLength();
+          const activeIndexes = caseToggleStates
+            .map((isActive, index) => (isActive ? index : -1))
+            .filter((index) => index >= 0);
+          if (!activeIndexes.length) {
+            setStatus("表示中の Case はありません。", "warning");
+            return;
+          }
+          if (activeIndexes.length >= casetableCases.length) {
+            setStatus("At least one Case is required.", "warning");
+            return;
+          }
+          const sortedIndexes = activeIndexes.sort((a, b) => b - a);
+          sortedIndexes.forEach((caseIndex) => {
+            casetableCases.splice(caseIndex, 1);
+            caseToggleStates.splice(caseIndex, 1);
+          });
+          casetableCases.forEach((caseEntry, index) => {
+            if (caseEntry?.attributes) {
+              caseEntry.attributes.DisplayOrder = String(index);
+            }
+          });
+          casetableEvals = normalizeCasetableEvals(casetableEvals, casetableCases.length);
+          renderCasetableCases();
+          renderCasetableEvals();
+          refreshCaseFieldAssignments({ rerenderCaseToggles: true });
+          setStatus(`${activeIndexes.length} 件の表示中 Case を削除しました。`, "ok");
+        }
+
         if (caseCheckboxes) {
           caseCheckboxes.addEventListener("click", (event) => {
             const button = event.target.closest(".toggle-pill-btn");
@@ -10959,6 +11168,10 @@ function parsePolygonTrace(doc) {
           caseUncheckAllBtn.addEventListener("click", () => {
             setAllCaseToggles(false);
           });
+        }
+
+        if (caseDeleteVisibleBtn) {
+          caseDeleteVisibleBtn.addEventListener("click", deleteVisibleCases);
         }
 
         if (fieldsetCheckboxes) {
@@ -11005,6 +11218,10 @@ function parsePolygonTrace(doc) {
           });
         }
 
+        if (fieldDeleteVisibleBtn) {
+          fieldDeleteVisibleBtn.addEventListener("click", deleteVisibleFields);
+        }
+
         if (triorbShapeCheckboxes) {
           triorbShapeCheckboxes.addEventListener("click", (event) => {
             const button = event.target.closest(".toggle-pill-btn");
@@ -11036,6 +11253,10 @@ function parsePolygonTrace(doc) {
           triorbShapeUncheckAllBtn.addEventListener("click", () => {
             setTriOrbShapeVisibility(false);
           });
+        }
+
+        if (triorbShapeDeleteVisibleBtn) {
+          triorbShapeDeleteVisibleBtn.addEventListener("click", deleteVisibleTriOrbShapes);
         }
 
         function ensureInlineGeometryForShape(field, shape) {
@@ -11339,6 +11560,47 @@ function parsePolygonTrace(doc) {
           renderFigure();
         }
 
+        function deleteVisibleFields() {
+          let removed = 0;
+          let preservedFieldsets = 0;
+          fieldsets.forEach((fieldset) => {
+            if (!fieldset || fieldset.visible === false || !Array.isArray(fieldset.fields)) {
+              return;
+            }
+            const remaining = [];
+            fieldset.fields.forEach((field) => {
+              const hasVisibleShape = (field.shapeRefs || []).some((ref) => {
+                const shape = findTriOrbShapeById(ref?.shapeId);
+                return shape && shape.visible !== false;
+              });
+              if (!hasVisibleShape) {
+                remaining.push(field);
+              }
+            });
+            if (!remaining.length && fieldset.fields.length > 0) {
+              remaining.push(fieldset.fields[0]);
+              preservedFieldsets += 1;
+            }
+            removed += fieldset.fields.length - remaining.length;
+            fieldset.fields = remaining;
+          });
+          if (!removed) {
+            setStatus("表示中の Field はありません。", "warning");
+            return;
+          }
+          renderFieldsets();
+          refreshCaseFieldAssignments({ rerenderCaseToggles: true });
+          renderFigure();
+          if (preservedFieldsets > 0) {
+            setStatus(
+              `${removed} 件の表示中 Field を削除しました (${preservedFieldsets} 件の Fieldset では 1 件を保持しました)。`,
+              "warning"
+            );
+          } else {
+            setStatus(`${removed} 件の表示中 Field を削除しました。`, "ok");
+          }
+        }
+
         function renderTriOrbShapeCheckboxes() {
           if (!triorbShapeCheckboxes) {
             return;
@@ -11371,6 +11633,32 @@ function parsePolygonTrace(doc) {
           invalidateTriOrbShapeCaches();
           renderTriOrbShapeCheckboxes();
           renderFigure();
+        }
+
+        function deleteVisibleTriOrbShapes() {
+          const visibleShapes = triorbShapes
+            .map((shape, index) => ({ shape, index }))
+            .filter(({ shape }) => shape && shape.visible !== false);
+          if (!visibleShapes.length) {
+            setStatus("表示中の Shape はありません。", "warning");
+            return;
+          }
+          const shapeIdsToRemove = new Set(visibleShapes.map(({ shape }) => shape.id));
+          triorbShapes = triorbShapes.filter((shape) => !shapeIdsToRemove.has(shape?.id));
+          rebuildTriOrbShapeRegistry();
+          invalidateTriOrbShapeCaches();
+          fieldsets.forEach((fieldset) => {
+            (fieldset.fields || []).forEach((field) => {
+              if (Array.isArray(field.shapeRefs)) {
+                field.shapeRefs = field.shapeRefs.filter((ref) => !shapeIdsToRemove.has(ref.shapeId));
+              }
+            });
+          });
+          renderTriOrbShapes();
+          renderTriOrbShapeCheckboxes();
+          renderFieldsets();
+          renderFigure();
+          setStatus(`${visibleShapes.length} 件の表示中 Shape を削除しました。`, "ok");
         }
 
         function removeTriOrbShape(shapeIndex) {
@@ -12135,6 +12423,9 @@ function parsePolygonTrace(doc) {
           replicateRotationInput,
           replicateRotationOriginXInput,
           replicateRotationOriginYInput,
+          replicateEllipseRatioInput,
+          replicateWidthSineGainInput,
+          replicateHeightSineGainInput,
           replicateScalePercentInput,
           replicateSpeedMinStepInput,
           replicateSpeedMaxStepInput,
@@ -12143,6 +12434,11 @@ function parsePolygonTrace(doc) {
             input.addEventListener("input", () => {
               updateReplicatePreview();
             });
+          }
+        });
+        [replicateWidthSineGainInput, replicateHeightSineGainInput].forEach((input) => {
+          if (input) {
+            input.addEventListener("change", updateReplicatePreview);
           }
         });
         if (replicateTargetToggle) {
@@ -12168,7 +12464,9 @@ function parsePolygonTrace(doc) {
           replicateIncludeCutoutsInput.addEventListener("change", updateReplicatePreview);
         }
         if (replicatePreserveOrientationInput) {
-          replicatePreserveOrientationInput.addEventListener("change", updateReplicatePreview);
+          replicatePreserveOrientationInput.addEventListener("change", () => {
+            updateReplicateSineGainAvailability({ syncPreview: true });
+          });
         }
         if (replicateStaticInputsAutoInput) {
           replicateStaticInputsAutoInput.addEventListener("change", updateReplicatePreview);
