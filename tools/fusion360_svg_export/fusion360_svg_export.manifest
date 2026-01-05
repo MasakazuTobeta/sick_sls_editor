@@ -1,13 +1,13 @@
 {
-  "autodeskProduct": "fusion360",
-  "productType": "application",
-  "extensionType": "addin",
-  "id": "sick-sls-editor.fusion360.svg-export-py",
-  "version": "1.0.0",
-  "name": "SICK SLS SVG Export (Python)",
-  "description": "Exports a selected sketch to SVG with folder and filename prompts.",
-  "author": "SICK SLS Editor",
-  "company": "SICK",
-  "supportedOS": "win64|mac64",
-  "runOnStartup": false
+	"autodeskProduct":	"Fusion",
+	"type":	"addin",
+	"author":	"Tobeta Masakazu",
+	"description":	{
+		"":	"Fusion 360 から SVG を書き出す"
+	},
+	"version":	"",
+	"runOnStartup":	false,
+	"supportedOS":	"windows|mac",
+	"editEnabled":	true,
+	"iconFilename":	"AddInIcon.svg"
 }
