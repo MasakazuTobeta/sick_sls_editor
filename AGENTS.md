@@ -7,12 +7,12 @@
 - モーダル: +Shape / +Field で Shape/Fieldset を登録する際は、モーダルで Fieldset チェックをトグル形式に変更済、Cancel で元に戻る・モーダルはドラッグ/リサイズ可能・削除ボタンは編集モードのみ表示。
 - ファイル読み書きは今後確認不要（承認済）なので、必要に応じて `python main.py` や Playwright 実行で上書き・保存してよい。
 - `<SdImportExport>` 以下の構造は変更しない。TriOrb 情報は `<TriOrb_SICK_SLS_Editor>` に格納し、それ以外のセクションと混在させない。Load 時には TriOrb メタ情報で形式を判別する。
-- コード変更時は必ずブラウザで起動し、コンソールにエラーが出ていないことを確認する（`renderFieldsets`/`renderFigure` 周りで録画され続ける mis-synced trace がないか検証）。
+- コード変更時は必ずローカル Flask を起動してブラウザで確認し、その後 Playwright でも確認する。少なくとも `run_playwright.ps1` か、`python -u -c "from main import create_app; create_app().run(port=5001)"` を別端末で起動したうえで `python tests/playwright/test_shapes.py` を実行し、コンソールエラーがないことを確認する（`renderFieldsets`/`renderFigure` 周りで mis-synced trace が残らないか検証）。
 - ./docs以下をAgentや手動で編集することはなく、mike deployを通じてのみ編集します
 
 ## テスト & 手動確認
 - ユニット: `pytest`
-- Playwright: `run_playwright.ps1` または `python tests/playwright/test_shapes.py`（PowerShell では DB・browser install などを先に行う）。Playwright は `?debug=1` で TriOrb UI を展開し `global-multiple-sampling` 等の入力待ちの状態までカバーする。
+- Playwright: 原則としてローカル Flask を起動した状態で確認する。標準手順は `run_playwright.ps1`。手動で行う場合は `python -u -c "from main import create_app; create_app().run(port=5001)"` を起動し、別端末で `python tests/playwright/test_shapes.py` を実行する。Playwright は `?debug=1` で TriOrb UI を展開し `global-multiple-sampling` 等の入力待ちの状態までカバーする。
 - 手動: `TestMatrix.md` に書き起こされたチェック項目（TriOrb Shapes 編集、Fieldset/Shape トグル、Save 形式 1/2、Device 別ファイル出力など）を走らせる。
 
 ## CI / デプロイ
@@ -21,7 +21,7 @@
 
 ## 直近の留意事項
 - `TriOrb Shapes` / `Fieldsets` / `Devices` は JS 側の同期が肝。Shape 編集後 `renderTriOrbShapes()`→`renderFieldsets()`→`renderFigure()` までの再描画が行われて console が silent になることを確認。
-- PowerShell スクリプト `run_playwright.ps1` は既に存在し、サーバー起動と Playwright テストを連続実行する。必要なら `Set-ExecutionPolicy RemoteSigned` を実行しておく。
+- PowerShell スクリプト `run_playwright.ps1` はローカル Flask を `127.0.0.1:5001` で起動してから Playwright を流す。必要なら `Set-ExecutionPolicy RemoteSigned` を実行しておく。
 - TriOrb モーダルでは、Fieldset チェックのトグル化とモーダルのドラッグ/リサイズ、Add/Edit/Delete の区別、Cancel での値リセットが揃っていることを確認する。
 - `README.md` を常に最新化して、Playwright 実行手順や `pip install -r requirements.txt` などのセットアップを明文化する。これらが現場のドキュメントとなる。
 - +Field モーダル: Protective/Warning の Field 内で Type=Field/CutOut ごとの Shape 選択と Plotly プレビュー、OK/Cancel で Fieldset を保存/破棄できる UI を導入しました。

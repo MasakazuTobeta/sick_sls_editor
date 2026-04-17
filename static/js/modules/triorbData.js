@@ -2,6 +2,39 @@ export function createShapeId() {
   return `shape-${Math.random().toString(36).slice(2, 10)}`;
 }
 
+export function sanitizeLoadedShapeName(value, shapeType = "") {
+  const raw = String(value ?? "").trim();
+  if (!raw) {
+    return raw;
+  }
+  const normalizedShapeType = String(shapeType || "").trim().toLowerCase();
+  const suffixCandidates = [];
+  if (normalizedShapeType === "polygon") {
+    suffixCandidates.push(" Protective Polygon", " Warning Polygon");
+  } else if (normalizedShapeType === "rectangle") {
+    suffixCandidates.push(" Protective Rectangle", " Warning Rectangle");
+  } else if (normalizedShapeType === "circle") {
+    suffixCandidates.push(" Protective Circle", " Warning Circle");
+  } else {
+    suffixCandidates.push(
+      " Protective Polygon",
+      " Warning Polygon",
+      " Protective Rectangle",
+      " Warning Rectangle",
+      " Protective Circle",
+      " Warning Circle"
+    );
+  }
+
+  for (const suffix of suffixCandidates) {
+    if (raw.endsWith(suffix)) {
+      const trimmed = raw.slice(0, -suffix.length).trim();
+      return trimmed || raw;
+    }
+  }
+  return raw;
+}
+
 export function createDefaultPolygonDetails() {
   return {
     Type: "CutOut",
@@ -154,7 +187,7 @@ export function initializeTriOrbShapes(data) {
     circle.Type = circle.Type || inferredKind;
     const normalizedShape = {
       id: shape.id || createShapeId(),
-      name: shape.name || `Shape ${index + 1}`,
+      name: sanitizeLoadedShapeName(shape.name || `Shape ${index + 1}`, shape.type || "Polygon"),
       type: shape.type || "Polygon",
       fieldtype,
       kind: inferredKind,

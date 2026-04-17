@@ -19,6 +19,7 @@ import {
   getPolygonTypeValue,
   initializeTriOrbShapes,
   parsePolygonPoints,
+  sanitizeLoadedShapeName,
   setPolygonTypeValue,
 } from "./modules/triorbData.js";
 
@@ -239,6 +240,10 @@ document.addEventListener("DOMContentLoaded", () => {
         const checkAllBtn = document.getElementById("btn-fieldset-check-all");
         const uncheckAllBtn = document.getElementById("btn-fieldset-uncheck-all");
         const fieldDeleteVisibleBtn = document.getElementById("btn-field-delete-visible");
+        const floatingPanelLauncherButtons = Array.from(
+          document.querySelectorAll(".panel-launch-btn[data-panel-target]")
+        );
+        const floatingPanels = Array.from(document.querySelectorAll(".floating-panel"));
         const toggleLegendBtn = document.getElementById("btn-toggle-legend");
         const fieldOfViewInput = document.getElementById("triorb-field-of-view");
         const globalResolutionInput = document.getElementById("global-resolution");
@@ -346,6 +351,13 @@ document.addEventListener("DOMContentLoaded", () => {
             return acc;
           }, {})
         );
+        const createFieldModalSelectionAnchors = createFieldShapeLists.map(() =>
+          shapeKinds.reduce((acc, kind) => {
+            acc[kind] = null;
+            return acc;
+          }, {})
+        );
+        let createShapeFieldsetSelectionAnchor = null;
         const replicateFieldsetSelect = document.getElementById("replicate-fieldset-select");
         const replicateCopyCountInput = document.getElementById("replicate-copy-count");
         const replicateOffsetXInput = document.getElementById("replicate-offset-x");
@@ -372,6 +384,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const replicateCaseSelect = document.getElementById("replicate-case-select");
         const fieldTypeLabels = ["ProtectiveSafeBlanking", "WarningSafeBlanking"];
         const defaultFieldNames = ["Protective", "Warning"];
+        const triOrbStateSnapshotVersion = 1;
         const createRectOriginXInput = document.getElementById("create-rect-originx");
         const createRectOriginYInput = document.getElementById("create-rect-originy");
         const createRectWidthInput = document.getElementById("create-rect-width");
@@ -397,7 +410,9 @@ document.addEventListener("DOMContentLoaded", () => {
         let pendingSvgImportContext = null;
         let triorbSource = bootstrapData.triorbSource || "";
         let fieldsets = initializeFieldsets(initialFieldsets);
-        let fieldsetDevices = initializeFieldsetDevices(initialFieldsetDevices);
+        let fieldsetDevices = initializeFieldsetDevices(initialFieldsetDevices, {
+          supplementDefaults: true,
+        });
         let fieldsetGlobalGeometry = initializeGlobalGeometry(initialFieldsetGlobal);
         const casetableCasesLimit = 128;
         const casetableEvalsLimit = 5;
@@ -464,6 +479,8 @@ document.addEventListener("DOMContentLoaded", () => {
         let createShapePreview = null;
         let createShapeDraftId = null;
         let fieldModalPreview = null;
+        let floatingPanelZCounter = 60;
+        let floatingPanelDragState = null;
         updateGlobalFieldAttributes();
 
         let lastHoverPoint = null;
@@ -557,6 +574,188 @@ document.addEventListener("DOMContentLoaded", () => {
           const resolvedState =
             typeof state === "string" ? state : state ? "error" : "ok";
           statusText.dataset.state = resolvedState;
+        }
+
+        function captureFileInfoValues() {
+          const scope = document.querySelector('[data-scope="fileinfo"]');
+          if (!scope) {
+            return {};
+          }
+          return Array.from(
+            scope.querySelectorAll(".menu-fileinfo-field input, .menu-fileinfo-field textarea")
+          ).reduce((acc, input) => {
+            const tag = input.dataset.field || sanitizeTagName(input.id || "Field");
+            acc[tag] = input.value ?? "";
+            return acc;
+          }, {});
+        }
+
+        function applyFileInfoValues(values = {}) {
+          const scope = document.querySelector('[data-scope="fileinfo"]');
+          if (!scope) {
+            return;
+          }
+          Array.from(
+            scope.querySelectorAll(".menu-fileinfo-field input, .menu-fileinfo-field textarea")
+          ).forEach((input) => {
+            const tag = input.dataset.field || sanitizeTagName(input.id || "Field");
+            if (Object.prototype.hasOwnProperty.call(values, tag)) {
+              input.value = values[tag] ?? "";
+            }
+          });
+        }
+
+        function encodeBase64Unicode(value) {
+          const encoder = new TextEncoder();
+          const bytes = encoder.encode(String(value ?? ""));
+          let binary = "";
+          bytes.forEach((byte) => {
+            binary += String.fromCharCode(byte);
+          });
+          return btoa(binary);
+        }
+
+        function decodeBase64Unicode(value) {
+          const binary = atob(String(value ?? ""));
+          const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+          const decoder = new TextDecoder();
+          return decoder.decode(bytes);
+        }
+
+        function clampValue(value, min, max) {
+          return Math.min(max, Math.max(min, value));
+        }
+
+        function syncFloatingPanelLauncherStates() {
+          floatingPanelLauncherButtons.forEach((button) => {
+            const target = document.getElementById(button.dataset.panelTarget || "");
+            const isActive = Boolean(target?.classList.contains("active"));
+            button.classList.toggle("active", isActive);
+            button.setAttribute("aria-pressed", String(isActive));
+          });
+        }
+
+        function bringFloatingPanelToFront(panel) {
+          if (!panel) {
+            return;
+          }
+          floatingPanelZCounter += 1;
+          panel.style.zIndex = String(floatingPanelZCounter);
+        }
+
+        function constrainFloatingPanelToViewport(panel) {
+          if (!panel) {
+            return;
+          }
+          const rect = panel.getBoundingClientRect();
+          const maxLeft = Math.max(16, window.innerWidth - rect.width - 16);
+          const maxTop = Math.max(16, window.innerHeight - rect.height - 16);
+          const left = clampValue(Number.parseFloat(panel.style.left) || rect.left, 16, maxLeft);
+          const top = clampValue(Number.parseFloat(panel.style.top) || rect.top, 16, maxTop);
+          panel.style.left = `${left}px`;
+          panel.style.top = `${top}px`;
+          panel.style.right = "auto";
+        }
+
+        function ensureFloatingPanelPosition(panel) {
+          if (!panel) {
+            return;
+          }
+          if (panel.dataset.positioned === "true") {
+            constrainFloatingPanelToViewport(panel);
+            return;
+          }
+          const panelIndex = Math.max(0, floatingPanels.indexOf(panel));
+          const column = panelIndex % 2;
+          const row = Math.floor(panelIndex / 2);
+          const rect = panel.getBoundingClientRect();
+          const width = rect.width || 560;
+          const left = Math.max(
+            16,
+            window.innerWidth - width - 24 - column * 28
+          );
+          const top = 112 + row * 28;
+          panel.style.left = `${left}px`;
+          panel.style.top = `${top}px`;
+          panel.style.right = "auto";
+          panel.dataset.positioned = "true";
+          constrainFloatingPanelToViewport(panel);
+        }
+
+        function openFloatingPanel(panelId) {
+          const panel = document.getElementById(panelId || "");
+          if (!panel) {
+            return;
+          }
+          panel.classList.add("active");
+          bringFloatingPanelToFront(panel);
+          ensureFloatingPanelPosition(panel);
+          syncFloatingPanelLauncherStates();
+        }
+
+        function closeFloatingPanel(target) {
+          const panel =
+            typeof target === "string" ? document.getElementById(target) : target;
+          if (!panel) {
+            return;
+          }
+          panel.classList.remove("active");
+          syncFloatingPanelLauncherStates();
+        }
+
+        function toggleFloatingPanel(panelId) {
+          const panel = document.getElementById(panelId || "");
+          if (!panel) {
+            return;
+          }
+          if (panel.classList.contains("active")) {
+            closeFloatingPanel(panel);
+          } else {
+            openFloatingPanel(panelId);
+          }
+        }
+
+        function handleFloatingPanelPointerDown(event) {
+          const header = event.target.closest("[data-panel-drag-handle]");
+          if (!header) {
+            return;
+          }
+          const panel = header.closest(".floating-panel");
+          if (!panel) {
+            return;
+          }
+          bringFloatingPanelToFront(panel);
+          ensureFloatingPanelPosition(panel);
+          const rect = panel.getBoundingClientRect();
+          floatingPanelDragState = {
+            panel,
+            pointerId: event.pointerId,
+            offsetX: event.clientX - rect.left,
+            offsetY: event.clientY - rect.top,
+          };
+          header.setPointerCapture?.(event.pointerId);
+          event.preventDefault();
+        }
+
+        function handleFloatingPanelPointerMove(event) {
+          if (!floatingPanelDragState || floatingPanelDragState.pointerId !== event.pointerId) {
+            return;
+          }
+          const { panel, offsetX, offsetY } = floatingPanelDragState;
+          panel.style.left = `${event.clientX - offsetX}px`;
+          panel.style.top = `${event.clientY - offsetY}px`;
+          panel.style.right = "auto";
+          panel.dataset.positioned = "true";
+          constrainFloatingPanelToViewport(panel);
+        }
+
+        function handleFloatingPanelPointerUp(event) {
+          if (!floatingPanelDragState || floatingPanelDragState.pointerId !== event.pointerId) {
+            return;
+          }
+          const activePanel = floatingPanelDragState.panel;
+          floatingPanelDragState = null;
+          constrainFloatingPanelToViewport(activePanel);
         }
 
         function invalidateBaseFigureTraces() {
@@ -3044,11 +3243,38 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           if (!selection) {
             return;
           }
-          if (selection.has(shapeId)) {
-            selection.delete(shapeId);
-          } else {
-            selection.add(shapeId);
+          const list = createFieldShapeLists[fieldIndex]?.[kind];
+          const anchorShapeId = createFieldModalSelectionAnchors[fieldIndex]?.[kind] || null;
+          const nextState = !selection.has(shapeId);
+          if (event.shiftKey && list && anchorShapeId) {
+            const buttons = Array.from(list.querySelectorAll(".create-field-shape-btn"));
+            const anchorIndex = buttons.findIndex((entry) => entry.dataset.shapeId === anchorShapeId);
+            const currentIndex = buttons.findIndex((entry) => entry.dataset.shapeId === shapeId);
+            if (anchorIndex >= 0 && currentIndex >= 0) {
+              const start = Math.min(anchorIndex, currentIndex);
+              const end = Math.max(anchorIndex, currentIndex);
+              buttons.slice(start, end + 1).forEach((entry) => {
+                const rangeShapeId = entry.dataset.shapeId;
+                if (!rangeShapeId) {
+                  return;
+                }
+                if (nextState) {
+                  selection.add(rangeShapeId);
+                } else {
+                  selection.delete(rangeShapeId);
+                }
+              });
+              setCreateFieldShapeSelections(fieldIndex, kind, Array.from(selection));
+              createFieldModalSelectionAnchors[fieldIndex][kind] = shapeId;
+              return;
+            }
           }
+          if (nextState) {
+            selection.add(shapeId);
+          } else {
+            selection.delete(shapeId);
+          }
+          createFieldModalSelectionAnchors[fieldIndex][kind] = shapeId;
           const isActive = selection.has(shapeId);
           button.classList.toggle("active", isActive);
           button.setAttribute("aria-pressed", String(isActive));
@@ -3393,6 +3619,11 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               selection[kind]?.clear();
             });
           });
+          createFieldModalSelectionAnchors.forEach((selection) => {
+            shapeKinds.forEach((kind) => {
+              selection[kind] = null;
+            });
+          });
           renderCreateFieldShapeLists();
           if (createFieldModalTitle) {
             createFieldModalTitle.textContent = isAppendingToExisting ? "Add Field" : "Add Fieldset";
@@ -3410,6 +3641,11 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           createFieldModalFieldShapeSelections.forEach((_, fieldIndex) => {
             shapeKinds.forEach((kind) => {
               setCreateFieldShapeSelections(fieldIndex, kind, []);
+            });
+          });
+          createFieldModalSelectionAnchors.forEach((selection) => {
+            shapeKinds.forEach((kind) => {
+              selection[kind] = null;
             });
           });
           createFieldTargetFieldsetIndex = null;
@@ -4313,7 +4549,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             `${shapeType} Shape ${triorbShapes.length + 1}`;
           const shape = createDefaultTriOrbShape(triorbShapes.length, shapeType);
           shape.id = normalizedAttrs.ID || createShapeId();
-          shape.name = shapeName;
+          shape.name = sanitizeLoadedShapeName(shapeName, shapeType);
           shape.fieldtype = context.fieldtype || shape.fieldtype;
           if (shapeType === "Polygon") {
             shape.polygon = {
@@ -5237,35 +5473,34 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             .join("");
         }
 
-        function initializeFieldsetDevices(data) {
-          let devices;
+        function initializeFieldsetDevices(
+          data,
+          { supplementDefaults = false } = {}
+        ) {
           if (!Array.isArray(data) || !data.length) {
-            devices = getDefaultFieldsetDevices();
-          } else {
-            devices = data.map((device, index) => {
-              const attrs = { ...(device.attributes || {}) };
-              if (!attrs.DeviceName) {
-                const scanDeviceByName = findScanPlaneDeviceByName(attrs.DeviceName);
-                if (scanDeviceByName?.attributes?.DeviceName) {
-                  attrs.DeviceName = scanDeviceByName.attributes.DeviceName;
-                } else {
-                  const scanDevice = findScanPlaneDeviceByTypekey(attrs.Typekey);
-                  if (scanDevice?.attributes?.DeviceName) {
-                    attrs.DeviceName = scanDevice.attributes.DeviceName;
-                  } else {
-                    attrs.DeviceName = `Device ${index + 1}`;
-                  }
-                }
-              }
-              const wrapper = { attributes: attrs };
-              applyScanPlaneDeviceAttributes(wrapper, {
-                deviceName: attrs.DeviceName,
-                typekey: attrs.Typekey,
-              });
-              return wrapper;
-            });
+            return getDefaultFieldsetDevices();
           }
-          ensureDefaultFieldsetDevices(devices);
+          const devices = data.map((device, index) => {
+            const attrs = { ...(device.attributes || {}) };
+            if (!attrs.DeviceName) {
+              const scanDevice = (scanPlanes[0]?.devices || [])[index] ||
+                findScanPlaneDeviceByTypekey(attrs.Typekey);
+              if (scanDevice?.attributes?.DeviceName) {
+                attrs.DeviceName = scanDevice.attributes.DeviceName;
+              } else {
+                attrs.DeviceName = `Device ${index + 1}`;
+              }
+            }
+            const wrapper = { attributes: attrs };
+            applyScanPlaneDeviceAttributes(wrapper, {
+              deviceName: attrs.DeviceName,
+              typekey: attrs.Typekey,
+            });
+            return wrapper;
+          });
+          if (supplementDefaults) {
+            ensureDefaultFieldsetDevices(devices);
+          }
           return devices;
         }
 
@@ -5289,6 +5524,137 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             text: typeof node.text === "string" ? node.text : "",
             children,
           };
+        }
+
+        function captureTriOrbStateSnapshot() {
+          return {
+            version: triOrbStateSnapshotVersion,
+            rootAttributes: { ...(rootAttributes || {}) },
+            fileInfo: captureFileInfoValues(),
+            scanPlanes: JSON.parse(JSON.stringify(scanPlanes || [])),
+            triorbShapes: JSON.parse(JSON.stringify(triorbShapes || [])),
+            triorbSource: triorbSource || "TriOrb",
+            fieldsets: JSON.parse(JSON.stringify(fieldsets || [])),
+            fieldsetDevices: JSON.parse(JSON.stringify(fieldsetDevices || [])),
+            fieldsetGlobalGeometry: JSON.parse(JSON.stringify(fieldsetGlobalGeometry || {})),
+            casetableAttributes: cloneAttributes(casetableAttributes || {}),
+            casetableConfiguration: cloneGenericNode(casetableConfiguration),
+            casetableCases: JSON.parse(JSON.stringify(casetableCases || [])),
+            casetableLayout: JSON.parse(JSON.stringify(casetableLayout || [])),
+            casetableEvals: JSON.parse(JSON.stringify(casetableEvals || null)),
+            fieldOfViewDegrees,
+            globalMultipleSampling,
+            globalResolution,
+            globalTolerancePositive,
+            globalToleranceNegative,
+            legendVisible,
+            caseToggleStates: Array.isArray(caseToggleStates) ? [...caseToggleStates] : [],
+            currentFigure: cloneFigure(currentFigure || defaultFigure),
+          };
+        }
+
+        function applySnapshotGlobals(snapshot = {}) {
+          fieldOfViewDegrees = parseNumeric(snapshot.fieldOfViewDegrees, 270);
+          globalMultipleSampling = String(
+            snapshot.globalMultipleSampling ?? deriveInitialMultipleSampling(fieldsets) ?? "2"
+          );
+          globalResolution = parseNumeric(
+            snapshot.globalResolution,
+            deriveFieldAttribute(fieldsets, "Resolution", 70)
+          );
+          globalTolerancePositive = parseNumeric(
+            snapshot.globalTolerancePositive,
+            deriveFieldAttribute(fieldsets, "TolerancePositive", 0)
+          );
+          globalToleranceNegative = parseNumeric(
+            snapshot.globalToleranceNegative,
+            deriveFieldAttribute(fieldsets, "ToleranceNegative", 0)
+          );
+          legendVisible = snapshot.legendVisible !== false;
+          if (fieldOfViewInput) {
+            fieldOfViewInput.value = String(fieldOfViewDegrees);
+          }
+          if (globalMultipleSamplingInput) {
+            globalMultipleSamplingInput.value = String(globalMultipleSampling);
+          }
+          if (globalResolutionInput) {
+            globalResolutionInput.value = String(globalResolution);
+          }
+          if (globalTolerancePositiveInput) {
+            globalTolerancePositiveInput.value = String(globalTolerancePositive);
+          }
+          if (globalToleranceNegativeInput) {
+            globalToleranceNegativeInput.value = String(globalToleranceNegative);
+          }
+          if (toggleLegendBtn) {
+            toggleLegendBtn.textContent = legendVisible ? "Hide Legend" : "Show Legend";
+          }
+          applyGlobalMultipleSampling(globalMultipleSampling, { rerender: false });
+          updateGlobalFieldAttributes();
+        }
+
+        function restoreTriOrbStateSnapshot(snapshot = {}) {
+          applyFileInfoValues(snapshot.fileInfo || {});
+          scanPlanes = initializeScanPlanes(snapshot.scanPlanes);
+          triorbShapes = initializeTriOrbShapes(snapshot.triorbShapes);
+          triorbSource = snapshot.triorbSource || "TriOrb";
+          triOrbImportContext = { triOrbRootFound: true, restoredFromSnapshot: true };
+          rebuildTriOrbShapeRegistry();
+          triOrbShapeCardCache.clear();
+          triOrbShapesListInitialized = false;
+          fieldsets = initializeFieldsets(snapshot.fieldsets);
+          fieldsetDevices = initializeFieldsetDevices(snapshot.fieldsetDevices, {
+            supplementDefaults: false,
+          });
+          fieldsetGlobalGeometry = initializeGlobalGeometry(snapshot.fieldsetGlobalGeometry);
+          casetableAttributes = cloneAttributes(snapshot.casetableAttributes || { Index: "0" });
+          casetableConfiguration = normalizeCasetableConfiguration(snapshot.casetableConfiguration);
+          casetableCases = initializeCasetableCases(snapshot.casetableCases);
+          casetableLayout = normalizeCasetableLayout(snapshot.casetableLayout);
+          casetableEvals = normalizeCasetableEvals(snapshot.casetableEvals, casetableCases.length);
+          casetableFieldsConfiguration = null;
+          caseToggleStates =
+            Array.isArray(snapshot.caseToggleStates) &&
+            snapshot.caseToggleStates.length === casetableCases.length
+              ? snapshot.caseToggleStates.map(Boolean)
+              : casetableCases.map(() => false);
+          applySnapshotGlobals(snapshot);
+          currentFigure = snapshot.currentFigure
+            ? cloneFigure(snapshot.currentFigure)
+            : cloneFigure(defaultFigure);
+          invalidateBaseFigureTraces();
+          invalidateDeviceTraceCache();
+          invalidateFieldsetTraces();
+          invalidateTriOrbShapeCaches();
+          renderScanPlanes();
+          renderFieldsetDevices();
+          renderFieldsetGlobal();
+          renderTriOrbShapes();
+          renderTriOrbShapeCheckboxes();
+          renderFieldsets();
+          renderCasetableConfiguration();
+          renderCasetableCases();
+          renderCasetableEvals();
+          regenerateFieldsConfiguration();
+          renderCasetableFieldsConfiguration();
+          refreshCaseFieldAssignments({ rerenderCaseToggles: true, rerenderFigure: false });
+          renderCaseCheckboxes();
+          renderFieldsetCheckboxes();
+        }
+
+        function readTriOrbStateSnapshot(triOrbNode) {
+          if (!triOrbNode) {
+            return null;
+          }
+          const snapshotNode = findFirstByTag(triOrbNode, "StateSnapshot");
+          const payload = (snapshotNode?.textContent || "").trim();
+          if (!snapshotNode || !payload) {
+            return null;
+          }
+          const encoding = (snapshotNode.getAttribute("Encoding") || "base64").toLowerCase();
+          const decoded =
+            encoding === "base64" ? decodeBase64Unicode(payload) : payload;
+          return JSON.parse(decoded);
         }
 
         function normalizeCasetableConfiguration(node) {
@@ -6481,6 +6847,9 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           const lines = buildBaseSdImportExportLines({
             deviceIndexStrategy: "sequential",
           }).slice();
+          const snapshotPayload = encodeBase64Unicode(
+            JSON.stringify(captureTriOrbStateSnapshot())
+          );
           lines.push("");
           if (!triorbSource) {
             triorbSource = "TriOrbAware";
@@ -6524,6 +6893,9 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           const shapeLines = buildTriOrbShapesXml();
           shapeLines.forEach((line) => lines.push(line));
           lines.push("  </TriOrbMenu>");
+          lines.push(
+            `  <StateSnapshot Format="json" Encoding="base64" Version="${triOrbStateSnapshotVersion}">${snapshotPayload}</StateSnapshot>`
+          );
           lines.push("</TriOrb_SICK_SLS_Editor>");
           return lines.join("\n");
         }
@@ -6639,6 +7011,29 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           return merged;
         }
 
+        function resolveFieldShapeReferences(field) {
+          return Array.isArray(field?.shapeRefs)
+            ? field.shapeRefs
+                .map((shapeRef) =>
+                  findTriOrbShapeById(shapeRef.shapeId) ||
+                  triorbShapes.find((shape) => shape.id === shapeRef.shapeId)
+                )
+                .filter(Boolean)
+            : [];
+        }
+
+        function fieldHasInlineGeometry(field) {
+          return (
+            (Array.isArray(field?.polygons) && field.polygons.length > 0) ||
+            (Array.isArray(field?.circles) && field.circles.length > 0) ||
+            (Array.isArray(field?.rectangles) && field.rectangles.length > 0)
+          );
+        }
+
+        function fieldHasSerializableContent(field) {
+          return fieldHasInlineGeometry(field) || resolveFieldShapeReferences(field).length > 0;
+        }
+
         function buildFieldsetsXml(fieldsetDeviceAttrs = null, { includeUserFieldIds = true } = {}) {
           const lines = [];
           lines.push('    <ScanPlane Index="0">');
@@ -6718,26 +7113,22 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
 
           if (fieldsets.length) {
             fieldsets.forEach((fieldset) => {
+              const mergedFields = mergeFieldsByAttributes(fieldset.fields || []);
+              const serializableFields = mergedFields.filter((field) =>
+                fieldHasSerializableContent(field)
+              );
+              if (!serializableFields.length) {
+                return;
+              }
               const attrText = buildAttributeString(
                 stripLatin9Key(fieldset.attributes),
                 getAttributeOrder("Fieldset")
               );
               lines.push(`        <Fieldset${attrText ? " " + attrText : ""}>`);
-              const mergedFields = mergeFieldsByAttributes(fieldset.fields || []);
-              if (mergedFields.length) {
-                mergedFields.forEach((field) => {
-                  const hasInlineGeometry =
-                    (Array.isArray(field.polygons) && field.polygons.length > 0) ||
-                    (Array.isArray(field.circles) && field.circles.length > 0) ||
-                    (Array.isArray(field.rectangles) && field.rectangles.length > 0);
-                  const shapeRefs = Array.isArray(field.shapeRefs)
-                    ? field.shapeRefs
-                        .map((shapeRef) =>
-                          findTriOrbShapeById(shapeRef.shapeId) ||
-                          triorbShapes.find((shape) => shape.id === shapeRef.shapeId)
-                        )
-                        .filter(Boolean)
-                    : [];
+              if (serializableFields.length) {
+                serializableFields.forEach((field) => {
+                  const hasInlineGeometry = fieldHasInlineGeometry(field);
+                  const shapeRefs = resolveFieldShapeReferences(field);
 
                   if (
                     Array.isArray(field.shapeRefs) &&
@@ -6834,8 +7225,6 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
                   }
                   lines.push("          </Field>");
                 });
-              } else {
-                lines.push("          <!-- No fields -->");
               }
               lines.push("        </Fieldset>");
             });
@@ -7410,21 +7799,22 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             const numericIndex = Number.parseInt(indexValue, 10);
             const planeId = attrs.Id || (Number.isFinite(numericIndex) ? String(numericIndex + 1) : String(planeIndex + 1));
             const nameValue = attrs.Name || `ScanPlane ${planeIndex + 1}`;
-            const userFieldsetsNode = fieldsetsAssigned
-              ? { tag: "UserFieldsets", attributes: {}, text: "", children: [] }
-              : buildFieldsConfigurationUserFieldsets(counter);
+            const children = [
+              { tag: "Index", attributes: {}, text: String(indexValue), children: [] },
+              { tag: "Name", attributes: {}, text: nameValue, children: [] },
+            ];
             if (!fieldsetsAssigned) {
+              const userFieldsetsNode = buildFieldsConfigurationUserFieldsets(counter);
+              if (userFieldsetsNode) {
+                children.push(userFieldsetsNode);
+              }
               fieldsetsAssigned = true;
             }
             return {
               tag: "ScanPlane",
               attributes: { Id: String(planeId) },
               text: "",
-              children: [
-                { tag: "Index", attributes: {}, text: String(indexValue), children: [] },
-                { tag: "Name", attributes: {}, text: nameValue, children: [] },
-                userFieldsetsNode,
-              ],
+              children,
             };
           });
         }
@@ -7432,6 +7822,10 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
         function buildFieldsConfigurationUserFieldsets(counter) {
           const fieldsetNodes = Array.isArray(fieldsets)
             ? fieldsets.map((fieldset, fieldsetIndex) => {
+                const userFields = buildFieldsConfigurationUserFields(fieldset, fieldsetIndex, counter);
+                if (!userFields.length) {
+                  return null;
+                }
                 const attrs = fieldset?.attributes || {};
                 return {
                   tag: "UserFieldset",
@@ -7444,17 +7838,22 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
                       tag: "UserFields",
                       attributes: {},
                       text: "",
-                      children: buildFieldsConfigurationUserFields(fieldset, fieldsetIndex, counter),
+                      children: userFields,
                     },
                   ],
                 };
-              })
+              }).filter(Boolean)
             : [];
+          if (!fieldsetNodes.length) {
+            return null;
+          }
           return { tag: "UserFieldsets", attributes: {}, text: "", children: fieldsetNodes };
         }
 
         function buildFieldsConfigurationUserFields(fieldset, fieldsetIndex, counter) {
-          const fields = Array.isArray(fieldset?.fields) ? mergeFieldsByAttributes(fieldset.fields) : [];
+          const fields = Array.isArray(fieldset?.fields)
+            ? mergeFieldsByAttributes(fieldset.fields).filter((field) => fieldHasSerializableContent(field))
+            : [];
           return fields.map((field, fieldIndex) => {
             const attrs = field?.attributes || {};
             const primaryShapeId = findPrimaryShapeIdForField(field);
@@ -8509,6 +8908,29 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             findFirstByTag(doc, "TriOrb_SICK_SLS_Editor");
           triOrbImportContext = { triOrbRootFound: Boolean(triOrbRoot) };
           console.log("parseXmlToFigure TriOrb root exists", Boolean(triOrbRoot));
+          if (triOrbRoot) {
+            try {
+              const snapshot = readTriOrbStateSnapshot(triOrbRoot);
+              if (snapshot) {
+                restoreTriOrbStateSnapshot(snapshot);
+                const restoredFigure = cloneFigure(currentFigure || defaultFigure);
+                return {
+                  traces: restoredFigure.data || [],
+                  layout: restoredFigure.layout || cloneFigure(defaultFigure).layout,
+                  warning: warningMessage,
+                  triOrbPresent: true,
+                };
+              }
+            } catch (error) {
+              warningMessage = [
+                warningMessage,
+                "TriOrb snapshot could not be restored; falling back to XML parsing.",
+              ]
+                .filter(Boolean)
+                .join(" ");
+              console.warn("TriOrb snapshot restore failed", error);
+            }
+          }
           if (!triOrbRoot) {
             const nodesWithTriOrbInName = [];
             const nodesWithTriOrbAttrs = [];
@@ -8703,13 +9125,23 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           const tracesFromPlotData = parsePlotDataTraces(doc);
           if (tracesFromPlotData.length) {
             const triOrbPresent = Boolean(triOrbDoc.querySelector("TriOrb_SICK_SLS_Editor"));
-            return { traces: tracesFromPlotData, warning: warningMessage, triOrbPresent };
+            return {
+              traces: tracesFromPlotData,
+              layout: cloneFigure(defaultFigure).layout,
+              warning: warningMessage,
+              triOrbPresent,
+            };
           }
 
           const polygonTrace = parsePolygonTrace(doc);
           if (polygonTrace.length) {
             const triOrbPresent = Boolean(triOrbDoc.querySelector("TriOrb_SICK_SLS_Editor"));
-            return { traces: polygonTrace, warning: warningMessage, triOrbPresent };
+            return {
+              traces: polygonTrace,
+              layout: cloneFigure(defaultFigure).layout,
+              warning: warningMessage,
+              triOrbPresent,
+            };
           }
 
           const combinedWarning = [
@@ -8720,6 +9152,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             .join(" ");
           return {
             traces: [],
+            layout: cloneFigure(defaultFigure).layout,
             warning: combinedWarning,
             triOrbPresent: Boolean(triOrbDoc.querySelector("TriOrb_SICK_SLS_Editor")),
           };
@@ -8852,7 +9285,11 @@ function parsePolygonTrace(doc) {
 
         function collectTriOrbShapeDetails(shapeNode) {
           const type = shapeNode.getAttribute("Type") || "Polygon";
-          const result = { id: shapeNode.getAttribute("ID") || createShapeId(), name: shapeNode.getAttribute("Name") || "", type };
+          const result = {
+            id: shapeNode.getAttribute("ID") || createShapeId(),
+            name: sanitizeLoadedShapeName(shapeNode.getAttribute("Name") || "", type),
+            type,
+          };
           if (type === "Polygon") {
             const polygon = findFirstByTag(shapeNode, "Polygon");
             if (polygon) {
@@ -11776,6 +12213,8 @@ function parsePolygonTrace(doc) {
         let createShapeModalOffsetY = 0;
         let createShapeDragStartX = 0;
         let createShapeDragStartY = 0;
+        let createShapeResizeStartX = 0;
+        let createShapeResizeStartY = 0;
         let isCreateShapeDragging = false;
         let isCreateShapeResizing = false;
         let createShapeInitialWidth = 0;
@@ -12045,6 +12484,10 @@ function parsePolygonTrace(doc) {
             button.classList.toggle("active", isActive);
             button.setAttribute("aria-pressed", String(isActive));
           });
+          const orderedIndexes = Array.from(indexSet).filter(Number.isFinite).sort((a, b) => a - b);
+          createShapeFieldsetSelectionAnchor = orderedIndexes.length
+            ? orderedIndexes[orderedIndexes.length - 1]
+            : null;
         }
 
         function getFieldsetIndexesReferencingShape(shapeId) {
@@ -12129,6 +12572,7 @@ function parsePolygonTrace(doc) {
           renderCreateShapeFieldsetsList();
 
           setCreateShapeFieldsetSelections([]);
+          createShapeFieldsetSelectionAnchor = null;
 
           createShapeDraftId = createShapeId();
 
@@ -12181,6 +12625,9 @@ function parsePolygonTrace(doc) {
           populateCreateShapeForm(shape);
           const referencing = getFieldsetIndexesReferencingShape(shape.id);
           setCreateShapeFieldsetSelections(referencing);
+          createShapeFieldsetSelectionAnchor = referencing.length
+            ? referencing[referencing.length - 1]
+            : null;
           createShapeDraftId = shape.id;
           if (createShapeModalTitle) {
             createShapeModalTitle.textContent = "Edit Shape";
@@ -12209,6 +12656,7 @@ function parsePolygonTrace(doc) {
           createShapeMode = "create";
           createShapeEditingId = null;
           createShapeOriginal = null;
+          createShapeFieldsetSelectionAnchor = null;
           if (createShapeModalTitle) {
             createShapeModalTitle.textContent = "Add Shape";
           }
@@ -12312,8 +12760,33 @@ function parsePolygonTrace(doc) {
               return;
             }
             event.preventDefault();
-            const isActive = button.classList.toggle("active");
-            button.setAttribute("aria-pressed", isActive ? "true" : "false");
+            const index = Number(button.dataset.createFieldsetIndex);
+            if (!Number.isFinite(index)) {
+              return;
+            }
+            const selectedIndexes = new Set(getCreateShapeSelectedFieldsets());
+            const nextState = !button.classList.contains("active");
+            if (event.shiftKey && createShapeFieldsetSelectionAnchor !== null) {
+              const start = Math.min(createShapeFieldsetSelectionAnchor, index);
+              const end = Math.max(createShapeFieldsetSelectionAnchor, index);
+              for (let current = start; current <= end; current += 1) {
+                if (nextState) {
+                  selectedIndexes.add(current);
+                } else {
+                  selectedIndexes.delete(current);
+                }
+              }
+              setCreateShapeFieldsetSelections(Array.from(selectedIndexes));
+              createShapeFieldsetSelectionAnchor = index;
+              return;
+            }
+            if (nextState) {
+              selectedIndexes.add(index);
+            } else {
+              selectedIndexes.delete(index);
+            }
+            setCreateShapeFieldsetSelections(Array.from(selectedIndexes));
+            createShapeFieldsetSelectionAnchor = index;
           });
         }
         if (createFieldModal) {
@@ -12813,8 +13286,7 @@ function parsePolygonTrace(doc) {
           const reader = new FileReader();
           reader.onload = () => {
             try {
-              const { traces, warning, triOrbPresent } = parseXmlToFigure(reader.result);
-              const layout = cloneFigure(defaultFigure).layout;
+              const { traces, layout, warning, triOrbPresent } = parseXmlToFigure(reader.result);
               currentFigure = { data: traces, layout };
               invalidateBaseFigureTraces();
               renderFigure();
@@ -12936,12 +13408,52 @@ function parsePolygonTrace(doc) {
         }
         document.addEventListener("pointermove", updateModalDrag);
         document.addEventListener("pointerup", endModalDrag);
+        floatingPanelLauncherButtons.forEach((button) => {
+          button.addEventListener("click", () => {
+            toggleFloatingPanel(button.dataset.panelTarget);
+          });
+        });
+        floatingPanels.forEach((panel) => {
+          panel.addEventListener("pointerdown", (event) => {
+            if (event.target.closest("[data-panel-close]")) {
+              closeFloatingPanel(panel);
+              return;
+            }
+            bringFloatingPanelToFront(panel);
+          });
+          panel
+            .querySelector("[data-panel-drag-handle]")
+            ?.addEventListener("pointerdown", handleFloatingPanelPointerDown);
+        });
+        document.addEventListener("pointermove", handleFloatingPanelPointerMove);
+        document.addEventListener("pointerup", handleFloatingPanelPointerUp);
+        window.addEventListener("resize", () => {
+          floatingPanels.forEach((panel) => {
+            if (panel.classList.contains("active")) {
+              constrainFloatingPanelToViewport(panel);
+            }
+          });
+        });
+        syncFloatingPanelLauncherStates();
 
         setupLayoutObservers();
         renderFigure();
 
         window.__triorbTestApi = {
           buildTriOrbXml: () => buildTriOrbXml(),
+          buildLegacyXml: () => buildLegacyXml(),
+          getStateSnapshot: () => captureTriOrbStateSnapshot(),
+          loadXml: (xmlText) => {
+            const parsed = parseXmlToFigure(xmlText);
+            currentFigure = { data: parsed.traces, layout: parsed.layout };
+            invalidateBaseFigureTraces();
+            renderFigure();
+            return parsed;
+          },
+          restoreStateSnapshot: (snapshot) => {
+            restoreTriOrbStateSnapshot(snapshot);
+            renderFigure();
+          },
         };
 
         function setupLayoutObservers() {

@@ -58,22 +58,18 @@
     }
 
     .side-menu {
-      flex: 0 0 360px;
-      max-height: calc(100vh - 4rem);
-      overflow-y: auto;
-      padding-right: 0.5rem;
+      flex: 0 0 220px;
+      min-width: 220px;
+      background: linear-gradient(180deg, #f8fbfe 0%, #eef4f8 100%);
+      border-radius: 14px;
+      padding: 1rem;
+      box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.06);
       position: sticky;
       top: 2rem;
       align-self: flex-start;
-    }
-
-    .side-menu::-webkit-scrollbar {
-      width: 6px;
-    }
-
-    .side-menu::-webkit-scrollbar-thumb {
-      background: rgba(15, 23, 42, 0.25);
-      border-radius: 3px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
     }
 
     .toolbar {
@@ -213,21 +209,104 @@
       font-size: 0.9rem;
     }
 
-    .side-menu {
-      flex: 0 0 auto;
-      min-width: 220px;
-      max-width: 40%;
-      width: fit-content;
-      background: #f6f8fb;
-      border-radius: 10px;
-      padding: 1rem;
-      box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.05);
-    }
-
     .side-menu h2 {
       font-size: 1rem;
       margin: 0 0 0.75rem;
       color: #1f2937;
+    }
+
+    .side-menu-note {
+      margin: 0;
+      color: #475569;
+      font-size: 0.85rem;
+      line-height: 1.5;
+    }
+
+    .floating-panel-launchers {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.6rem;
+    }
+
+    .panel-launch-btn {
+      justify-content: center;
+      min-height: 3rem;
+      background: #0f172a;
+      color: #f8fafc;
+      border-radius: 10px;
+      padding: 0.75rem 0.5rem;
+      font-size: 0.82rem;
+      text-align: center;
+      line-height: 1.35;
+    }
+
+    .panel-launch-btn.active {
+      background: #0b6fb8;
+    }
+
+    .floating-panel {
+      position: fixed;
+      top: 7rem;
+      right: 1.5rem;
+      width: min(560px, calc(100vw - 3rem));
+      max-height: calc(100vh - 9rem);
+      display: none;
+      flex-direction: column;
+      background: #ffffff;
+      border: 1px solid rgba(15, 23, 42, 0.12);
+      border-radius: 14px;
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.22);
+      overflow: hidden;
+      z-index: 40;
+    }
+
+    .floating-panel.active {
+      display: flex;
+    }
+
+    .floating-panel[data-panel-size="wide"] {
+      width: min(720px, calc(100vw - 3rem));
+    }
+
+    .floating-panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0.85rem 1rem;
+      background: linear-gradient(135deg, #0b6fb8 0%, #155e75 100%);
+      color: #ffffff;
+      cursor: move;
+      user-select: none;
+    }
+
+    .floating-panel-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .floating-panel-body {
+      overflow: auto;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      background: #f8fafc;
+    }
+
+    .floating-panel-body .menu-section,
+    .floating-panel-body .casetable-section {
+      margin-bottom: 0;
+    }
+
+    .floating-panel-body::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .floating-panel-body::-webkit-scrollbar-thumb {
+      background: rgba(15, 23, 42, 0.18);
+      border-radius: 999px;
     }
 
     .menu-section {
@@ -1641,6 +1720,15 @@
 
       .side-menu {
         width: 100%;
+        min-width: 0;
+        position: static;
+      }
+
+      .floating-panel {
+        left: 1rem;
+        right: 1rem;
+        width: auto;
+        max-height: 70vh;
       }
     }
   </style>
@@ -1789,7 +1877,7 @@
           </div>
         </div>
         <div class="modal-section preview-note">
-          <p>Selected shapes render on the Plotly canvas in red preview while editing.</p>
+          <p>Selected shapes render on the Plotly canvas in red preview while editing. Shift + click selects a range.</p>
         </div>
       </div>
       <div class="modal-footer">
@@ -2059,15 +2147,25 @@
         <div id="triorb-shape-checkboxes"></div>
       </div>
     </section>
-    <!-- サイドメニュー: XML構造を表示する領域 -->
+    <!-- 右側ドック: 6ボタンで各編集ツリーをフローティング表示 -->
     <aside class="side-menu">
-      <h2>Structure Menu</h2>
-      {% for item in menu_items %}
-      <details class="menu-section" {% if loop.first and item.tag !="FileInfo" %}open{% endif %}>
-        <summary>{{ item.tag }}</summary>
-        <div class="menu-content">
-          {% if item.tag == "FileInfo" %}
-          <p class="menu-description">{{ item.summary }}</p>
+      <h2>Editors</h2>
+      <p class="side-menu-note">右側の編集ツリーは必要なときだけフローティング表示します。</p>
+      <div class="floating-panel-launchers">
+        <button type="button" class="panel-launch-btn" data-panel-target="panel-fileinfo">FileInfo</button>
+        <button type="button" class="panel-launch-btn" data-panel-target="panel-scanplanes">ScanPlanes</button>
+        <button type="button" class="panel-launch-btn" data-panel-target="panel-fieldsets">Fieldsets</button>
+        <button type="button" class="panel-launch-btn" data-panel-target="panel-casetable">Casetable</button>
+        <button type="button" class="panel-launch-btn" data-panel-target="panel-triorb-settings">TriOrb Settings</button>
+        <button type="button" class="panel-launch-btn" data-panel-target="panel-triorb-shapes">TriOrb Shapes</button>
+      </div>
+
+      <section class="floating-panel" id="panel-fileinfo">
+        <div class="floating-panel-header" data-panel-drag-handle>
+          <span class="floating-panel-title">FileInfo</span>
+          <button type="button" class="inline-btn secondary shape-mini-btn" data-panel-close>×</button>
+        </div>
+        <div class="floating-panel-body">
           {% if fileinfo_fields %}
           <div class="menu-fileinfo-grid" data-scope="fileinfo">
             {% for field in fileinfo_fields %}
@@ -2080,12 +2178,26 @@
           {% else %}
           <p>No FileInfo entries.</p>
           {% endif %}
-          {% elif item.tag == "Export_ScanPlanes" %}
-          <p class="menu-description">{{ item.summary }}</p>
+        </div>
+      </section>
+
+      <section class="floating-panel" id="panel-scanplanes">
+        <div class="floating-panel-header" data-panel-drag-handle>
+          <span class="floating-panel-title">ScanPlanes</span>
+          <button type="button" class="inline-btn secondary shape-mini-btn" data-panel-close>×</button>
+        </div>
+        <div class="floating-panel-body">
           <button type="button" class="inline-btn" id="btn-add-scanplane">Add ScanPlane</button>
           <div class="scanplanes-editor" id="scanplanes-editor"></div>
-          {% elif item.tag == "Export_FieldsetsAndFields" %}
-          <p class="menu-description">{{ item.summary }}</p>
+        </div>
+      </section>
+
+      <section class="floating-panel" id="panel-fieldsets">
+        <div class="floating-panel-header" data-panel-drag-handle>
+          <span class="floating-panel-title">Fieldsets</span>
+          <button type="button" class="inline-btn secondary shape-mini-btn" data-panel-close>×</button>
+        </div>
+        <div class="floating-panel-body">
           <button type="button" class="inline-btn" id="btn-add-fieldset">Add Fieldset</button>
           <details class="menu-section" id="fieldset-global-section">
             <summary>GlobalGeometry</summary>
@@ -2105,7 +2217,15 @@
             </div>
           </details>
           <div class="fieldsets-editor" id="fieldsets-editor"></div>
-          {% elif item.tag == "Export_CasetablesAndCases" %}
+        </div>
+      </section>
+
+      <section class="floating-panel" id="panel-casetable" data-panel-size="wide">
+        <div class="floating-panel-header" data-panel-drag-handle>
+          <span class="floating-panel-title">Casetable</span>
+          <button type="button" class="inline-btn secondary shape-mini-btn" data-panel-close>×</button>
+        </div>
+        <div class="floating-panel-body">
           <div class="casetable-section">
             <h3>Configuration</h3>
             <div class="casetable-configuration" id="casetable-configuration"></div>
@@ -2139,27 +2259,68 @@
             </p>
             <div class="casetable-fields-configuration" id="casetable-fields-configuration"></div>
           </div>
-          {% else %}
-          <p>{{ item.summary }}</p>
-          {% endif %}
         </div>
-      </details>
-      {% endfor %}
-      <h2>TriOrb Menu</h2>
-      <details class="menu-section">
-        <summary>Device</summary>
-        <div class="menu-content">
-          <div class="menu-fileinfo-grid">
-            <div class="triorb-field">
-              <label>FieldOfView</label>
-              <input type="number" id="triorb-field-of-view" value="270" min="1" max="360" step="1" />
+      </section>
+
+      <section class="floating-panel" id="panel-triorb-settings">
+        <div class="floating-panel-header" data-panel-drag-handle>
+          <span class="floating-panel-title">TriOrb Settings</span>
+          <button type="button" class="inline-btn secondary shape-mini-btn" data-panel-close>×</button>
+        </div>
+        <div class="floating-panel-body">
+          <details class="menu-section" open>
+            <summary>Device</summary>
+            <div class="menu-content">
+              <div class="menu-fileinfo-grid">
+                <div class="triorb-field">
+                  <label>FieldOfView</label>
+                  <input type="number" id="triorb-field-of-view" value="270" min="1" max="360" step="1" />
+                </div>
+              </div>
             </div>
-          </div>
+          </details>
+          <details class="menu-section" open>
+            <summary>Common</summary>
+            <div class="menu-content">
+              <div class="menu-fileinfo-grid">
+                <div class="triorb-field">
+                  <label>MultipleSampling (2-16)</label>
+                  <input id="global-multiple-sampling" type="number" min="2" max="16" value="2" />
+                </div>
+                <div class="triorb-field">
+                  <label>Resolution</label>
+                  <input id="global-resolution" type="number" min="1" max="1000" value="70" />
+                </div>
+                <div class="triorb-field">
+                  <label>TolerancePositive</label>
+                  <input id="global-tolerance-positive" type="number" value="0" />
+                </div>
+                <div class="triorb-field">
+                  <label>ToleranceNegative</label>
+                  <input id="global-tolerance-negative" type="number" value="0" />
+                </div>
+              </div>
+              <details class="menu-section">
+                <summary>CommonCutOut #1</summary>
+                <div class="menu-content">
+                  <ul>
+                    <li>Polygon #1</li>
+                    <li>Circle #1</li>
+                    <li>Rectangle #1</li>
+                  </ul>
+                </div>
+              </details>
+            </div>
+          </details>
         </div>
-      </details>
-      <details class="menu-section">
-        <summary>Shapes</summary>
-        <div class="menu-content">
+      </section>
+
+      <section class="floating-panel" id="panel-triorb-shapes">
+        <div class="floating-panel-header" data-panel-drag-handle>
+          <span class="floating-panel-title">TriOrb Shapes</span>
+          <button type="button" class="inline-btn secondary shape-mini-btn" data-panel-close>×</button>
+        </div>
+        <div class="floating-panel-body">
           <div class="fieldset-actions">
             <button type="button" class="inline-btn" id="btn-add-triorb-shape">
               Add Shape
@@ -2167,40 +2328,7 @@
           </div>
           <div class="triorb-shapes-list" id="triorb-shapes-list"></div>
         </div>
-      </details>
-      <details class="menu-section">
-        <summary>Common</summary>
-        <div class="menu-content">
-          <div class="menu-fileinfo-grid">
-            <div class="triorb-field">
-              <label>MultipleSampling (2-16)</label>
-              <input id="global-multiple-sampling" type="number" min="2" max="16" value="2" />
-            </div>
-            <div class="triorb-field">
-              <label>Resolution</label>
-              <input id="global-resolution" type="number" min="1" max="1000" value="70" />
-            </div>
-            <div class="triorb-field">
-              <label>TolerancePositive</label>
-              <input id="global-tolerance-positive" type="number" value="0" />
-            </div>
-            <div class="triorb-field">
-              <label>ToleranceNegative</label>
-              <input id="global-tolerance-negative" type="number" value="0" />
-            </div>
-          </div>
-          <details class="menu-section">
-            <summary>CommonCutOut #1</summary>
-            <div class="menu-content">
-              <ul>
-                <li>Polygon #1</li>
-                <li>Circle #1</li>
-                <li>Rectangle #1</li>
-              </ul>
-            </div>
-          </details>
-        </div>
-      </details>
+      </section>
     </aside>
   </main>
   <footer>Flask + Plotly powered preview</footer>
