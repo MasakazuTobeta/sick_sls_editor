@@ -175,6 +175,47 @@
       margin-bottom: 0.75rem;
     }
 
+    .panel-filter-box {
+      margin: 0.75rem 0 1rem;
+    }
+
+    .panel-filter-box input {
+      width: 100%;
+      border: 1px solid rgba(15, 23, 42, 0.18);
+      border-radius: 8px;
+      padding: 0.55rem 0.75rem;
+      font-size: 0.9rem;
+      background: #f8fafc;
+      color: #0f172a;
+    }
+
+    .panel-filter-empty {
+      margin: 0;
+      color: #64748b;
+      font-size: 0.9rem;
+    }
+
+    .selection-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .selection-toolbar-actions {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+    }
+
+    .selection-help {
+      margin: 0.35rem 0 0;
+      font-size: 0.82rem;
+      color: #64748b;
+    }
+
     #fieldset-checkboxes {
       display: flex;
       flex-wrap: wrap;
@@ -1055,6 +1096,13 @@
       border-radius: 8px;
       padding: 0.6rem;
       background: #fff;
+      transition: border-color 120ms ease, box-shadow 120ms ease, background 120ms ease;
+    }
+
+    .fieldset-card.is-hovered {
+      border-color: rgba(14, 116, 144, 0.4);
+      background: #f0fdfa;
+      box-shadow: 0 0 0 2px rgba(45, 212, 191, 0.14);
     }
 
     .fieldset-details summary {
@@ -1119,6 +1167,13 @@
       padding: 0.5rem;
       background: #fefefe;
       margin-top: 0.5rem;
+      transition: border-color 120ms ease, box-shadow 120ms ease, background 120ms ease;
+    }
+
+    .field-card.is-hovered {
+      border-color: rgba(37, 99, 235, 0.38);
+      background: #eff6ff;
+      box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.14);
     }
 
     .field-details summary {
@@ -1162,6 +1217,19 @@
       border-radius: 10px;
       padding: 0.6rem;
       background: #f1f5f9;
+      transition: border-color 120ms ease, box-shadow 120ms ease, background 120ms ease;
+    }
+
+    .triorb-shape-card.is-hovered {
+      border-color: rgba(14, 116, 144, 0.55);
+      background: #ecfeff;
+      box-shadow: 0 0 0 2px rgba(34, 211, 238, 0.2);
+    }
+
+    .triorb-shape-card.is-selected {
+      border-color: rgba(37, 99, 235, 0.55);
+      background: #eff6ff;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.18);
     }
 
     .triorb-shape-card .shape-row {
@@ -1810,8 +1878,19 @@
           </div>
         </div>
         <div class="modal-section">
-          <label>Attach to Fieldsets</label>
+          <div class="selection-toolbar">
+            <label>Attach to Fieldsets</label>
+            <div class="selection-toolbar-actions">
+              <button type="button" class="inline-btn secondary shape-mini-btn" data-create-shape-selection-action="all">
+                All
+              </button>
+              <button type="button" class="inline-btn secondary shape-mini-btn" data-create-shape-selection-action="clear">
+                Clear
+              </button>
+            </div>
+          </div>
           <div id="create-shape-fieldset-list" class="toggle-pill-grid"></div>
+          <p class="selection-help">Shift + click で範囲選択、Ctrl/Cmd + click で現在の選択を保ったまま追加・解除できます。</p>
         </div>
         <div class="modal-section preview-note">
           <p>Live preview will be shown as a red overlay while editing.</p>
@@ -1852,11 +1931,31 @@
               <input type="text" id="create-field-name-0" placeholder="Protective name" />
             </label>
             <div class="shape-list-group">
-              <p>Type = Field</p>
+              <div class="selection-toolbar">
+                <p>Type = Field</p>
+                <div class="selection-toolbar-actions">
+                  <button type="button" class="inline-btn secondary shape-mini-btn" data-create-field-selection-action="all" data-field-index="0" data-kind="Field">
+                    All
+                  </button>
+                  <button type="button" class="inline-btn secondary shape-mini-btn" data-create-field-selection-action="clear" data-field-index="0" data-kind="Field">
+                    Clear
+                  </button>
+                </div>
+              </div>
               <div class="shape-list" id="create-field-shape-list-0-field"></div>
             </div>
             <div class="shape-list-group">
-              <p>Type = CutOut</p>
+              <div class="selection-toolbar">
+                <p>Type = CutOut</p>
+                <div class="selection-toolbar-actions">
+                  <button type="button" class="inline-btn secondary shape-mini-btn" data-create-field-selection-action="all" data-field-index="0" data-kind="CutOut">
+                    All
+                  </button>
+                  <button type="button" class="inline-btn secondary shape-mini-btn" data-create-field-selection-action="clear" data-field-index="0" data-kind="CutOut">
+                    Clear
+                  </button>
+                </div>
+              </div>
               <div class="shape-list" id="create-field-shape-list-0-cutout"></div>
             </div>
           </div>
@@ -1867,17 +1966,37 @@
               <input type="text" id="create-field-name-1" placeholder="Warning name" />
             </label>
             <div class="shape-list-group">
-              <p>Type = Field</p>
+              <div class="selection-toolbar">
+                <p>Type = Field</p>
+                <div class="selection-toolbar-actions">
+                  <button type="button" class="inline-btn secondary shape-mini-btn" data-create-field-selection-action="all" data-field-index="1" data-kind="Field">
+                    All
+                  </button>
+                  <button type="button" class="inline-btn secondary shape-mini-btn" data-create-field-selection-action="clear" data-field-index="1" data-kind="Field">
+                    Clear
+                  </button>
+                </div>
+              </div>
               <div class="shape-list" id="create-field-shape-list-1-field"></div>
             </div>
             <div class="shape-list-group">
-              <p>Type = CutOut</p>
+              <div class="selection-toolbar">
+                <p>Type = CutOut</p>
+                <div class="selection-toolbar-actions">
+                  <button type="button" class="inline-btn secondary shape-mini-btn" data-create-field-selection-action="all" data-field-index="1" data-kind="CutOut">
+                    All
+                  </button>
+                  <button type="button" class="inline-btn secondary shape-mini-btn" data-create-field-selection-action="clear" data-field-index="1" data-kind="CutOut">
+                    Clear
+                  </button>
+                </div>
+              </div>
               <div class="shape-list" id="create-field-shape-list-1-cutout"></div>
             </div>
           </div>
         </div>
         <div class="modal-section preview-note">
-          <p>Selected shapes render on the Plotly canvas in red preview while editing. Shift + click selects a range.</p>
+          <p>Selected shapes render on the Plotly canvas in red preview while editing. Shift + click selects a range, Ctrl/Cmd + click keeps the current selection, and All / Clear toggles the whole group.</p>
         </div>
       </div>
       <div class="modal-footer">
@@ -1899,7 +2018,17 @@
       </div>
       <div class="modal-body bulk-edit-modal-body">
         <div class="bulk-edit-section">
-          <h4>Cases</h4>
+          <div class="selection-toolbar">
+            <h4>Cases</h4>
+            <div class="selection-toolbar-actions">
+              <button type="button" class="inline-btn secondary shape-mini-btn" data-bulk-selection-action="all" data-bulk-selection-target="case">
+                All
+              </button>
+              <button type="button" class="inline-btn secondary shape-mini-btn" data-bulk-selection-action="clear" data-bulk-selection-target="case">
+                Clear
+              </button>
+            </div>
+          </div>
           <p class="bulk-edit-description">StaticInput をまとめて更新します。</p>
           <div class="bulk-toggle-grid" id="bulk-edit-case-toggles"></div>
           <div class="bulk-edit-grid">
@@ -1916,10 +2045,20 @@
               </select>
             </label>
           </div>
-          <p class="bulk-edit-note">Shift + クリックで範囲選択をまとめて ON にします。</p>
+          <p class="bulk-edit-note">Shift + クリックで範囲選択、Ctrl/Cmd + クリックで現在の選択を保ったまま追加・解除できます。</p>
         </div>
         <div class="bulk-edit-section">
-          <h4>Shapes</h4>
+          <div class="selection-toolbar">
+            <h4>Shapes</h4>
+            <div class="selection-toolbar-actions">
+              <button type="button" class="inline-btn secondary shape-mini-btn" data-bulk-selection-action="all" data-bulk-selection-target="shape">
+                All
+              </button>
+              <button type="button" class="inline-btn secondary shape-mini-btn" data-bulk-selection-action="clear" data-bulk-selection-target="shape">
+                Clear
+              </button>
+            </div>
+          </div>
           <p class="bulk-edit-description">位置とサイズをまとめて更新します。</p>
           <div class="bulk-toggle-grid" id="bulk-edit-shape-toggles"></div>
           <div class="bulk-edit-grid">
@@ -2199,6 +2338,9 @@
         </div>
         <div class="floating-panel-body">
           <button type="button" class="inline-btn" id="btn-add-fieldset">Add Fieldset</button>
+          <div class="panel-filter-box">
+            <input type="search" id="fieldset-filter-input" placeholder="Filter fieldsets and fields" />
+          </div>
           <details class="menu-section" id="fieldset-global-section">
             <summary>GlobalGeometry</summary>
             <div class="menu-content">
@@ -2212,6 +2354,9 @@
                 <button type="button" class="inline-btn" id="btn-add-fieldset-device">
                   Add Device
                 </button>
+              </div>
+              <div class="panel-filter-box">
+                <input type="search" id="fieldset-device-filter-input" placeholder="Filter devices" />
               </div>
               <div class="fieldsets-editor" id="fieldset-devices"></div>
             </div>
@@ -2325,6 +2470,9 @@
             <button type="button" class="inline-btn" id="btn-add-triorb-shape">
               Add Shape
             </button>
+          </div>
+          <div class="panel-filter-box">
+            <input type="search" id="triorb-shape-filter-input" placeholder="Filter shapes" />
           </div>
           <div class="triorb-shapes-list" id="triorb-shapes-list"></div>
         </div>

@@ -3,8 +3,14 @@ param(
     [int]$Port = 5001
 )
 
-function Stop-Server([System.Diagnostics.Process]$server) {
-    if ($server -and !$server.HasExited) {
+function Stop-Server($server) {
+    if ($server -is [System.Management.Automation.Job]) {
+        if ($server.State -notin @('Completed', 'Failed', 'Stopped')) {
+            Write-Host "Stopping Flask job ($($server.Id))..."
+            Stop-Job -Job $server -ErrorAction SilentlyContinue | Out-Null
+        }
+        Remove-Job -Job $server -Force -ErrorAction SilentlyContinue | Out-Null
+    } elseif ($server -is [System.Diagnostics.Process] -and !$server.HasExited) {
         Write-Host "Stopping Flask server (PID $($server.Id))..."
         Stop-Process -Id $server.Id -Force -ErrorAction SilentlyContinue
     }
@@ -52,8 +58,14 @@ function Wait-ForServer {
 }
 
 Write-Host "Starting Flask server..."
-$serverArgs = '-u', '-c', "from main import create_app; create_app().run(port=$Port)"
-$serverProcess = Start-Process -FilePath "python" -ArgumentList $serverArgs -WorkingDirectory $PSScriptRoot -PassThru
+$serverProcess = Start-Job -ScriptBlock {
+    param(
+        [string]$RepoRoot,
+        [int]$ServerPort
+    )
+    Set-Location $RepoRoot
+    python -u -c "from main import create_app; create_app().run(port=$ServerPort)"
+} -ArgumentList $PSScriptRoot, $Port
 try {
     Write-Host "Waiting for server to accept connections..."
     if (-not (Wait-ForServer -Port $Port -TimeoutSeconds $WaitSeconds)) {
