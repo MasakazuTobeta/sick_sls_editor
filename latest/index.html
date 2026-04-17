@@ -58,22 +58,18 @@
     }
 
     .side-menu {
-      flex: 0 0 360px;
-      max-height: calc(100vh - 4rem);
-      overflow-y: auto;
-      padding-right: 0.5rem;
+      flex: 0 0 220px;
+      min-width: 220px;
+      background: linear-gradient(180deg, #f8fbfe 0%, #eef4f8 100%);
+      border-radius: 14px;
+      padding: 1rem;
+      box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.06);
       position: sticky;
       top: 2rem;
       align-self: flex-start;
-    }
-
-    .side-menu::-webkit-scrollbar {
-      width: 6px;
-    }
-
-    .side-menu::-webkit-scrollbar-thumb {
-      background: rgba(15, 23, 42, 0.25);
-      border-radius: 3px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
     }
 
     .toolbar {
@@ -179,6 +175,47 @@
       margin-bottom: 0.75rem;
     }
 
+    .panel-filter-box {
+      margin: 0.75rem 0 1rem;
+    }
+
+    .panel-filter-box input {
+      width: 100%;
+      border: 1px solid rgba(15, 23, 42, 0.18);
+      border-radius: 8px;
+      padding: 0.55rem 0.75rem;
+      font-size: 0.9rem;
+      background: #f8fafc;
+      color: #0f172a;
+    }
+
+    .panel-filter-empty {
+      margin: 0;
+      color: #64748b;
+      font-size: 0.9rem;
+    }
+
+    .selection-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .selection-toolbar-actions {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+    }
+
+    .selection-help {
+      margin: 0.35rem 0 0;
+      font-size: 0.82rem;
+      color: #64748b;
+    }
+
     #fieldset-checkboxes {
       display: flex;
       flex-wrap: wrap;
@@ -213,21 +250,104 @@
       font-size: 0.9rem;
     }
 
-    .side-menu {
-      flex: 0 0 auto;
-      min-width: 220px;
-      max-width: 40%;
-      width: fit-content;
-      background: #f6f8fb;
-      border-radius: 10px;
-      padding: 1rem;
-      box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.05);
-    }
-
     .side-menu h2 {
       font-size: 1rem;
       margin: 0 0 0.75rem;
       color: #1f2937;
+    }
+
+    .side-menu-note {
+      margin: 0;
+      color: #475569;
+      font-size: 0.85rem;
+      line-height: 1.5;
+    }
+
+    .floating-panel-launchers {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.6rem;
+    }
+
+    .panel-launch-btn {
+      justify-content: center;
+      min-height: 3rem;
+      background: #0f172a;
+      color: #f8fafc;
+      border-radius: 10px;
+      padding: 0.75rem 0.5rem;
+      font-size: 0.82rem;
+      text-align: center;
+      line-height: 1.35;
+    }
+
+    .panel-launch-btn.active {
+      background: #0b6fb8;
+    }
+
+    .floating-panel {
+      position: fixed;
+      top: 7rem;
+      right: 1.5rem;
+      width: min(560px, calc(100vw - 3rem));
+      max-height: calc(100vh - 9rem);
+      display: none;
+      flex-direction: column;
+      background: #ffffff;
+      border: 1px solid rgba(15, 23, 42, 0.12);
+      border-radius: 14px;
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.22);
+      overflow: hidden;
+      z-index: 40;
+    }
+
+    .floating-panel.active {
+      display: flex;
+    }
+
+    .floating-panel[data-panel-size="wide"] {
+      width: min(720px, calc(100vw - 3rem));
+    }
+
+    .floating-panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0.85rem 1rem;
+      background: linear-gradient(135deg, #0b6fb8 0%, #155e75 100%);
+      color: #ffffff;
+      cursor: move;
+      user-select: none;
+    }
+
+    .floating-panel-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .floating-panel-body {
+      overflow: auto;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      background: #f8fafc;
+    }
+
+    .floating-panel-body .menu-section,
+    .floating-panel-body .casetable-section {
+      margin-bottom: 0;
+    }
+
+    .floating-panel-body::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .floating-panel-body::-webkit-scrollbar-thumb {
+      background: rgba(15, 23, 42, 0.18);
+      border-radius: 999px;
     }
 
     .menu-section {
@@ -976,6 +1096,13 @@
       border-radius: 8px;
       padding: 0.6rem;
       background: #fff;
+      transition: border-color 120ms ease, box-shadow 120ms ease, background 120ms ease;
+    }
+
+    .fieldset-card.is-hovered {
+      border-color: rgba(14, 116, 144, 0.4);
+      background: #f0fdfa;
+      box-shadow: 0 0 0 2px rgba(45, 212, 191, 0.14);
     }
 
     .fieldset-details summary {
@@ -1040,6 +1167,13 @@
       padding: 0.5rem;
       background: #fefefe;
       margin-top: 0.5rem;
+      transition: border-color 120ms ease, box-shadow 120ms ease, background 120ms ease;
+    }
+
+    .field-card.is-hovered {
+      border-color: rgba(37, 99, 235, 0.38);
+      background: #eff6ff;
+      box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.14);
     }
 
     .field-details summary {
@@ -1083,6 +1217,19 @@
       border-radius: 10px;
       padding: 0.6rem;
       background: #f1f5f9;
+      transition: border-color 120ms ease, box-shadow 120ms ease, background 120ms ease;
+    }
+
+    .triorb-shape-card.is-hovered {
+      border-color: rgba(14, 116, 144, 0.55);
+      background: #ecfeff;
+      box-shadow: 0 0 0 2px rgba(34, 211, 238, 0.2);
+    }
+
+    .triorb-shape-card.is-selected {
+      border-color: rgba(37, 99, 235, 0.55);
+      background: #eff6ff;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.18);
     }
 
     .triorb-shape-card .shape-row {
@@ -1641,6 +1788,15 @@
 
       .side-menu {
         width: 100%;
+        min-width: 0;
+        position: static;
+      }
+
+      .floating-panel {
+        left: 1rem;
+        right: 1rem;
+        width: auto;
+        max-height: 70vh;
       }
     }
   </style>
@@ -1722,8 +1878,19 @@
           </div>
         </div>
         <div class="modal-section">
-          <label>Attach to Fieldsets</label>
+          <div class="selection-toolbar">
+            <label>Attach to Fieldsets</label>
+            <div class="selection-toolbar-actions">
+              <button type="button" class="inline-btn secondary shape-mini-btn" data-create-shape-selection-action="all">
+                All
+              </button>
+              <button type="button" class="inline-btn secondary shape-mini-btn" data-create-shape-selection-action="clear">
+                Clear
+              </button>
+            </div>
+          </div>
           <div id="create-shape-fieldset-list" class="toggle-pill-grid"></div>
+          <p class="selection-help">Shift + click で範囲選択、Ctrl/Cmd + click で現在の選択を保ったまま追加・解除できます。</p>
         </div>
         <div class="modal-section preview-note">
           <p>Live preview will be shown as a red overlay while editing.</p>
@@ -1764,11 +1931,31 @@
               <input type="text" id="create-field-name-0" placeholder="Protective name" />
             </label>
             <div class="shape-list-group">
-              <p>Type = Field</p>
+              <div class="selection-toolbar">
+                <p>Type = Field</p>
+                <div class="selection-toolbar-actions">
+                  <button type="button" class="inline-btn secondary shape-mini-btn" data-create-field-selection-action="all" data-field-index="0" data-kind="Field">
+                    All
+                  </button>
+                  <button type="button" class="inline-btn secondary shape-mini-btn" data-create-field-selection-action="clear" data-field-index="0" data-kind="Field">
+                    Clear
+                  </button>
+                </div>
+              </div>
               <div class="shape-list" id="create-field-shape-list-0-field"></div>
             </div>
             <div class="shape-list-group">
-              <p>Type = CutOut</p>
+              <div class="selection-toolbar">
+                <p>Type = CutOut</p>
+                <div class="selection-toolbar-actions">
+                  <button type="button" class="inline-btn secondary shape-mini-btn" data-create-field-selection-action="all" data-field-index="0" data-kind="CutOut">
+                    All
+                  </button>
+                  <button type="button" class="inline-btn secondary shape-mini-btn" data-create-field-selection-action="clear" data-field-index="0" data-kind="CutOut">
+                    Clear
+                  </button>
+                </div>
+              </div>
               <div class="shape-list" id="create-field-shape-list-0-cutout"></div>
             </div>
           </div>
@@ -1779,17 +1966,37 @@
               <input type="text" id="create-field-name-1" placeholder="Warning name" />
             </label>
             <div class="shape-list-group">
-              <p>Type = Field</p>
+              <div class="selection-toolbar">
+                <p>Type = Field</p>
+                <div class="selection-toolbar-actions">
+                  <button type="button" class="inline-btn secondary shape-mini-btn" data-create-field-selection-action="all" data-field-index="1" data-kind="Field">
+                    All
+                  </button>
+                  <button type="button" class="inline-btn secondary shape-mini-btn" data-create-field-selection-action="clear" data-field-index="1" data-kind="Field">
+                    Clear
+                  </button>
+                </div>
+              </div>
               <div class="shape-list" id="create-field-shape-list-1-field"></div>
             </div>
             <div class="shape-list-group">
-              <p>Type = CutOut</p>
+              <div class="selection-toolbar">
+                <p>Type = CutOut</p>
+                <div class="selection-toolbar-actions">
+                  <button type="button" class="inline-btn secondary shape-mini-btn" data-create-field-selection-action="all" data-field-index="1" data-kind="CutOut">
+                    All
+                  </button>
+                  <button type="button" class="inline-btn secondary shape-mini-btn" data-create-field-selection-action="clear" data-field-index="1" data-kind="CutOut">
+                    Clear
+                  </button>
+                </div>
+              </div>
               <div class="shape-list" id="create-field-shape-list-1-cutout"></div>
             </div>
           </div>
         </div>
         <div class="modal-section preview-note">
-          <p>Selected shapes render on the Plotly canvas in red preview while editing.</p>
+          <p>Selected shapes render on the Plotly canvas in red preview while editing. Shift + click selects a range, Ctrl/Cmd + click keeps the current selection, and All / Clear toggles the whole group.</p>
         </div>
       </div>
       <div class="modal-footer">
@@ -1811,7 +2018,17 @@
       </div>
       <div class="modal-body bulk-edit-modal-body">
         <div class="bulk-edit-section">
-          <h4>Cases</h4>
+          <div class="selection-toolbar">
+            <h4>Cases</h4>
+            <div class="selection-toolbar-actions">
+              <button type="button" class="inline-btn secondary shape-mini-btn" data-bulk-selection-action="all" data-bulk-selection-target="case">
+                All
+              </button>
+              <button type="button" class="inline-btn secondary shape-mini-btn" data-bulk-selection-action="clear" data-bulk-selection-target="case">
+                Clear
+              </button>
+            </div>
+          </div>
           <p class="bulk-edit-description">StaticInput をまとめて更新します。</p>
           <div class="bulk-toggle-grid" id="bulk-edit-case-toggles"></div>
           <div class="bulk-edit-grid">
@@ -1828,10 +2045,20 @@
               </select>
             </label>
           </div>
-          <p class="bulk-edit-note">Shift + クリックで範囲選択をまとめて ON にします。</p>
+          <p class="bulk-edit-note">Shift + クリックで範囲選択、Ctrl/Cmd + クリックで現在の選択を保ったまま追加・解除できます。</p>
         </div>
         <div class="bulk-edit-section">
-          <h4>Shapes</h4>
+          <div class="selection-toolbar">
+            <h4>Shapes</h4>
+            <div class="selection-toolbar-actions">
+              <button type="button" class="inline-btn secondary shape-mini-btn" data-bulk-selection-action="all" data-bulk-selection-target="shape">
+                All
+              </button>
+              <button type="button" class="inline-btn secondary shape-mini-btn" data-bulk-selection-action="clear" data-bulk-selection-target="shape">
+                Clear
+              </button>
+            </div>
+          </div>
           <p class="bulk-edit-description">位置とサイズをまとめて更新します。</p>
           <div class="bulk-toggle-grid" id="bulk-edit-shape-toggles"></div>
           <div class="bulk-edit-grid">
@@ -2059,15 +2286,25 @@
         <div id="triorb-shape-checkboxes"></div>
       </div>
     </section>
-    <!-- サイドメニュー: XML構造を表示する領域 -->
+    <!-- 右側ドック: 6ボタンで各編集ツリーをフローティング表示 -->
     <aside class="side-menu">
-      <h2>Structure Menu</h2>
-      
-      <details class="menu-section" >
-        <summary>FileInfo</summary>
-        <div class="menu-content">
-          
-          <p class="menu-description">No additional attributes</p>
+      <h2>Editors</h2>
+      <p class="side-menu-note">右側の編集ツリーは必要なときだけフローティング表示します。</p>
+      <div class="floating-panel-launchers">
+        <button type="button" class="panel-launch-btn" data-panel-target="panel-fileinfo">FileInfo</button>
+        <button type="button" class="panel-launch-btn" data-panel-target="panel-scanplanes">ScanPlanes</button>
+        <button type="button" class="panel-launch-btn" data-panel-target="panel-fieldsets">Fieldsets</button>
+        <button type="button" class="panel-launch-btn" data-panel-target="panel-casetable">Casetable</button>
+        <button type="button" class="panel-launch-btn" data-panel-target="panel-triorb-settings">TriOrb Settings</button>
+        <button type="button" class="panel-launch-btn" data-panel-target="panel-triorb-shapes">TriOrb Shapes</button>
+      </div>
+
+      <section class="floating-panel" id="panel-fileinfo">
+        <div class="floating-panel-header" data-panel-drag-handle>
+          <span class="floating-panel-title">FileInfo</span>
+          <button type="button" class="inline-btn secondary shape-mini-btn" data-panel-close>×</button>
+        </div>
+        <div class="floating-panel-body">
           
           <div class="menu-fileinfo-grid" data-scope="fileinfo">
             
@@ -2108,27 +2345,30 @@
             
           </div>
           
-          
         </div>
-      </details>
-      
-      <details class="menu-section" >
-        <summary>Export_ScanPlanes</summary>
-        <div class="menu-content">
-          
-          <p class="menu-description">No additional attributes</p>
+      </section>
+
+      <section class="floating-panel" id="panel-scanplanes">
+        <div class="floating-panel-header" data-panel-drag-handle>
+          <span class="floating-panel-title">ScanPlanes</span>
+          <button type="button" class="inline-btn secondary shape-mini-btn" data-panel-close>×</button>
+        </div>
+        <div class="floating-panel-body">
           <button type="button" class="inline-btn" id="btn-add-scanplane">Add ScanPlane</button>
           <div class="scanplanes-editor" id="scanplanes-editor"></div>
-          
         </div>
-      </details>
-      
-      <details class="menu-section" >
-        <summary>Export_FieldsetsAndFields</summary>
-        <div class="menu-content">
-          
-          <p class="menu-description">No additional attributes</p>
+      </section>
+
+      <section class="floating-panel" id="panel-fieldsets">
+        <div class="floating-panel-header" data-panel-drag-handle>
+          <span class="floating-panel-title">Fieldsets</span>
+          <button type="button" class="inline-btn secondary shape-mini-btn" data-panel-close>×</button>
+        </div>
+        <div class="floating-panel-body">
           <button type="button" class="inline-btn" id="btn-add-fieldset">Add Fieldset</button>
+          <div class="panel-filter-box">
+            <input type="search" id="fieldset-filter-input" placeholder="Filter fieldsets and fields" />
+          </div>
           <details class="menu-section" id="fieldset-global-section">
             <summary>GlobalGeometry</summary>
             <div class="menu-content">
@@ -2143,18 +2383,22 @@
                   Add Device
                 </button>
               </div>
+              <div class="panel-filter-box">
+                <input type="search" id="fieldset-device-filter-input" placeholder="Filter devices" />
+              </div>
               <div class="fieldsets-editor" id="fieldset-devices"></div>
             </div>
           </details>
           <div class="fieldsets-editor" id="fieldsets-editor"></div>
-          
         </div>
-      </details>
-      
-      <details class="menu-section" >
-        <summary>Export_CasetablesAndCases</summary>
-        <div class="menu-content">
-          
+      </section>
+
+      <section class="floating-panel" id="panel-casetable" data-panel-size="wide">
+        <div class="floating-panel-header" data-panel-drag-handle>
+          <span class="floating-panel-title">Casetable</span>
+          <button type="button" class="inline-btn secondary shape-mini-btn" data-panel-close>×</button>
+        </div>
+        <div class="floating-panel-body">
           <div class="casetable-section">
             <h3>Configuration</h3>
             <div class="casetable-configuration" id="casetable-configuration"></div>
@@ -2188,66 +2432,79 @@
             </p>
             <div class="casetable-fields-configuration" id="casetable-fields-configuration"></div>
           </div>
-          
         </div>
-      </details>
-      
-      <h2>TriOrb Menu</h2>
-      <details class="menu-section">
-        <summary>Device</summary>
-        <div class="menu-content">
-          <div class="menu-fileinfo-grid">
-            <div class="triorb-field">
-              <label>FieldOfView</label>
-              <input type="number" id="triorb-field-of-view" value="270" min="1" max="360" step="1" />
+      </section>
+
+      <section class="floating-panel" id="panel-triorb-settings">
+        <div class="floating-panel-header" data-panel-drag-handle>
+          <span class="floating-panel-title">TriOrb Settings</span>
+          <button type="button" class="inline-btn secondary shape-mini-btn" data-panel-close>×</button>
+        </div>
+        <div class="floating-panel-body">
+          <details class="menu-section" open>
+            <summary>Device</summary>
+            <div class="menu-content">
+              <div class="menu-fileinfo-grid">
+                <div class="triorb-field">
+                  <label>FieldOfView</label>
+                  <input type="number" id="triorb-field-of-view" value="270" min="1" max="360" step="1" />
+                </div>
+              </div>
             </div>
-          </div>
+          </details>
+          <details class="menu-section" open>
+            <summary>Common</summary>
+            <div class="menu-content">
+              <div class="menu-fileinfo-grid">
+                <div class="triorb-field">
+                  <label>MultipleSampling (2-16)</label>
+                  <input id="global-multiple-sampling" type="number" min="2" max="16" value="2" />
+                </div>
+                <div class="triorb-field">
+                  <label>Resolution</label>
+                  <input id="global-resolution" type="number" min="1" max="1000" value="70" />
+                </div>
+                <div class="triorb-field">
+                  <label>TolerancePositive</label>
+                  <input id="global-tolerance-positive" type="number" value="0" />
+                </div>
+                <div class="triorb-field">
+                  <label>ToleranceNegative</label>
+                  <input id="global-tolerance-negative" type="number" value="0" />
+                </div>
+              </div>
+              <details class="menu-section">
+                <summary>CommonCutOut #1</summary>
+                <div class="menu-content">
+                  <ul>
+                    <li>Polygon #1</li>
+                    <li>Circle #1</li>
+                    <li>Rectangle #1</li>
+                  </ul>
+                </div>
+              </details>
+            </div>
+          </details>
         </div>
-      </details>
-      <details class="menu-section">
-        <summary>Shapes</summary>
-        <div class="menu-content">
+      </section>
+
+      <section class="floating-panel" id="panel-triorb-shapes">
+        <div class="floating-panel-header" data-panel-drag-handle>
+          <span class="floating-panel-title">TriOrb Shapes</span>
+          <button type="button" class="inline-btn secondary shape-mini-btn" data-panel-close>×</button>
+        </div>
+        <div class="floating-panel-body">
           <div class="fieldset-actions">
             <button type="button" class="inline-btn" id="btn-add-triorb-shape">
               Add Shape
             </button>
           </div>
+          <div class="panel-filter-box">
+            <input type="search" id="triorb-shape-filter-input" placeholder="Filter shapes" />
+          </div>
           <div class="triorb-shapes-list" id="triorb-shapes-list"></div>
         </div>
-      </details>
-      <details class="menu-section">
-        <summary>Common</summary>
-        <div class="menu-content">
-          <div class="menu-fileinfo-grid">
-            <div class="triorb-field">
-              <label>MultipleSampling (2-16)</label>
-              <input id="global-multiple-sampling" type="number" min="2" max="16" value="2" />
-            </div>
-            <div class="triorb-field">
-              <label>Resolution</label>
-              <input id="global-resolution" type="number" min="1" max="1000" value="70" />
-            </div>
-            <div class="triorb-field">
-              <label>TolerancePositive</label>
-              <input id="global-tolerance-positive" type="number" value="0" />
-            </div>
-            <div class="triorb-field">
-              <label>ToleranceNegative</label>
-              <input id="global-tolerance-negative" type="number" value="0" />
-            </div>
-          </div>
-          <details class="menu-section">
-            <summary>CommonCutOut #1</summary>
-            <div class="menu-content">
-              <ul>
-                <li>Polygon #1</li>
-                <li>Circle #1</li>
-                <li>Rectangle #1</li>
-              </ul>
-            </div>
-          </details>
-        </div>
-      </details>
+      </section>
     </aside>
   </main>
   <footer>Flask + Plotly powered preview</footer>
@@ -2258,9 +2515,9 @@
       defaultFigure: {"data": [], "layout": {"legend": {"orientation": "h", "y": 1.02, "yanchor": "bottom"}, "margin": {"b": 60, "l": 60, "r": 20, "t": 30}, "paper_bgcolor": "#ffffff", "plot_bgcolor": "#ffffff", "shapes": [{"line": {"color": "#cbd5f5", "dash": "dot", "width": 1}, "type": "line", "x0": -1000, "x1": 1000, "xref": "x", "y0": -750, "y1": -750, "yref": "y"}, {"line": {"color": "#cbd5f5", "dash": "dot", "width": 1}, "type": "line", "x0": -750, "x1": -750, "xref": "x", "y0": -1000, "y1": 1000, "yref": "y"}, {"line": {"color": "#cbd5f5", "dash": "dot", "width": 1}, "type": "line", "x0": -1000, "x1": 1000, "xref": "x", "y0": -500, "y1": -500, "yref": "y"}, {"line": {"color": "#cbd5f5", "dash": "dot", "width": 1}, "type": "line", "x0": -500, "x1": -500, "xref": "x", "y0": -1000, "y1": 1000, "yref": "y"}, {"line": {"color": "#cbd5f5", "dash": "dot", "width": 1}, "type": "line", "x0": -1000, "x1": 1000, "xref": "x", "y0": -250, "y1": -250, "yref": "y"}, {"line": {"color": "#cbd5f5", "dash": "dot", "width": 1}, "type": "line", "x0": -250, "x1": -250, "xref": "x", "y0": -1000, "y1": 1000, "yref": "y"}, {"line": {"color": "#cbd5f5", "dash": "dot", "width": 1}, "type": "line", "x0": -1000, "x1": 1000, "xref": "x", "y0": 250, "y1": 250, "yref": "y"}, {"line": {"color": "#cbd5f5", "dash": "dot", "width": 1}, "type": "line", "x0": 250, "x1": 250, "xref": "x", "y0": -1000, "y1": 1000, "yref": "y"}, {"line": {"color": "#cbd5f5", "dash": "dot", "width": 1}, "type": "line", "x0": -1000, "x1": 1000, "xref": "x", "y0": 500, "y1": 500, "yref": "y"}, {"line": {"color": "#cbd5f5", "dash": "dot", "width": 1}, "type": "line", "x0": 500, "x1": 500, "xref": "x", "y0": -1000, "y1": 1000, "yref": "y"}, {"line": {"color": "#cbd5f5", "dash": "dot", "width": 1}, "type": "line", "x0": -1000, "x1": 1000, "xref": "x", "y0": 750, "y1": 750, "yref": "y"}, {"line": {"color": "#cbd5f5", "dash": "dot", "width": 1}, "type": "line", "x0": 750, "x1": 750, "xref": "x", "y0": -1000, "y1": 1000, "yref": "y"}], "template": {"data": {"bar": [{"error_x": {"color": "#2a3f5f"}, "error_y": {"color": "#2a3f5f"}, "marker": {"line": {"color": "#E5ECF6", "width": 0.5}, "pattern": {"fillmode": "overlay", "size": 10, "solidity": 0.2}}, "type": "bar"}], "barpolar": [{"marker": {"line": {"color": "#E5ECF6", "width": 0.5}, "pattern": {"fillmode": "overlay", "size": 10, "solidity": 0.2}}, "type": "barpolar"}], "carpet": [{"aaxis": {"endlinecolor": "#2a3f5f", "gridcolor": "white", "linecolor": "white", "minorgridcolor": "white", "startlinecolor": "#2a3f5f"}, "baxis": {"endlinecolor": "#2a3f5f", "gridcolor": "white", "linecolor": "white", "minorgridcolor": "white", "startlinecolor": "#2a3f5f"}, "type": "carpet"}], "choropleth": [{"colorbar": {"outlinewidth": 0, "ticks": ""}, "type": "choropleth"}], "contour": [{"colorbar": {"outlinewidth": 0, "ticks": ""}, "colorscale": [[0.0, "#0d0887"], [0.1111111111111111, "#46039f"], [0.2222222222222222, "#7201a8"], [0.3333333333333333, "#9c179e"], [0.4444444444444444, "#bd3786"], [0.5555555555555556, "#d8576b"], [0.6666666666666666, "#ed7953"], [0.7777777777777778, "#fb9f3a"], [0.8888888888888888, "#fdca26"], [1.0, "#f0f921"]], "type": "contour"}], "contourcarpet": [{"colorbar": {"outlinewidth": 0, "ticks": ""}, "type": "contourcarpet"}], "heatmap": [{"colorbar": {"outlinewidth": 0, "ticks": ""}, "colorscale": [[0.0, "#0d0887"], [0.1111111111111111, "#46039f"], [0.2222222222222222, "#7201a8"], [0.3333333333333333, "#9c179e"], [0.4444444444444444, "#bd3786"], [0.5555555555555556, "#d8576b"], [0.6666666666666666, "#ed7953"], [0.7777777777777778, "#fb9f3a"], [0.8888888888888888, "#fdca26"], [1.0, "#f0f921"]], "type": "heatmap"}], "histogram": [{"marker": {"pattern": {"fillmode": "overlay", "size": 10, "solidity": 0.2}}, "type": "histogram"}], "histogram2d": [{"colorbar": {"outlinewidth": 0, "ticks": ""}, "colorscale": [[0.0, "#0d0887"], [0.1111111111111111, "#46039f"], [0.2222222222222222, "#7201a8"], [0.3333333333333333, "#9c179e"], [0.4444444444444444, "#bd3786"], [0.5555555555555556, "#d8576b"], [0.6666666666666666, "#ed7953"], [0.7777777777777778, "#fb9f3a"], [0.8888888888888888, "#fdca26"], [1.0, "#f0f921"]], "type": "histogram2d"}], "histogram2dcontour": [{"colorbar": {"outlinewidth": 0, "ticks": ""}, "colorscale": [[0.0, "#0d0887"], [0.1111111111111111, "#46039f"], [0.2222222222222222, "#7201a8"], [0.3333333333333333, "#9c179e"], [0.4444444444444444, "#bd3786"], [0.5555555555555556, "#d8576b"], [0.6666666666666666, "#ed7953"], [0.7777777777777778, "#fb9f3a"], [0.8888888888888888, "#fdca26"], [1.0, "#f0f921"]], "type": "histogram2dcontour"}], "mesh3d": [{"colorbar": {"outlinewidth": 0, "ticks": ""}, "type": "mesh3d"}], "parcoords": [{"line": {"colorbar": {"outlinewidth": 0, "ticks": ""}}, "type": "parcoords"}], "pie": [{"automargin": true, "type": "pie"}], "scatter": [{"fillpattern": {"fillmode": "overlay", "size": 10, "solidity": 0.2}, "type": "scatter"}], "scatter3d": [{"line": {"colorbar": {"outlinewidth": 0, "ticks": ""}}, "marker": {"colorbar": {"outlinewidth": 0, "ticks": ""}}, "type": "scatter3d"}], "scattercarpet": [{"marker": {"colorbar": {"outlinewidth": 0, "ticks": ""}}, "type": "scattercarpet"}], "scattergeo": [{"marker": {"colorbar": {"outlinewidth": 0, "ticks": ""}}, "type": "scattergeo"}], "scattergl": [{"marker": {"colorbar": {"outlinewidth": 0, "ticks": ""}}, "type": "scattergl"}], "scattermap": [{"marker": {"colorbar": {"outlinewidth": 0, "ticks": ""}}, "type": "scattermap"}], "scattermapbox": [{"marker": {"colorbar": {"outlinewidth": 0, "ticks": ""}}, "type": "scattermapbox"}], "scatterpolar": [{"marker": {"colorbar": {"outlinewidth": 0, "ticks": ""}}, "type": "scatterpolar"}], "scatterpolargl": [{"marker": {"colorbar": {"outlinewidth": 0, "ticks": ""}}, "type": "scatterpolargl"}], "scatterternary": [{"marker": {"colorbar": {"outlinewidth": 0, "ticks": ""}}, "type": "scatterternary"}], "surface": [{"colorbar": {"outlinewidth": 0, "ticks": ""}, "colorscale": [[0.0, "#0d0887"], [0.1111111111111111, "#46039f"], [0.2222222222222222, "#7201a8"], [0.3333333333333333, "#9c179e"], [0.4444444444444444, "#bd3786"], [0.5555555555555556, "#d8576b"], [0.6666666666666666, "#ed7953"], [0.7777777777777778, "#fb9f3a"], [0.8888888888888888, "#fdca26"], [1.0, "#f0f921"]], "type": "surface"}], "table": [{"cells": {"fill": {"color": "#EBF0F8"}, "line": {"color": "white"}}, "header": {"fill": {"color": "#C8D4E3"}, "line": {"color": "white"}}, "type": "table"}]}, "layout": {"annotationdefaults": {"arrowcolor": "#2a3f5f", "arrowhead": 0, "arrowwidth": 1}, "autotypenumbers": "strict", "coloraxis": {"colorbar": {"outlinewidth": 0, "ticks": ""}}, "colorscale": {"diverging": [[0, "#8e0152"], [0.1, "#c51b7d"], [0.2, "#de77ae"], [0.3, "#f1b6da"], [0.4, "#fde0ef"], [0.5, "#f7f7f7"], [0.6, "#e6f5d0"], [0.7, "#b8e186"], [0.8, "#7fbc41"], [0.9, "#4d9221"], [1, "#276419"]], "sequential": [[0.0, "#0d0887"], [0.1111111111111111, "#46039f"], [0.2222222222222222, "#7201a8"], [0.3333333333333333, "#9c179e"], [0.4444444444444444, "#bd3786"], [0.5555555555555556, "#d8576b"], [0.6666666666666666, "#ed7953"], [0.7777777777777778, "#fb9f3a"], [0.8888888888888888, "#fdca26"], [1.0, "#f0f921"]], "sequentialminus": [[0.0, "#0d0887"], [0.1111111111111111, "#46039f"], [0.2222222222222222, "#7201a8"], [0.3333333333333333, "#9c179e"], [0.4444444444444444, "#bd3786"], [0.5555555555555556, "#d8576b"], [0.6666666666666666, "#ed7953"], [0.7777777777777778, "#fb9f3a"], [0.8888888888888888, "#fdca26"], [1.0, "#f0f921"]]}, "colorway": ["#636efa", "#EF553B", "#00cc96", "#ab63fa", "#FFA15A", "#19d3f3", "#FF6692", "#B6E880", "#FF97FF", "#FECB52"], "font": {"color": "#2a3f5f"}, "geo": {"bgcolor": "white", "lakecolor": "white", "landcolor": "#E5ECF6", "showlakes": true, "showland": true, "subunitcolor": "white"}, "hoverlabel": {"align": "left"}, "hovermode": "closest", "mapbox": {"style": "light"}, "paper_bgcolor": "white", "plot_bgcolor": "#E5ECF6", "polar": {"angularaxis": {"gridcolor": "white", "linecolor": "white", "ticks": ""}, "bgcolor": "#E5ECF6", "radialaxis": {"gridcolor": "white", "linecolor": "white", "ticks": ""}}, "scene": {"xaxis": {"backgroundcolor": "#E5ECF6", "gridcolor": "white", "gridwidth": 2, "linecolor": "white", "showbackground": true, "ticks": "", "zerolinecolor": "white"}, "yaxis": {"backgroundcolor": "#E5ECF6", "gridcolor": "white", "gridwidth": 2, "linecolor": "white", "showbackground": true, "ticks": "", "zerolinecolor": "white"}, "zaxis": {"backgroundcolor": "#E5ECF6", "gridcolor": "white", "gridwidth": 2, "linecolor": "white", "showbackground": true, "ticks": "", "zerolinecolor": "white"}}, "shapedefaults": {"line": {"color": "#2a3f5f"}}, "ternary": {"aaxis": {"gridcolor": "white", "linecolor": "white", "ticks": ""}, "baxis": {"gridcolor": "white", "linecolor": "white", "ticks": ""}, "bgcolor": "#E5ECF6", "caxis": {"gridcolor": "white", "linecolor": "white", "ticks": ""}}, "title": {"x": 0.05}, "xaxis": {"automargin": true, "gridcolor": "white", "linecolor": "white", "ticks": "", "title": {"standoff": 15}, "zerolinecolor": "white", "zerolinewidth": 2}, "yaxis": {"automargin": true, "gridcolor": "white", "linecolor": "white", "ticks": "", "title": {"standoff": 15}, "zerolinecolor": "white", "zerolinewidth": 2}}}, "xaxis": {"constrain": "range", "dtick": 100, "gridcolor": "#d9dee7", "gridwidth": 1, "linecolor": "#6b7a99", "linewidth": 2, "minor": {"dtick": 50, "gridcolor": "#f2f5fb", "gridwidth": 0.5, "showgrid": true}, "range": [-1000, 1000], "showgrid": true, "showline": true, "tick0": 0, "title": {"text": "X[mm]"}, "zeroline": true, "zerolinecolor": "#9fb3d1", "zerolinewidth": 2}, "yaxis": {"constrain": "range", "dtick": 100, "gridcolor": "#d9dee7", "gridwidth": 1, "linecolor": "#6b7a99", "linewidth": 2, "minor": {"dtick": 50, "gridcolor": "#f2f5fb", "gridwidth": 0.5, "showgrid": true}, "range": [-1000, 1000], "scaleanchor": "x", "scaleratio": 1, "showgrid": true, "showline": true, "tick0": 0, "title": {"text": "Y[mm]"}, "zeroline": true, "zerolinecolor": "#9fb3d1", "zerolinewidth": 2}}},
     rootAttributes: {"Commentary": "", "Hash": "F6DD52BFA24B880C2098B043D94361A5BDA97A2D739267475F75A9B371A8B2B42B9A499E3C790B2A37265396EAD12D6447E34EFE3DC6FD8537A722E50798E69B", "Timestamp": "2025-11-25T01:44:22.4208755Z"},
     scanPlanes: [{"attributes": {"Index": "0", "MultipleSampling": "2", "MultipleSamplingOff2OnActivated": "false", "Name": "Monitoring plane 1", "ObjectSize": "70", "ScanPlaneDirection": "Horizontal", "SelectedCaseSwitching": "Fast", "UseReferenceContour": "false"}, "devices": [{"attributes": {"DeviceName": "Right", "Index": "0", "ResponseTime": "30", "ScanResolutionAddition": "0", "Typekey": "NANS3-CAAZ30ZA1P02", "TypekeyDisplayVersion": "V 1.0.0", "TypekeyVersion": "1.0"}}]}],
-    fieldsets: {"devices": [{"attributes": {"PositionX": "170", "PositionY": "102", "Rotation": "290", "StandingUpsideDown": "true", "Typekey": "NANS3-CAAZ30ZA1P02", "TypekeyDisplayVersion": "V 1.0.0", "TypekeyVersion": "1.0"}}], "fieldsets": [{"attributes": {"Name": "Min10"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-32e46f44"}]}]}], "global_geometry": {"UseGlobalGeometry": "false"}},
+    fieldsets: {"devices": [{"attributes": {"PositionX": "170", "PositionY": "102", "Rotation": "290", "StandingUpsideDown": "true", "Typekey": "NANS3-CAAZ30ZA1P02", "TypekeyDisplayVersion": "V 1.0.0", "TypekeyVersion": "1.0"}}], "fieldsets": [{"attributes": {"Name": "Min10"}, "fields": [{"attributes": {"Fieldtype": "ProtectiveSafeBlanking", "MultipleSampling": "2", "Name": "Protective", "Resolution": "70", "ToleranceNegative": "0", "TolerancePositive": "0"}, "shapeRefs": [{"shapeId": "shape-1a759783"}]}]}], "global_geometry": {"UseGlobalGeometry": "false"}},
     casetablePayload: {"cases": [{"attributes": {"Id": "0"}, "layout": [{"kind": "node", "node": {"attributes": {}, "children": [], "tag": "Name", "text": "Min10"}}, {"kind": "node", "node": {"attributes": {}, "children": [], "tag": "SleepMode", "text": "false"}}, {"kind": "node", "node": {"attributes": {}, "children": [], "tag": "DisplayOrder", "text": "0"}}, {"kind": "node", "node": {"attributes": {}, "children": [{"attributes": {}, "children": [{"attributes": {}, "children": [{"attributes": {}, "children": [], "tag": "Match", "text": "Low"}], "tag": "StaticInput", "text": ""}, {"attributes": {}, "children": [{"attributes": {}, "children": [], "tag": "Match", "text": "Low"}], "tag": "StaticInput", "text": ""}, {"attributes": {}, "children": [{"attributes": {}, "children": [], "tag": "Match", "text": "Low"}], "tag": "StaticInput", "text": ""}, {"attributes": {}, "children": [{"attributes": {}, "children": [], "tag": "Match", "text": "Low"}], "tag": "StaticInput", "text": ""}, {"attributes": {}, "children": [{"attributes": {}, "children": [], "tag": "Match", "text": "Low"}], "tag": "StaticInput", "text": ""}, {"attributes": {}, "children": [{"attributes": {}, "children": [], "tag": "Match", "text": "Low"}], "tag": "StaticInput", "text": ""}, {"attributes": {}, "children": [{"attributes": {}, "children": [], "tag": "Match", "text": "Low"}], "tag": "StaticInput", "text": ""}, {"attributes": {}, "children": [{"attributes": {}, "children": [], "tag": "Match", "text": "Low"}], "tag": "StaticInput", "text": ""}], "tag": "StaticInputs", "text": ""}, {"attributes": {}, "children": [], "tag": "StaticInputs1ofNIndex", "text": "-1"}, {"attributes": {}, "children": [], "tag": "SpeedActivation", "text": "SpeedRange"}, {"attributes": {}, "children": [], "tag": "MinSpeed", "text": "-149"}, {"attributes": {}, "children": [], "tag": "MaxSpeed", "text": "150"}, {"attributes": {}, "children": [], "tag": "CaseNumber", "text": "1"}, {"attributes": {}, "children": [{"attributes": {}, "children": [{"attributes": {}, "children": [], "tag": "CaseIndex", "text": "-1"}], "tag": "FollowingCase", "text": ""}, {"attributes": {}, "children": [{"attributes": {}, "children": [], "tag": "CaseIndex", "text": "-1"}], "tag": "FollowingCase", "text": ""}], "tag": "FollowingCases", "text": ""}, {"attributes": {}, "children": [], "tag": "SingleStepSequencePos", "text": "-1"}], "tag": "Activation", "text": ""}}], "speed_activation": null, "static_inputs": []}], "casetable_attributes": {"Index": "0"}, "configuration": {"attributes": {}, "children": [{"attributes": {}, "children": [], "tag": "Name", "text": "Monitoring case table 1"}, {"attributes": {}, "children": [{"attributes": {}, "children": [], "tag": "Source", "text": "Assembly_EIPEPRGWRX_105_with_StopAlarmDetection_and_Speed"}, {"attributes": {}, "children": [], "tag": "StaticActivation", "text": "Antivalent"}], "tag": "StaticInputSource", "text": ""}, {"attributes": {}, "children": [{"attributes": {}, "children": [{"attributes": {}, "children": [], "tag": "Ranking", "text": "1"}, {"attributes": {}, "children": [], "tag": "Evaluate", "text": "true"}], "tag": "StaticInput", "text": ""}, {"attributes": {}, "children": [{"attributes": {}, "children": [], "tag": "Ranking", "text": "2"}, {"attributes": {}, "children": [], "tag": "Evaluate", "text": "true"}], "tag": "StaticInput", "text": ""}, {"attributes": {}, "children": [{"attributes": {}, "children": [], "tag": "Ranking", "text": "3"}, {"attributes": {}, "children": [], "tag": "Evaluate", "text": "true"}], "tag": "StaticInput", "text": ""}, {"attributes": {}, "children": [{"attributes": {}, "children": [], "tag": "Ranking", "text": "4"}, {"attributes": {}, "children": [], "tag": "Evaluate", "text": "true"}], "tag": "StaticInput", "text": ""}, {"attributes": {}, "children": [{"attributes": {}, "children": [], "tag": "Ranking", "text": "5"}, {"attributes": {}, "children": [], "tag": "Evaluate", "text": "true"}], "tag": "StaticInput", "text": ""}, {"attributes": {}, "children": [{"attributes": {}, "children": [], "tag": "Ranking", "text": "6"}, {"attributes": {}, "children": [], "tag": "Evaluate", "text": "true"}], "tag": "StaticInput", "text": ""}, {"attributes": {}, "children": [{"attributes": {}, "children": [], "tag": "Ranking", "text": "7"}, {"attributes": {}, "children": [], "tag": "Evaluate", "text": "true"}], "tag": "StaticInput", "text": ""}, {"attributes": {}, "children": [{"attributes": {}, "children": [], "tag": "Ranking", "text": "8"}, {"attributes": {}, "children": [], "tag": "Evaluate", "text": "true"}], "tag": "StaticInput", "text": ""}], "tag": "StaticInputs", "text": ""}, {"attributes": {}, "children": [], "tag": "UseSpeed", "text": "true"}, {"attributes": {}, "children": [], "tag": "InputDelay", "text": "12"}, {"attributes": {}, "children": [], "tag": "CaseSequenceEnabled", "text": "false"}, {"attributes": {}, "children": [], "tag": "ShowPermanentPreset", "text": "false"}], "tag": "Configuration", "text": ""}, "evals": {"attributes": {}, "evals": [{"attributes": {"Id": "1"}, "cases": [{"attributes": {"Id": "0"}, "scanPlane": {"attributes": {"Id": "1"}, "isSplitted": "true", "userFieldId": "1"}}], "name": "\u906e\u65ad\u30d1\u30b9 1", "nameLatin9Key": "_COPN01_8A74", "permanentPreset": {"fieldMode": "2", "scanPlaneAttributes": {"Id": "1"}}, "q": "1", "reset": {"autoResetTime": "2", "evalResetSource": "Assembly_EIPEPRGWRX_105_with_StopAlarmDetection_and_Speed", "resetType": "NoReset"}}]}, "fields_configuration": {"attributes": {}, "children": [{"attributes": {}, "children": [{"attributes": {"Id": "1"}, "children": [{"attributes": {}, "children": [], "tag": "Index", "text": "0"}, {"attributes": {}, "children": [], "tag": "Name", "text": "Monitoring plane 1"}, {"attributes": {}, "children": [{"attributes": {"Id": "1"}, "children": [{"attributes": {}, "children": [], "tag": "Index", "text": "0"}, {"attributes": {}, "children": [], "tag": "Name", "text": "Min10"}, {"attributes": {}, "children": [{"attributes": {"Id": "1"}, "children": [{"attributes": {}, "children": [], "tag": "Index", "text": "0"}, {"attributes": {}, "children": [], "tag": "Name", "text": "Protective"}, {"attributes": {}, "children": [], "tag": "FieldType", "text": "ProtectiveSafeBlanking"}, {"attributes": {}, "children": [], "tag": "MultipleSampling", "text": "2"}, {"attributes": {}, "children": [], "tag": "ObjectResolution", "text": "70"}, {"attributes": {}, "children": [], "tag": "ContourNegative", "text": "0"}, {"attributes": {}, "children": [], "tag": "ContourPositive", "text": "0"}], "tag": "UserField", "text": ""}], "tag": "UserFields", "text": ""}], "tag": "UserFieldset", "text": ""}], "tag": "UserFieldsets", "text": ""}], "tag": "ScanPlane", "text": ""}], "tag": "ScanPlanes", "text": ""}, {"attributes": {}, "children": [{"attributes": {"Id": "2"}, "children": [], "tag": "PermRed", "text": ""}, {"attributes": {"Id": "3"}, "children": [], "tag": "PermGreen", "text": ""}, {"attributes": {"Id": "4"}, "children": [], "tag": "PermGreenWf", "text": ""}], "tag": "StatFields", "text": ""}], "tag": "FieldsConfiguration", "text": ""}, "layout": [{"kind": "configuration"}, {"kind": "cases"}, {"kind": "evals"}, {"kind": "fields_configuration"}]},
-    triorbShapes: [{"fieldtype": "ProtectiveSafeBlanking", "id": "shape-32e46f44", "kind": "Field", "name": "Min10 Protective Polygon", "polygon": {"Type": "Field", "points": [{"X": "-22", "Y": "-316"}, {"X": "-38", "Y": "-312"}, {"X": "-52", "Y": "-304"}, {"X": "-66", "Y": "-295"}, {"X": "-77", "Y": "-283"}, {"X": "-86", "Y": "-269"}, {"X": "-92", "Y": "-253"}, {"X": "-95", "Y": "-236"}, {"X": "-97", "Y": "-226"}, {"X": "-100", "Y": "-215"}, {"X": "-104", "Y": "-205"}, {"X": "-109", "Y": "-195"}, {"X": "-225", "Y": "6"}, {"X": "-229", "Y": "12"}, {"X": "-234", "Y": "18"}, {"X": "-238", "Y": "23"}, {"X": "-243", "Y": "29"}, {"X": "-249", "Y": "34"}, {"X": "-254", "Y": "38"}, {"X": "-267", "Y": "49"}, {"X": "-277", "Y": "62"}, {"X": "-285", "Y": "77"}, {"X": "-290", "Y": "93"}, {"X": "-292", "Y": "109"}, {"X": "-291", "Y": "125"}, {"X": "-287", "Y": "142"}, {"X": "-280", "Y": "157"}, {"X": "-270", "Y": "171"}, {"X": "-258", "Y": "183"}, {"X": "-244", "Y": "192"}, {"X": "-229", "Y": "198"}, {"X": "-213", "Y": "202"}, {"X": "-196", "Y": "203"}, {"X": "-180", "Y": "201"}, {"X": "-164", "Y": "195"}, {"X": "-157", "Y": "192"}, {"X": "-150", "Y": "190"}, {"X": "-143", "Y": "188"}, {"X": "-136", "Y": "187"}, {"X": "-129", "Y": "186"}, {"X": "-121", "Y": "186"}, {"X": "-5", "Y": "186"}, {"X": "111", "Y": "186"}, {"X": "119", "Y": "186"}, {"X": "126", "Y": "187"}, {"X": "133", "Y": "188"}, {"X": "140", "Y": "190"}, {"X": "147", "Y": "192"}, {"X": "154", "Y": "195"}, {"X": "170", "Y": "201"}, {"X": "186", "Y": "203"}, {"X": "203", "Y": "202"}, {"X": "219", "Y": "198"}, {"X": "234", "Y": "192"}, {"X": "248", "Y": "183"}, {"X": "260", "Y": "171"}, {"X": "270", "Y": "157"}, {"X": "277", "Y": "142"}, {"X": "281", "Y": "125"}, {"X": "282", "Y": "109"}, {"X": "280", "Y": "93"}, {"X": "275", "Y": "77"}, {"X": "267", "Y": "62"}, {"X": "257", "Y": "49"}, {"X": "244", "Y": "38"}, {"X": "239", "Y": "34"}, {"X": "233", "Y": "29"}, {"X": "228", "Y": "23"}, {"X": "224", "Y": "18"}, {"X": "219", "Y": "12"}, {"X": "215", "Y": "6"}, {"X": "99", "Y": "-195"}, {"X": "94", "Y": "-205"}, {"X": "90", "Y": "-215"}, {"X": "87", "Y": "-226"}, {"X": "85", "Y": "-236"}, {"X": "82", "Y": "-253"}, {"X": "75", "Y": "-269"}, {"X": "67", "Y": "-283"}, {"X": "55", "Y": "-295"}, {"X": "42", "Y": "-304"}, {"X": "28", "Y": "-312"}, {"X": "12", "Y": "-316"}, {"X": "-5", "Y": "-318"}, {"X": "-22", "Y": "-316"}]}, "type": "Polygon"}],
+    triorbShapes: [{"fieldtype": "ProtectiveSafeBlanking", "id": "shape-1a759783", "kind": "Field", "name": "Min10 Protective Polygon", "polygon": {"Type": "Field", "points": [{"X": "-22", "Y": "-316"}, {"X": "-38", "Y": "-312"}, {"X": "-52", "Y": "-304"}, {"X": "-66", "Y": "-295"}, {"X": "-77", "Y": "-283"}, {"X": "-86", "Y": "-269"}, {"X": "-92", "Y": "-253"}, {"X": "-95", "Y": "-236"}, {"X": "-97", "Y": "-226"}, {"X": "-100", "Y": "-215"}, {"X": "-104", "Y": "-205"}, {"X": "-109", "Y": "-195"}, {"X": "-225", "Y": "6"}, {"X": "-229", "Y": "12"}, {"X": "-234", "Y": "18"}, {"X": "-238", "Y": "23"}, {"X": "-243", "Y": "29"}, {"X": "-249", "Y": "34"}, {"X": "-254", "Y": "38"}, {"X": "-267", "Y": "49"}, {"X": "-277", "Y": "62"}, {"X": "-285", "Y": "77"}, {"X": "-290", "Y": "93"}, {"X": "-292", "Y": "109"}, {"X": "-291", "Y": "125"}, {"X": "-287", "Y": "142"}, {"X": "-280", "Y": "157"}, {"X": "-270", "Y": "171"}, {"X": "-258", "Y": "183"}, {"X": "-244", "Y": "192"}, {"X": "-229", "Y": "198"}, {"X": "-213", "Y": "202"}, {"X": "-196", "Y": "203"}, {"X": "-180", "Y": "201"}, {"X": "-164", "Y": "195"}, {"X": "-157", "Y": "192"}, {"X": "-150", "Y": "190"}, {"X": "-143", "Y": "188"}, {"X": "-136", "Y": "187"}, {"X": "-129", "Y": "186"}, {"X": "-121", "Y": "186"}, {"X": "-5", "Y": "186"}, {"X": "111", "Y": "186"}, {"X": "119", "Y": "186"}, {"X": "126", "Y": "187"}, {"X": "133", "Y": "188"}, {"X": "140", "Y": "190"}, {"X": "147", "Y": "192"}, {"X": "154", "Y": "195"}, {"X": "170", "Y": "201"}, {"X": "186", "Y": "203"}, {"X": "203", "Y": "202"}, {"X": "219", "Y": "198"}, {"X": "234", "Y": "192"}, {"X": "248", "Y": "183"}, {"X": "260", "Y": "171"}, {"X": "270", "Y": "157"}, {"X": "277", "Y": "142"}, {"X": "281", "Y": "125"}, {"X": "282", "Y": "109"}, {"X": "280", "Y": "93"}, {"X": "275", "Y": "77"}, {"X": "267", "Y": "62"}, {"X": "257", "Y": "49"}, {"X": "244", "Y": "38"}, {"X": "239", "Y": "34"}, {"X": "233", "Y": "29"}, {"X": "228", "Y": "23"}, {"X": "224", "Y": "18"}, {"X": "219", "Y": "12"}, {"X": "215", "Y": "6"}, {"X": "99", "Y": "-195"}, {"X": "94", "Y": "-205"}, {"X": "90", "Y": "-215"}, {"X": "87", "Y": "-226"}, {"X": "85", "Y": "-236"}, {"X": "82", "Y": "-253"}, {"X": "75", "Y": "-269"}, {"X": "67", "Y": "-283"}, {"X": "55", "Y": "-295"}, {"X": "42", "Y": "-304"}, {"X": "28", "Y": "-312"}, {"X": "12", "Y": "-316"}, {"X": "-5", "Y": "-318"}, {"X": "-22", "Y": "-316"}]}, "type": "Polygon"}],
     triorbSource: "",
   };
   </script>

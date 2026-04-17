@@ -19,6 +19,7 @@ import {
   getPolygonTypeValue,
   initializeTriOrbShapes,
   parsePolygonPoints,
+  sanitizeLoadedShapeName,
   setPolygonTypeValue,
 } from "./modules/triorbData.js";
 
@@ -239,6 +240,12 @@ document.addEventListener("DOMContentLoaded", () => {
         const checkAllBtn = document.getElementById("btn-fieldset-check-all");
         const uncheckAllBtn = document.getElementById("btn-fieldset-uncheck-all");
         const fieldDeleteVisibleBtn = document.getElementById("btn-field-delete-visible");
+        const fieldsetFilterInput = document.getElementById("fieldset-filter-input");
+        const fieldsetDeviceFilterInput = document.getElementById("fieldset-device-filter-input");
+        const floatingPanelLauncherButtons = Array.from(
+          document.querySelectorAll(".panel-launch-btn[data-panel-target]")
+        );
+        const floatingPanels = Array.from(document.querySelectorAll(".floating-panel"));
         const toggleLegendBtn = document.getElementById("btn-toggle-legend");
         const fieldOfViewInput = document.getElementById("triorb-field-of-view");
         const globalResolutionInput = document.getElementById("global-resolution");
@@ -246,6 +253,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const globalToleranceNegativeInput = document.getElementById("global-tolerance-negative");
         const triorbShapesContainer = document.getElementById("triorb-shapes-list");
         const addTriOrbShapeBtn = document.getElementById("btn-add-triorb-shape");
+        const triorbShapeFilterInput = document.getElementById("triorb-shape-filter-input");
         const triorbShapeCheckboxes = document.getElementById("triorb-shape-checkboxes");
         if (triorbShapeCheckboxes) {
           triorbShapeCheckboxes.classList.add("toggle-pill-grid");
@@ -346,6 +354,13 @@ document.addEventListener("DOMContentLoaded", () => {
             return acc;
           }, {})
         );
+        const createFieldModalSelectionAnchors = createFieldShapeLists.map(() =>
+          shapeKinds.reduce((acc, kind) => {
+            acc[kind] = null;
+            return acc;
+          }, {})
+        );
+        let createShapeFieldsetSelectionAnchor = null;
         const replicateFieldsetSelect = document.getElementById("replicate-fieldset-select");
         const replicateCopyCountInput = document.getElementById("replicate-copy-count");
         const replicateOffsetXInput = document.getElementById("replicate-offset-x");
@@ -372,6 +387,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const replicateCaseSelect = document.getElementById("replicate-case-select");
         const fieldTypeLabels = ["ProtectiveSafeBlanking", "WarningSafeBlanking"];
         const defaultFieldNames = ["Protective", "Warning"];
+        const triOrbStateSnapshotVersion = 2;
         const createRectOriginXInput = document.getElementById("create-rect-originx");
         const createRectOriginYInput = document.getElementById("create-rect-originy");
         const createRectWidthInput = document.getElementById("create-rect-width");
@@ -397,7 +413,9 @@ document.addEventListener("DOMContentLoaded", () => {
         let pendingSvgImportContext = null;
         let triorbSource = bootstrapData.triorbSource || "";
         let fieldsets = initializeFieldsets(initialFieldsets);
-        let fieldsetDevices = initializeFieldsetDevices(initialFieldsetDevices);
+        let fieldsetDevices = initializeFieldsetDevices(initialFieldsetDevices, {
+          supplementDefaults: true,
+        });
         let fieldsetGlobalGeometry = initializeGlobalGeometry(initialFieldsetGlobal);
         const casetableCasesLimit = 128;
         const casetableEvalsLimit = 5;
@@ -461,9 +479,248 @@ document.addEventListener("DOMContentLoaded", () => {
         if (globalToleranceNegativeInput) {
           globalToleranceNegativeInput.value = globalToleranceNegative;
         }
+
+        function defineStoreProperty(target, key, getter, setter) {
+          Object.defineProperty(target, key, {
+            enumerable: true,
+            configurable: false,
+            get: getter,
+            set: setter,
+          });
+        }
+
+        function createTriOrbStore() {
+          const devices = {};
+          defineStoreProperty(devices, "scanPlanes", () => scanPlanes, (value) => {
+            scanPlanes = value;
+          });
+          defineStoreProperty(devices, "fieldsetDevices", () => fieldsetDevices, (value) => {
+            fieldsetDevices = value;
+          });
+          defineStoreProperty(
+            devices,
+            "fieldsetGlobalGeometry",
+            () => fieldsetGlobalGeometry,
+            (value) => {
+              fieldsetGlobalGeometry = value;
+            }
+          );
+
+          const shapes = {};
+          defineStoreProperty(shapes, "items", () => triorbShapes, (value) => {
+            triorbShapes = value;
+          });
+          defineStoreProperty(shapes, "source", () => triorbSource, (value) => {
+            triorbSource = value;
+          });
+          defineStoreProperty(shapes, "importContext", () => triOrbImportContext, (value) => {
+            triOrbImportContext = value;
+          });
+
+          const fieldsetStore = {};
+          defineStoreProperty(fieldsetStore, "items", () => fieldsets, (value) => {
+            fieldsets = value;
+          });
+
+          const assignments = {};
+          defineStoreProperty(assignments, "caseToggleStates", () => caseToggleStates, (value) => {
+            caseToggleStates = value;
+          });
+          defineStoreProperty(
+            assignments,
+            "caseFieldAssignments",
+            () => caseFieldAssignments,
+            (value) => {
+              caseFieldAssignments = value;
+            }
+          );
+
+          const uiState = {};
+          defineStoreProperty(uiState, "currentFigure", () => currentFigure, (value) => {
+            currentFigure = value;
+          });
+          defineStoreProperty(uiState, "legendVisible", () => legendVisible, (value) => {
+            legendVisible = value;
+          });
+          defineStoreProperty(uiState, "fieldOfViewDegrees", () => fieldOfViewDegrees, (value) => {
+            fieldOfViewDegrees = value;
+          });
+          defineStoreProperty(
+            uiState,
+            "globalMultipleSampling",
+            () => globalMultipleSampling,
+            (value) => {
+              globalMultipleSampling = value;
+            }
+          );
+          defineStoreProperty(uiState, "globalResolution", () => globalResolution, (value) => {
+            globalResolution = value;
+          });
+          defineStoreProperty(
+            uiState,
+            "globalTolerancePositive",
+            () => globalTolerancePositive,
+            (value) => {
+              globalTolerancePositive = value;
+            }
+          );
+          defineStoreProperty(
+            uiState,
+            "globalToleranceNegative",
+            () => globalToleranceNegative,
+            (value) => {
+              globalToleranceNegative = value;
+            }
+          );
+
+          const casetable = {};
+          defineStoreProperty(casetable, "attributes", () => casetableAttributes, (value) => {
+            casetableAttributes = value;
+          });
+          defineStoreProperty(
+            casetable,
+            "configuration",
+            () => casetableConfiguration,
+            (value) => {
+              casetableConfiguration = value;
+            }
+          );
+          defineStoreProperty(casetable, "cases", () => casetableCases, (value) => {
+            casetableCases = value;
+          });
+          defineStoreProperty(casetable, "layout", () => casetableLayout, (value) => {
+            casetableLayout = value;
+          });
+          defineStoreProperty(casetable, "evals", () => casetableEvals, (value) => {
+            casetableEvals = value;
+          });
+          defineStoreProperty(
+            casetable,
+            "fieldsConfiguration",
+            () => casetableFieldsConfiguration,
+            (value) => {
+              casetableFieldsConfiguration = value;
+            }
+          );
+
+          return {
+            devices,
+            shapes,
+            fieldsets: fieldsetStore,
+            assignments,
+            uiState,
+            casetable,
+            captureState() {
+              return {
+                devices: {
+                  scanPlanes: JSON.parse(JSON.stringify(devices.scanPlanes || [])),
+                  fieldsetDevices: JSON.parse(JSON.stringify(devices.fieldsetDevices || [])),
+                  fieldsetGlobalGeometry: JSON.parse(
+                    JSON.stringify(devices.fieldsetGlobalGeometry || {})
+                  ),
+                },
+                shapes: {
+                  items: JSON.parse(JSON.stringify(shapes.items || [])),
+                  source: shapes.source || "",
+                  importContext: JSON.parse(JSON.stringify(shapes.importContext || {})),
+                },
+                fieldsets: {
+                  items: JSON.parse(JSON.stringify(fieldsetStore.items || [])),
+                },
+                assignments: {
+                  caseToggleStates: Array.isArray(assignments.caseToggleStates)
+                    ? [...assignments.caseToggleStates]
+                    : [],
+                  caseFieldAssignments: JSON.parse(
+                    JSON.stringify(assignments.caseFieldAssignments || [])
+                  ),
+                },
+                uiState: {
+                  currentFigure: cloneFigure(uiState.currentFigure || defaultFigure),
+                  legendVisible: uiState.legendVisible !== false,
+                  fieldOfViewDegrees: uiState.fieldOfViewDegrees,
+                  globalMultipleSampling: uiState.globalMultipleSampling,
+                  globalResolution: uiState.globalResolution,
+                  globalTolerancePositive: uiState.globalTolerancePositive,
+                  globalToleranceNegative: uiState.globalToleranceNegative,
+                },
+                casetable: {
+                  attributes: cloneAttributes(casetable.attributes || {}),
+                  configuration: cloneGenericNode(casetable.configuration),
+                  cases: JSON.parse(JSON.stringify(casetable.cases || [])),
+                  layout: JSON.parse(JSON.stringify(casetable.layout || [])),
+                  evals: JSON.parse(JSON.stringify(casetable.evals || null)),
+                  fieldsConfiguration: cloneGenericNode(casetable.fieldsConfiguration),
+                },
+              };
+            },
+            replaceDocumentState(documentState = {}, options = {}) {
+              const { supplementFieldsetDeviceDefaults = false } = options;
+              devices.scanPlanes = initializeScanPlanes(documentState.scanPlanes);
+              shapes.items = initializeTriOrbShapes(documentState.triorbShapes);
+              shapes.source = documentState.triorbSource || "TriOrb";
+              fieldsetStore.items = initializeFieldsets(documentState.fieldsets);
+              devices.fieldsetDevices = initializeFieldsetDevices(documentState.fieldsetDevices, {
+                supplementDefaults: supplementFieldsetDeviceDefaults,
+              });
+              devices.fieldsetGlobalGeometry = initializeGlobalGeometry(
+                documentState.fieldsetGlobalGeometry
+              );
+              casetable.attributes = cloneAttributes(documentState.casetableAttributes || { Index: "0" });
+              casetable.configuration = normalizeCasetableConfiguration(
+                documentState.casetableConfiguration
+              );
+              casetable.cases = initializeCasetableCases(documentState.casetableCases);
+              casetable.layout = normalizeCasetableLayout(documentState.casetableLayout);
+              casetable.evals = normalizeCasetableEvals(
+                documentState.casetableEvals,
+                casetable.cases.length
+              );
+              casetable.fieldsConfiguration = null;
+            },
+            replaceAssignmentsState(assignmentsState = {}) {
+              assignments.caseToggleStates =
+                Array.isArray(assignmentsState.caseToggleStates) &&
+                assignmentsState.caseToggleStates.length === casetable.cases.length
+                  ? assignmentsState.caseToggleStates.map(Boolean)
+                  : casetable.cases.map(() => false);
+              assignments.caseFieldAssignments = Array.isArray(
+                assignmentsState.caseFieldAssignments
+              )
+                ? JSON.parse(JSON.stringify(assignmentsState.caseFieldAssignments))
+                : [];
+            },
+            replaceUiState(nextUiState = {}) {
+              uiState.fieldOfViewDegrees = parseNumeric(nextUiState.fieldOfViewDegrees, 270);
+              uiState.globalMultipleSampling = String(
+                nextUiState.globalMultipleSampling ?? deriveInitialMultipleSampling(fieldsets) ?? "2"
+              );
+              uiState.globalResolution = parseNumeric(
+                nextUiState.globalResolution,
+                deriveFieldAttribute(fieldsets, "Resolution", 70)
+              );
+              uiState.globalTolerancePositive = parseNumeric(
+                nextUiState.globalTolerancePositive,
+                deriveFieldAttribute(fieldsets, "TolerancePositive", 0)
+              );
+              uiState.globalToleranceNegative = parseNumeric(
+                nextUiState.globalToleranceNegative,
+                deriveFieldAttribute(fieldsets, "ToleranceNegative", 0)
+              );
+              uiState.legendVisible = nextUiState.legendVisible !== false;
+              uiState.currentFigure = nextUiState.currentFigure
+                ? cloneFigure(nextUiState.currentFigure)
+                : cloneFigure(defaultFigure);
+            },
+          };
+        }
+
+        const triOrbStore = createTriOrbStore();
         let createShapePreview = null;
         let createShapeDraftId = null;
         let fieldModalPreview = null;
+        let floatingPanelZCounter = 60;
+        let floatingPanelDragState = null;
         updateGlobalFieldAttributes();
 
         let lastHoverPoint = null;
@@ -505,6 +762,19 @@ document.addEventListener("DOMContentLoaded", () => {
           lastCaseIndex: null,
           lastShapeIndex: null,
         };
+        const triOrbInteractionState = {
+          hoveredShapeId: null,
+          selectedShapeId: null,
+        };
+        const fieldsetInteractionState = {
+          hoveredFieldsetIndex: null,
+          hoveredFieldIndex: null,
+        };
+        const listFilterState = {
+          fieldsets: "",
+          devices: "",
+          shapes: "",
+        };
         let replicatePreviewState = null;
         const plotTraceCache = {
           baseFigure: { version: -1, traces: [] },
@@ -519,16 +789,18 @@ document.addEventListener("DOMContentLoaded", () => {
         invalidateBaseFigureTraces();
 
         rebuildTriOrbShapeRegistry();
-        renderScanPlanes();
-        renderFieldsets();
-        renderFieldsetDevices();
-        renderFieldsetGlobal();
-        renderFieldsetCheckboxes();
-        renderTriOrbShapes();
-        renderTriOrbShapeCheckboxes();
-        renderCasetableConfiguration();
-        renderCasetableCases();
-        renderCasetableFieldsConfiguration();
+        refreshUiViews({
+          scanPlanes: true,
+          fieldsets: true,
+          fieldsetDevices: true,
+          fieldsetGlobal: true,
+          fieldsetCheckboxes: true,
+          triOrbShapes: true,
+          triOrbShapeCheckboxes: true,
+          casetableConfiguration: true,
+          casetableCases: true,
+          casetableFieldsConfiguration: true,
+        });
 
         function initializeScanPlanes(data) {
           let planes;
@@ -559,6 +831,443 @@ document.addEventListener("DOMContentLoaded", () => {
           statusText.dataset.state = resolvedState;
         }
 
+        function captureFileInfoValues() {
+          const scope = document.querySelector('[data-scope="fileinfo"]');
+          if (!scope) {
+            return {};
+          }
+          return Array.from(
+            scope.querySelectorAll(".menu-fileinfo-field input, .menu-fileinfo-field textarea")
+          ).reduce((acc, input) => {
+            const tag = input.dataset.field || sanitizeTagName(input.id || "Field");
+            acc[tag] = input.value ?? "";
+            return acc;
+          }, {});
+        }
+
+        function applyFileInfoValues(values = {}) {
+          const scope = document.querySelector('[data-scope="fileinfo"]');
+          if (!scope) {
+            return;
+          }
+          Array.from(
+            scope.querySelectorAll(".menu-fileinfo-field input, .menu-fileinfo-field textarea")
+          ).forEach((input) => {
+            const tag = input.dataset.field || sanitizeTagName(input.id || "Field");
+            if (Object.prototype.hasOwnProperty.call(values, tag)) {
+              input.value = values[tag] ?? "";
+            }
+          });
+        }
+
+        function encodeBase64Unicode(value) {
+          const encoder = new TextEncoder();
+          const bytes = encoder.encode(String(value ?? ""));
+          let binary = "";
+          bytes.forEach((byte) => {
+            binary += String.fromCharCode(byte);
+          });
+          return btoa(binary);
+        }
+
+        function decodeBase64Unicode(value) {
+          const binary = atob(String(value ?? ""));
+          const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+          const decoder = new TextDecoder();
+          return decoder.decode(bytes);
+        }
+
+        function clampValue(value, min, max) {
+          return Math.min(max, Math.max(min, value));
+        }
+
+        function normalizeSearchText(value) {
+          return String(value ?? "").trim().toLowerCase();
+        }
+
+        function matchesSearchQuery(candidate, query) {
+          if (!query) {
+            return true;
+          }
+          return normalizeSearchText(candidate).includes(query);
+        }
+
+        function hasAdditiveSelectionModifier(event) {
+          return Boolean(event?.ctrlKey || event?.metaKey);
+        }
+
+        function applyMultiToggleSelection({
+          event,
+          selection,
+          orderedValues,
+          targetValue,
+          anchorValue,
+          additiveByDefault = true,
+        }) {
+          if (!(selection instanceof Set) || !Array.isArray(orderedValues)) {
+            return { nextState: false, anchorValue };
+          }
+          const nextState = !selection.has(targetValue);
+          const additiveSelection = additiveByDefault || hasAdditiveSelectionModifier(event);
+          if (event?.shiftKey && anchorValue !== null && anchorValue !== undefined) {
+            const anchorIndex = orderedValues.findIndex((value) => value === anchorValue);
+            const currentIndex = orderedValues.findIndex((value) => value === targetValue);
+            if (anchorIndex >= 0 && currentIndex >= 0) {
+              const start = Math.min(anchorIndex, currentIndex);
+              const end = Math.max(anchorIndex, currentIndex);
+              orderedValues.slice(start, end + 1).forEach((value) => {
+                if (nextState) {
+                  selection.add(value);
+                } else {
+                  selection.delete(value);
+                }
+              });
+              return { nextState, anchorValue: targetValue };
+            }
+          }
+          if (!additiveSelection) {
+            selection.clear();
+          }
+          if (nextState) {
+            selection.add(targetValue);
+          } else {
+            selection.delete(targetValue);
+          }
+          return { nextState, anchorValue: targetValue };
+        }
+
+        function getFilteredFieldsetEntries() {
+          const query = normalizeSearchText(listFilterState.fieldsets);
+          return fieldsets
+            .map((fieldset, index) => ({ fieldset, index }))
+            .filter(({ fieldset, index }) => {
+              if (!query) {
+                return true;
+              }
+              const fieldNames = (fieldset.fields || [])
+                .map((field) => field?.attributes?.Name || "")
+                .join(" ");
+              const searchableText = [
+                fieldset?.attributes?.Name || `Fieldset ${index + 1}`,
+                fieldset?.attributes?.NameLatin9Key || "",
+                fieldNames,
+              ].join(" ");
+              return matchesSearchQuery(searchableText, query);
+            });
+        }
+
+        function getFilteredFieldsetDeviceEntries() {
+          const query = normalizeSearchText(listFilterState.devices);
+          return fieldsetDevices
+            .map((device, index) => ({ device, index }))
+            .filter(({ device, index }) => {
+              if (!query) {
+                return true;
+              }
+              const attrs = device?.attributes || {};
+              const searchableText = [
+                attrs.DeviceName || `Device ${index + 1}`,
+                attrs.Typekey || "",
+                attrs.TypekeyVersion || "",
+                attrs.TypekeyDisplayVersion || "",
+              ].join(" ");
+              return matchesSearchQuery(searchableText, query);
+            });
+        }
+
+        function getFilteredTriOrbShapeEntries() {
+          const query = normalizeSearchText(listFilterState.shapes);
+          return triorbShapes
+            .map((shape, index) => ({ shape, index }))
+            .filter(({ shape, index }) => {
+              if (!query) {
+                return true;
+              }
+              const searchableText = [
+                shape?.name || `Shape ${index + 1}`,
+                shape?.type || "",
+                shape?.fieldtype || "",
+                shape?.kind || "",
+              ].join(" ");
+              return matchesSearchQuery(searchableText, query);
+            });
+        }
+
+        function setModalVisibility(modal, isActive) {
+          if (!modal) {
+            return;
+          }
+          modal.classList.toggle("active", isActive);
+          modal.setAttribute("aria-hidden", String(!isActive));
+        }
+
+        function createModalInteractionController({
+          windowEl,
+          minWidth = 320,
+          minHeight = 320,
+          realignAfterDrag = false,
+        } = {}) {
+          const state = {
+            offsetX: 0,
+            offsetY: 0,
+            dragStartX: 0,
+            dragStartY: 0,
+            resizeStartX: 0,
+            resizeStartY: 0,
+            initialWidth: 0,
+            initialHeight: 0,
+            lastDx: 0,
+            lastDy: 0,
+            isDragging: false,
+            isResizing: false,
+          };
+
+          return {
+            ensurePosition() {
+              if (!windowEl) {
+                return;
+              }
+              windowEl.style.transform = `translate(${state.offsetX}px, ${state.offsetY}px)`;
+            },
+            resetTransform() {
+              state.offsetX = 0;
+              state.offsetY = 0;
+              state.lastDx = 0;
+              state.lastDy = 0;
+              state.isDragging = false;
+              state.isResizing = false;
+              if (!windowEl) {
+                return;
+              }
+              windowEl.style.transform = "translate(0px, 0px)";
+              windowEl.style.width = "";
+              windowEl.style.height = "";
+              windowEl.style.transition = "";
+            },
+            startDrag(event) {
+              if (!windowEl) {
+                return;
+              }
+              state.isDragging = true;
+              state.dragStartX = event.clientX;
+              state.dragStartY = event.clientY;
+              state.lastDx = 0;
+              state.lastDy = 0;
+              windowEl.style.transition = "none";
+            },
+            startResize(event) {
+              if (!windowEl) {
+                return;
+              }
+              state.isResizing = true;
+              state.resizeStartX = event.clientX;
+              state.resizeStartY = event.clientY;
+              state.initialWidth = windowEl.offsetWidth;
+              state.initialHeight = windowEl.offsetHeight;
+              windowEl.style.transition = "none";
+            },
+            updatePointer(event) {
+              if (state.isDragging && windowEl) {
+                const dx = event.clientX - state.dragStartX;
+                const dy = event.clientY - state.dragStartY;
+                windowEl.style.transform = `translate(${state.offsetX + dx}px, ${state.offsetY + dy}px)`;
+                state.lastDx = dx;
+                state.lastDy = dy;
+              }
+              if (state.isResizing && windowEl) {
+                const dx = event.clientX - state.resizeStartX;
+                const dy = event.clientY - state.resizeStartY;
+                const width = Math.max(minWidth, state.initialWidth + dx);
+                const height = Math.max(minHeight, state.initialHeight + dy);
+                windowEl.style.width = `${width}px`;
+                windowEl.style.height = `${height}px`;
+              }
+            },
+            endPointer() {
+              if (state.isDragging) {
+                state.offsetX += state.lastDx;
+                state.offsetY += state.lastDy;
+                state.lastDx = 0;
+                state.lastDy = 0;
+                state.isDragging = false;
+                if (windowEl) {
+                  windowEl.style.transition = "";
+                  if (realignAfterDrag) {
+                    this.ensurePosition();
+                  }
+                }
+              }
+              if (state.isResizing) {
+                state.isResizing = false;
+                if (windowEl) {
+                  windowEl.style.transition = "";
+                }
+              }
+            },
+          };
+        }
+
+        function appendModalResizeHandle(target, className = "modal-resize-handle") {
+          if (!target) {
+            return null;
+          }
+          const handle = document.createElement("div");
+          handle.className = className;
+          target.appendChild(handle);
+          return handle;
+        }
+
+        function bindModalInteraction({
+          dragHandle,
+          resizeHandle,
+          controller,
+        } = {}) {
+          if (dragHandle && controller) {
+            dragHandle.addEventListener("pointerdown", (event) => {
+              event.preventDefault();
+              controller.startDrag(event);
+            });
+          }
+          if (resizeHandle && controller) {
+            resizeHandle.addEventListener("pointerdown", (event) => {
+              event.preventDefault();
+              controller.startResize(event);
+            });
+          }
+        }
+
+        function syncFloatingPanelLauncherStates() {
+          floatingPanelLauncherButtons.forEach((button) => {
+            const target = document.getElementById(button.dataset.panelTarget || "");
+            const isActive = Boolean(target?.classList.contains("active"));
+            button.classList.toggle("active", isActive);
+            button.setAttribute("aria-pressed", String(isActive));
+          });
+        }
+
+        function bringFloatingPanelToFront(panel) {
+          if (!panel) {
+            return;
+          }
+          floatingPanelZCounter += 1;
+          panel.style.zIndex = String(floatingPanelZCounter);
+        }
+
+        function constrainFloatingPanelToViewport(panel) {
+          if (!panel) {
+            return;
+          }
+          const rect = panel.getBoundingClientRect();
+          const maxLeft = Math.max(16, window.innerWidth - rect.width - 16);
+          const maxTop = Math.max(16, window.innerHeight - rect.height - 16);
+          const left = clampValue(Number.parseFloat(panel.style.left) || rect.left, 16, maxLeft);
+          const top = clampValue(Number.parseFloat(panel.style.top) || rect.top, 16, maxTop);
+          panel.style.left = `${left}px`;
+          panel.style.top = `${top}px`;
+          panel.style.right = "auto";
+        }
+
+        function ensureFloatingPanelPosition(panel) {
+          if (!panel) {
+            return;
+          }
+          if (panel.dataset.positioned === "true") {
+            constrainFloatingPanelToViewport(panel);
+            return;
+          }
+          const panelIndex = Math.max(0, floatingPanels.indexOf(panel));
+          const column = panelIndex % 2;
+          const row = Math.floor(panelIndex / 2);
+          const rect = panel.getBoundingClientRect();
+          const width = rect.width || 560;
+          const left = Math.max(
+            16,
+            window.innerWidth - width - 24 - column * 28
+          );
+          const top = 112 + row * 28;
+          panel.style.left = `${left}px`;
+          panel.style.top = `${top}px`;
+          panel.style.right = "auto";
+          panel.dataset.positioned = "true";
+          constrainFloatingPanelToViewport(panel);
+        }
+
+        function openFloatingPanel(panelId) {
+          const panel = document.getElementById(panelId || "");
+          if (!panel) {
+            return;
+          }
+          panel.classList.add("active");
+          bringFloatingPanelToFront(panel);
+          ensureFloatingPanelPosition(panel);
+          syncFloatingPanelLauncherStates();
+        }
+
+        function closeFloatingPanel(target) {
+          const panel =
+            typeof target === "string" ? document.getElementById(target) : target;
+          if (!panel) {
+            return;
+          }
+          panel.classList.remove("active");
+          syncFloatingPanelLauncherStates();
+        }
+
+        function toggleFloatingPanel(panelId) {
+          const panel = document.getElementById(panelId || "");
+          if (!panel) {
+            return;
+          }
+          if (panel.classList.contains("active")) {
+            closeFloatingPanel(panel);
+          } else {
+            openFloatingPanel(panelId);
+          }
+        }
+
+        function handleFloatingPanelPointerDown(event) {
+          const header = event.target.closest("[data-panel-drag-handle]");
+          if (!header) {
+            return;
+          }
+          const panel = header.closest(".floating-panel");
+          if (!panel) {
+            return;
+          }
+          bringFloatingPanelToFront(panel);
+          ensureFloatingPanelPosition(panel);
+          const rect = panel.getBoundingClientRect();
+          floatingPanelDragState = {
+            panel,
+            pointerId: event.pointerId,
+            offsetX: event.clientX - rect.left,
+            offsetY: event.clientY - rect.top,
+          };
+          header.setPointerCapture?.(event.pointerId);
+          event.preventDefault();
+        }
+
+        function handleFloatingPanelPointerMove(event) {
+          if (!floatingPanelDragState || floatingPanelDragState.pointerId !== event.pointerId) {
+            return;
+          }
+          const { panel, offsetX, offsetY } = floatingPanelDragState;
+          panel.style.left = `${event.clientX - offsetX}px`;
+          panel.style.top = `${event.clientY - offsetY}px`;
+          panel.style.right = "auto";
+          panel.dataset.positioned = "true";
+          constrainFloatingPanelToViewport(panel);
+        }
+
+        function handleFloatingPanelPointerUp(event) {
+          if (!floatingPanelDragState || floatingPanelDragState.pointerId !== event.pointerId) {
+            return;
+          }
+          const activePanel = floatingPanelDragState.panel;
+          floatingPanelDragState = null;
+          constrainFloatingPanelToViewport(activePanel);
+        }
+
         function invalidateBaseFigureTraces() {
           baseFigureVersion += 1;
         }
@@ -577,6 +1286,85 @@ document.addEventListener("DOMContentLoaded", () => {
         function invalidateTriOrbShapeCaches() {
           triOrbShapeTraceVersion += 1;
           invalidateFieldsetTraces({ skipDeviceCache: true });
+        }
+
+        function invalidateRenderCaches({
+          baseFigure = false,
+          deviceOverlay = false,
+          fieldsets = false,
+          triOrbShapes = false,
+        } = {}) {
+          if (baseFigure) {
+            invalidateBaseFigureTraces();
+          }
+          if (triOrbShapes) {
+            invalidateTriOrbShapeCaches();
+          } else if (fieldsets) {
+            invalidateFieldsetTraces();
+          } else if (deviceOverlay) {
+            invalidateDeviceTraceCache();
+          }
+          if (triOrbShapes && deviceOverlay) {
+            invalidateDeviceTraceCache();
+          }
+        }
+
+        function refreshUiViews({
+          invalidate = {},
+          scanPlanes = false,
+          fieldsets = false,
+          fieldsetDevices = false,
+          fieldsetGlobal = false,
+          fieldsetCheckboxes = false,
+          triOrbShapes = false,
+          triOrbShapeCheckboxes = false,
+          caseCheckboxes = false,
+          figure = false,
+          casetableConfiguration = false,
+          casetableCases = false,
+          casetableEvals = false,
+          casetableFieldsConfiguration = false,
+        } = {}) {
+          invalidateRenderCaches(invalidate);
+          if (scanPlanes) {
+            renderScanPlanes();
+          }
+          if (fieldsets) {
+            renderFieldsets({ invalidateTraces: false });
+          }
+          if (fieldsetDevices) {
+            renderFieldsetDevices({ invalidateTraceCache: false });
+          }
+          if (fieldsetGlobal) {
+            renderFieldsetGlobal();
+          }
+          if (fieldsetCheckboxes) {
+            renderFieldsetCheckboxes();
+          }
+          if (triOrbShapes) {
+            renderTriOrbShapes();
+          }
+          if (triOrbShapeCheckboxes) {
+            renderTriOrbShapeCheckboxes();
+          }
+          if (caseCheckboxes) {
+            renderCaseCheckboxes();
+          }
+          if (casetableConfiguration) {
+            renderCasetableConfiguration();
+          }
+          if (casetableCases) {
+            renderCasetableCases();
+          }
+          if (casetableEvals) {
+            renderCasetableEvals();
+          }
+          if (casetableFieldsConfiguration) {
+            renderCasetableFieldsConfiguration();
+          }
+          if (figure) {
+            renderFigure();
+          }
         }
 
         function buildBaseFigureTraces() {
@@ -624,6 +1412,101 @@ document.addEventListener("DOMContentLoaded", () => {
           return traces;
         }
 
+        function cloneTraceForRender(trace) {
+          return {
+            ...trace,
+            line: trace?.line ? { ...trace.line } : trace?.line,
+            marker: trace?.marker ? { ...trace.marker } : trace?.marker,
+            meta: trace?.meta ? { ...trace.meta } : trace?.meta,
+          };
+        }
+
+        function getActiveTriOrbShapeHighlightId() {
+          normalizeTriOrbInteractionState();
+          return triOrbInteractionState.hoveredShapeId || triOrbInteractionState.selectedShapeId || null;
+        }
+
+        function getActiveFieldsetInteraction() {
+          const { hoveredFieldsetIndex, hoveredFieldIndex } = fieldsetInteractionState;
+          if (!Number.isInteger(hoveredFieldsetIndex)) {
+            return null;
+          }
+          return {
+            fieldsetIndex: hoveredFieldsetIndex,
+            fieldIndex: Number.isInteger(hoveredFieldIndex) ? hoveredFieldIndex : null,
+          };
+        }
+
+        function normalizeTriOrbInteractionState() {
+          const validIds = new Set(triorbShapes.map((shape) => shape?.id).filter(Boolean));
+          if (
+            triOrbInteractionState.hoveredShapeId &&
+            !validIds.has(triOrbInteractionState.hoveredShapeId)
+          ) {
+            triOrbInteractionState.hoveredShapeId = null;
+          }
+          if (
+            triOrbInteractionState.selectedShapeId &&
+            !validIds.has(triOrbInteractionState.selectedShapeId)
+          ) {
+            triOrbInteractionState.selectedShapeId = null;
+          }
+        }
+
+        function applyTriOrbInteractionHighlights(traces) {
+          const activeShapeId = getActiveTriOrbShapeHighlightId();
+          if (!activeShapeId) {
+            return traces;
+          }
+          traces.forEach((trace) => {
+            if (!trace?.meta?.isTriOrbShape || !trace.meta.shapeId) {
+              return;
+            }
+            const isActive = String(trace.meta.shapeId) === String(activeShapeId);
+            const baseWidth = Number(trace.line?.width) || 2;
+            if (isActive) {
+              trace.opacity = 1;
+              trace.line = {
+                ...(trace.line || {}),
+                width: Math.max(baseWidth + 1.5, 4),
+              };
+            } else {
+              trace.opacity = 0.16;
+            }
+          });
+          return traces;
+        }
+
+        function applyFieldsetInteractionHighlights(traces) {
+          const activeTarget = getActiveFieldsetInteraction();
+          if (!activeTarget) {
+            return traces;
+          }
+          traces.forEach((trace) => {
+            if (
+              !trace?.meta ||
+              !Number.isInteger(trace.meta.fieldsetIndex) ||
+              !Number.isInteger(trace.meta.fieldIndex)
+            ) {
+              return;
+            }
+            const isMatch =
+              trace.meta.fieldsetIndex === activeTarget.fieldsetIndex &&
+              (activeTarget.fieldIndex === null || trace.meta.fieldIndex === activeTarget.fieldIndex);
+            const baseWidth = Number(trace.line?.width) || 2;
+            if (isMatch) {
+              trace.opacity = 1;
+              trace.line = {
+                ...(trace.line || {}),
+                width: Math.max(baseWidth + 1.2, 3.5),
+              };
+            } else {
+              trace.opacity = 0.16;
+            }
+          });
+          return traces;
+        }
+
         function renderFigure() {
           syncPlotSize();
           const baseData = resolveBaseFigureTraces();
@@ -663,31 +1546,51 @@ document.addEventListener("DOMContentLoaded", () => {
             },
           };
           const combinedTraces = [];
+          const appendTraces = (traces) => {
+            traces.forEach((trace) => {
+              if (!trace || typeof trace !== "object") {
+                return;
+              }
+              combinedTraces.push(trace);
+            });
+          };
           if (deviceTraces.length) {
-            combinedTraces.push(...deviceTraces);
+            appendTraces(deviceTraces);
           }
           if (triOrbShapeTraces.length) {
-            combinedTraces.push(...triOrbShapeTraces);
+            appendTraces(triOrbShapeTraces);
           }
           if (baseData.length) {
-            combinedTraces.push(...baseData);
+            appendTraces(baseData);
           }
           if (fieldsetTraces.length) {
-            combinedTraces.push(...fieldsetTraces);
+            appendTraces(fieldsetTraces);
           }
           if (previewTraces.length) {
-            combinedTraces.push(...previewTraces);
+            appendTraces(previewTraces);
           }
           if (fieldModalPreviewTraces.length) {
-            combinedTraces.push(...fieldModalPreviewTraces);
+            appendTraces(fieldModalPreviewTraces);
           }
           if (replicatePreviewTraces.length) {
-            combinedTraces.push(...replicatePreviewTraces);
+            appendTraces(replicatePreviewTraces);
           }
           if (bulkEditPreviewTraces.length) {
-            combinedTraces.push(...bulkEditPreviewTraces);
+            appendTraces(bulkEditPreviewTraces);
           }
-          Plotly.react(plotNode, combinedTraces, layout, figureConfig);
+          const activeShapeId = getActiveTriOrbShapeHighlightId();
+          const activeFieldsetTarget = getActiveFieldsetInteraction();
+          const tracesForRender =
+            activeShapeId || activeFieldsetTarget
+              ? combinedTraces.map((trace) =>
+                  trace?.meta?.isTriOrbShape || Number.isInteger(trace?.meta?.fieldsetIndex)
+                    ? cloneTraceForRender(trace)
+                    : trace
+                )
+              : combinedTraces;
+          applyTriOrbInteractionHighlights(tracesForRender);
+          applyFieldsetInteractionHighlights(tracesForRender);
+          Plotly.react(plotNode, tracesForRender, layout, figureConfig);
         }
 
         function buildFieldsetTraces() {
@@ -1220,8 +2123,8 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
                       color,
                       label,
                       fieldType,
-                      0,
-                      0,
+                      null,
+                      null,
                       shapeIndex
                     );
                   }
@@ -1233,8 +2136,8 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
                       color,
                       label,
                       fieldType,
-                      0,
-                      0,
+                      null,
+                      null,
                       shapeIndex
                     );
                   }
@@ -1247,8 +2150,8 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
                       color,
                       label,
                       fieldType,
-                      0,
-                      0,
+                      null,
+                      null,
                       shapeIndex
                     );
                   }
@@ -2721,8 +3624,10 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           replicateFieldBtn.disabled = !hasFieldsetTargets && !hasCaseTargets;
         }
 
-        function renderFieldsets() {
-          invalidateFieldsetTraces();
+        function renderFieldsets({ invalidateTraces = true } = {}) {
+          if (invalidateTraces) {
+            invalidateFieldsetTraces();
+          }
           if (!fieldsetsContainer) {
             return;
           }
@@ -2731,9 +3636,14 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             fieldsetsContainer.innerHTML = "<p>No fieldsets defined.</p>";
             return;
           }
+          const visibleFieldsetEntries = getFilteredFieldsetEntries();
+          if (!visibleFieldsetEntries.length) {
+            fieldsetsContainer.innerHTML = '<p class="panel-filter-empty">No fieldsets match the current filter.</p>';
+            return;
+          }
           const totalFieldsets = fieldsets.length;
-          fieldsetsContainer.innerHTML = fieldsets
-            .map((fieldset, fieldsetIndex) => {
+          fieldsetsContainer.innerHTML = visibleFieldsetEntries
+            .map(({ fieldset, index: fieldsetIndex }) => {
               const fieldsetFields = Object.entries(fieldset.attributes || {})
                 .map(([key, value]) => formatFieldsetAttribute(fieldsetIndex, key, value))
                 .join("");
@@ -2925,6 +3835,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           renderFigure();
           regenerateFieldsConfiguration();
           restoreFieldsetDetailState(detailState);
+          syncFieldsetCardHighlights();
           updateReplicateButtonState();
         }
 
@@ -3026,6 +3937,23 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           updateFieldModalPreview();
         }
 
+        function getCreateFieldShapeIdsForKind(kind) {
+          return triorbShapes
+            .filter((shape) => shape.kind === kind)
+            .map((shape) => shape.id)
+            .filter(Boolean);
+        }
+
+        function setAllCreateFieldShapeSelections(fieldIndex, kind, active) {
+          const shapeIds = active ? getCreateFieldShapeIdsForKind(kind) : [];
+          setCreateFieldShapeSelections(fieldIndex, kind, shapeIds);
+          if (createFieldModalSelectionAnchors[fieldIndex]) {
+            createFieldModalSelectionAnchors[fieldIndex][kind] = active && shapeIds.length
+              ? shapeIds[shapeIds.length - 1]
+              : null;
+          }
+        }
+
         function handleCreateFieldShapeToggle(event) {
           const button = event.target.closest(".create-field-shape-btn");
           if (
@@ -3044,15 +3972,21 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           if (!selection) {
             return;
           }
-          if (selection.has(shapeId)) {
-            selection.delete(shapeId);
-          } else {
-            selection.add(shapeId);
-          }
-          const isActive = selection.has(shapeId);
-          button.classList.toggle("active", isActive);
-          button.setAttribute("aria-pressed", String(isActive));
-          updateFieldModalPreview();
+          const list = createFieldShapeLists[fieldIndex]?.[kind];
+          const orderedValues = list
+            ? Array.from(list.querySelectorAll(".create-field-shape-btn"))
+                .map((entry) => entry.dataset.shapeId)
+                .filter(Boolean)
+            : [];
+          const result = applyMultiToggleSelection({
+            event,
+            selection,
+            orderedValues,
+            targetValue: shapeId,
+            anchorValue: createFieldModalSelectionAnchors[fieldIndex]?.[kind] || null,
+          });
+          createFieldModalSelectionAnchors[fieldIndex][kind] = result.anchorValue;
+          setCreateFieldShapeSelections(fieldIndex, kind, Array.from(selection));
         }
 
         function getFieldPreviewColor(entry) {
@@ -3393,15 +4327,19 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               selection[kind]?.clear();
             });
           });
+          createFieldModalSelectionAnchors.forEach((selection) => {
+            shapeKinds.forEach((kind) => {
+              selection[kind] = null;
+            });
+          });
           renderCreateFieldShapeLists();
           if (createFieldModalTitle) {
             createFieldModalTitle.textContent = isAppendingToExisting ? "Add Field" : "Add Fieldset";
           }
           if (createFieldModal) {
             createFieldModal.dataset.mode = isAppendingToExisting ? "append" : "create";
-            createFieldModal.classList.add("active");
-            createFieldModal.setAttribute("aria-hidden", "false");
           }
+          setModalVisibility(createFieldModal, true);
           updateFieldModalPreview();
         }
 
@@ -3412,12 +4350,16 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               setCreateFieldShapeSelections(fieldIndex, kind, []);
             });
           });
+          createFieldModalSelectionAnchors.forEach((selection) => {
+            shapeKinds.forEach((kind) => {
+              selection[kind] = null;
+            });
+          });
           createFieldTargetFieldsetIndex = null;
           if (createFieldModal) {
             createFieldModal.dataset.mode = "create";
-            createFieldModal.classList.remove("active");
-            createFieldModal.setAttribute("aria-hidden", "true");
           }
+          setModalVisibility(createFieldModal, false);
           renderFigure();
         }
 
@@ -3620,15 +4562,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
         }
 
         function resetReplicateModalTransform() {
-          replicateModalOffsetX = 0;
-          replicateModalOffsetY = 0;
-          replicateModalLastDx = 0;
-          replicateModalLastDy = 0;
-          if (replicateModalWindow) {
-            replicateModalWindow.style.transform = "translate(0px, 0px)";
-            replicateModalWindow.style.width = "";
-            replicateModalWindow.style.height = "";
-          }
+          replicateModalController.resetTransform();
         }
 
         function openReplicateModal() {
@@ -3732,8 +4666,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             replicateCasePrefixInput.value = fallbackPrefix;
           }
           updateReplicatePrefixPlaceholder();
-          replicateModal.classList.add("active");
-          replicateModal.setAttribute("aria-hidden", "false");
+          setModalVisibility(replicateModal, true);
           updateReplicatePreview();
           resetReplicateModalTransform();
         }
@@ -3742,8 +4675,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           if (!replicateModal) {
             return;
           }
-          replicateModal.classList.remove("active");
-          replicateModal.setAttribute("aria-hidden", "true");
+          setModalVisibility(replicateModal, false);
           clearReplicatePreview();
           resetReplicateModalTransform();
         }
@@ -4313,7 +5245,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             `${shapeType} Shape ${triorbShapes.length + 1}`;
           const shape = createDefaultTriOrbShape(triorbShapes.length, shapeType);
           shape.id = normalizedAttrs.ID || createShapeId();
-          shape.name = shapeName;
+          shape.name = sanitizeLoadedShapeName(shapeName, shapeType);
           shape.fieldtype = context.fieldtype || shape.fieldtype;
           if (shapeType === "Polygon") {
             shape.polygon = {
@@ -4359,12 +5291,25 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             renderCasetableEvals();
             return;
           }
+          const visibleShapeEntries = getFilteredTriOrbShapeEntries();
+          if (!visibleShapeEntries.length) {
+            Array.from(triOrbShapeCardCache.keys()).forEach((shapeId) => {
+              const cachedCard = triOrbShapeCardCache.get(shapeId);
+              if (cachedCard?.parentNode === triorbShapesContainer) {
+                triorbShapesContainer.removeChild(cachedCard);
+              }
+            });
+            triOrbShapesListInitialized = false;
+            triorbShapesContainer.innerHTML = '<p class="panel-filter-empty">No shapes match the current filter.</p>';
+            renderCasetableEvals();
+            return;
+          }
           if (!triOrbShapesListInitialized) {
             triorbShapesContainer.innerHTML = "";
             triOrbShapesListInitialized = true;
           }
           const renderedShapeIds = new Set();
-          triorbShapes.forEach((shape, shapeIndex) => {
+          visibleShapeEntries.forEach(({ shape, index: shapeIndex }) => {
             const shapeId = shape.id;
             let card = triOrbShapeCardCache.get(shapeId);
             if (!card) {
@@ -4387,6 +5332,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           if (createFieldModal) {
             renderCreateFieldShapeLists();
           }
+          syncTriOrbShapeCardHighlights();
           renderCasetableEvals();
         }
 
@@ -4401,6 +5347,81 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             card.dataset.shapeSignature = shapeSignature;
           } else {
             syncTriOrbShapeCardIndexes(card, shapeIndex);
+          }
+          syncTriOrbShapeCardElementState(card, shape.id);
+        }
+
+        function syncTriOrbShapeCardElementState(card, shapeId) {
+          if (!card) {
+            return;
+          }
+          card.classList.toggle(
+            "is-hovered",
+            Boolean(shapeId) && String(triOrbInteractionState.hoveredShapeId) === String(shapeId)
+          );
+          card.classList.toggle(
+            "is-selected",
+            Boolean(shapeId) && String(triOrbInteractionState.selectedShapeId) === String(shapeId)
+          );
+        }
+
+        function syncTriOrbShapeCardHighlights() {
+          triOrbShapeCardCache.forEach((card, shapeId) => {
+            syncTriOrbShapeCardElementState(card, shapeId);
+          });
+        }
+
+        function ensureTriOrbShapeCardVisible(shapeId, { openPanel = false } = {}) {
+          if (!shapeId) {
+            return;
+          }
+          if (openPanel) {
+            openFloatingPanel("panel-triorb-shapes");
+          }
+          const card = triOrbShapeCardCache.get(shapeId);
+          if (card && typeof card.scrollIntoView === "function") {
+            card.scrollIntoView({ block: "nearest" });
+          }
+        }
+
+        function setHoveredTriOrbShape(shapeId, { rerenderFigure = true } = {}) {
+          const nextShapeId = shapeId || null;
+          if (triOrbInteractionState.hoveredShapeId === nextShapeId) {
+            return;
+          }
+          triOrbInteractionState.hoveredShapeId = nextShapeId;
+          syncTriOrbShapeCardHighlights();
+          if (rerenderFigure) {
+            renderFigure();
+          }
+        }
+
+        function setSelectedTriOrbShape(shapeId, options = {}) {
+          const nextShapeId = shapeId || null;
+          const changed = triOrbInteractionState.selectedShapeId !== nextShapeId;
+          triOrbInteractionState.selectedShapeId = nextShapeId;
+          syncTriOrbShapeCardHighlights();
+          if (options.scrollIntoView) {
+            ensureTriOrbShapeCardVisible(nextShapeId, {
+              openPanel: options.openPanel === true,
+            });
+          } else if (options.openPanel === true) {
+            openFloatingPanel("panel-triorb-shapes");
+          }
+          if (changed) {
+            renderFigure();
+          }
+        }
+
+        function clearTriOrbShapeInteractionForIds(shapeIds) {
+          if (!(shapeIds instanceof Set) || !shapeIds.size) {
+            return;
+          }
+          if (shapeIds.has(triOrbInteractionState.hoveredShapeId)) {
+            triOrbInteractionState.hoveredShapeId = null;
+          }
+          if (shapeIds.has(triOrbInteractionState.selectedShapeId)) {
+            triOrbInteractionState.selectedShapeId = null;
           }
         }
 
@@ -5124,8 +6145,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             });
           }
           shapeModalBody.innerHTML = html;
-          shapeModal.classList.add("active");
-          shapeModal.setAttribute("aria-hidden", "false");
+          setModalVisibility(shapeModal, true);
           ensureModalPosition();
         }
 
@@ -5164,8 +6184,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
         function closeShapeModal() {
           modalShapeMeta = null;
           modalOriginalShape = null;
-          shapeModal.classList.remove("active");
-          shapeModal.setAttribute("aria-hidden", "true");
+          setModalVisibility(shapeModal, false);
         }
 
         function saveShapeModal() {
@@ -5237,35 +6256,34 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             .join("");
         }
 
-        function initializeFieldsetDevices(data) {
-          let devices;
+        function initializeFieldsetDevices(
+          data,
+          { supplementDefaults = false } = {}
+        ) {
           if (!Array.isArray(data) || !data.length) {
-            devices = getDefaultFieldsetDevices();
-          } else {
-            devices = data.map((device, index) => {
-              const attrs = { ...(device.attributes || {}) };
-              if (!attrs.DeviceName) {
-                const scanDeviceByName = findScanPlaneDeviceByName(attrs.DeviceName);
-                if (scanDeviceByName?.attributes?.DeviceName) {
-                  attrs.DeviceName = scanDeviceByName.attributes.DeviceName;
-                } else {
-                  const scanDevice = findScanPlaneDeviceByTypekey(attrs.Typekey);
-                  if (scanDevice?.attributes?.DeviceName) {
-                    attrs.DeviceName = scanDevice.attributes.DeviceName;
-                  } else {
-                    attrs.DeviceName = `Device ${index + 1}`;
-                  }
-                }
-              }
-              const wrapper = { attributes: attrs };
-              applyScanPlaneDeviceAttributes(wrapper, {
-                deviceName: attrs.DeviceName,
-                typekey: attrs.Typekey,
-              });
-              return wrapper;
-            });
+            return getDefaultFieldsetDevices();
           }
-          ensureDefaultFieldsetDevices(devices);
+          const devices = data.map((device, index) => {
+            const attrs = { ...(device.attributes || {}) };
+            if (!attrs.DeviceName) {
+              const scanDevice = (scanPlanes[0]?.devices || [])[index] ||
+                findScanPlaneDeviceByTypekey(attrs.Typekey);
+              if (scanDevice?.attributes?.DeviceName) {
+                attrs.DeviceName = scanDevice.attributes.DeviceName;
+              } else {
+                attrs.DeviceName = `Device ${index + 1}`;
+              }
+            }
+            const wrapper = { attributes: attrs };
+            applyScanPlaneDeviceAttributes(wrapper, {
+              deviceName: attrs.DeviceName,
+              typekey: attrs.Typekey,
+            });
+            return wrapper;
+          });
+          if (supplementDefaults) {
+            ensureDefaultFieldsetDevices(devices);
+          }
           return devices;
         }
 
@@ -5289,6 +6307,164 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             text: typeof node.text === "string" ? node.text : "",
             children,
           };
+        }
+
+        function captureTriOrbDocumentState() {
+          const storeState = triOrbStore.captureState();
+          return {
+            rootAttributes: { ...(rootAttributes || {}) },
+            fileInfo: captureFileInfoValues(),
+            scanPlanes: storeState.devices.scanPlanes,
+            triorbShapes: storeState.shapes.items,
+            triorbSource: storeState.shapes.source || "TriOrb",
+            fieldsets: storeState.fieldsets.items,
+            fieldsetDevices: storeState.devices.fieldsetDevices,
+            fieldsetGlobalGeometry: storeState.devices.fieldsetGlobalGeometry,
+            casetableAttributes: storeState.casetable.attributes,
+            casetableConfiguration: storeState.casetable.configuration,
+            casetableCases: storeState.casetable.cases,
+            casetableLayout: storeState.casetable.layout,
+            casetableEvals: storeState.casetable.evals,
+            fieldOfViewDegrees: storeState.uiState.fieldOfViewDegrees,
+            globalMultipleSampling: storeState.uiState.globalMultipleSampling,
+            globalResolution: storeState.uiState.globalResolution,
+            globalTolerancePositive: storeState.uiState.globalTolerancePositive,
+            globalToleranceNegative: storeState.uiState.globalToleranceNegative,
+          };
+        }
+
+        function captureTriOrbUiState() {
+          const storeState = triOrbStore.captureState();
+          return {
+            legendVisible: storeState.uiState.legendVisible,
+            caseToggleStates: storeState.assignments.caseToggleStates,
+            currentFigure: storeState.uiState.currentFigure,
+          };
+        }
+
+        function captureTriOrbStateSnapshot() {
+          return {
+            version: triOrbStateSnapshotVersion,
+            document: captureTriOrbDocumentState(),
+            uiState: captureTriOrbUiState(),
+          };
+        }
+
+        function normalizeTriOrbStateSnapshot(snapshot = {}) {
+          if (snapshot?.document || snapshot?.uiState) {
+            return {
+              version: snapshot.version ?? triOrbStateSnapshotVersion,
+              document: { ...(snapshot.document || {}) },
+              uiState: { ...(snapshot.uiState || {}) },
+            };
+          }
+          const {
+            version,
+            legendVisible: legacyLegendVisible,
+            caseToggleStates: legacyCaseToggleStates,
+            currentFigure: legacyCurrentFigure,
+            ...legacyDocument
+          } = snapshot || {};
+          return {
+            version: version ?? 1,
+            document: legacyDocument,
+            uiState: {
+              legendVisible: legacyLegendVisible,
+              caseToggleStates: legacyCaseToggleStates,
+              currentFigure: legacyCurrentFigure,
+            },
+          };
+        }
+
+        function applySnapshotGlobals(documentState = {}, uiState = {}) {
+          triOrbStore.replaceUiState({
+            fieldOfViewDegrees: documentState.fieldOfViewDegrees,
+            globalMultipleSampling: documentState.globalMultipleSampling,
+            globalResolution: documentState.globalResolution,
+            globalTolerancePositive: documentState.globalTolerancePositive,
+            globalToleranceNegative: documentState.globalToleranceNegative,
+            legendVisible: uiState.legendVisible,
+            currentFigure: uiState.currentFigure,
+          });
+          if (fieldOfViewInput) {
+            fieldOfViewInput.value = String(triOrbStore.uiState.fieldOfViewDegrees);
+          }
+          if (globalMultipleSamplingInput) {
+            globalMultipleSamplingInput.value = String(triOrbStore.uiState.globalMultipleSampling);
+          }
+          if (globalResolutionInput) {
+            globalResolutionInput.value = String(triOrbStore.uiState.globalResolution);
+          }
+          if (globalTolerancePositiveInput) {
+            globalTolerancePositiveInput.value = String(triOrbStore.uiState.globalTolerancePositive);
+          }
+          if (globalToleranceNegativeInput) {
+            globalToleranceNegativeInput.value = String(triOrbStore.uiState.globalToleranceNegative);
+          }
+          if (toggleLegendBtn) {
+            toggleLegendBtn.textContent = triOrbStore.uiState.legendVisible
+              ? "Hide Legend"
+              : "Show Legend";
+          }
+          applyGlobalMultipleSampling(triOrbStore.uiState.globalMultipleSampling, { rerender: false });
+          updateGlobalFieldAttributes();
+        }
+
+        function restoreTriOrbStateSnapshot(snapshot = {}) {
+          const normalizedSnapshot = normalizeTriOrbStateSnapshot(snapshot);
+          const documentState = normalizedSnapshot.document || {};
+          const uiState = normalizedSnapshot.uiState || {};
+          applyFileInfoValues(documentState.fileInfo || {});
+          triOrbStore.replaceDocumentState(documentState, {
+            supplementFieldsetDeviceDefaults: false,
+          });
+          triOrbStore.shapes.importContext = { triOrbRootFound: true, restoredFromSnapshot: true };
+          rebuildTriOrbShapeRegistry();
+          triOrbShapeCardCache.clear();
+          triOrbShapesListInitialized = false;
+          triOrbStore.replaceAssignmentsState({
+            caseToggleStates: uiState.caseToggleStates,
+          });
+          applySnapshotGlobals(documentState, uiState);
+          invalidateRenderCaches({
+            baseFigure: true,
+            deviceOverlay: true,
+            fieldsets: true,
+            triOrbShapes: true,
+          });
+          refreshUiViews({
+            scanPlanes: true,
+            fieldsetDevices: true,
+            fieldsetGlobal: true,
+            triOrbShapes: true,
+            triOrbShapeCheckboxes: true,
+            fieldsets: true,
+            casetableConfiguration: true,
+            casetableCases: true,
+            casetableEvals: true,
+          });
+          regenerateFieldsConfiguration();
+          refreshCaseFieldAssignments({ rerenderCaseToggles: false, rerenderFigure: false });
+          refreshUiViews({
+            casetableFieldsConfiguration: true,
+            caseCheckboxes: true,
+            fieldsetCheckboxes: true,
+          });
+        }
+
+        function readTriOrbStateSnapshot(triOrbNode) {
+          if (!triOrbNode) {
+            return null;
+          }
+          const snapshotNode = findFirstByTag(triOrbNode, "StateSnapshot");
+          const payload = (snapshotNode?.textContent || "").trim();
+          if (!snapshotNode || !payload) {
+            return null;
+          }
+          const encoding = (snapshotNode.getAttribute("Encoding") || "base64").toLowerCase();
+          const decoded =
+            encoding === "base64" ? decodeBase64Unicode(payload) : payload;
+          return JSON.parse(decoded);
         }
 
         function normalizeCasetableConfiguration(node) {
@@ -6267,17 +7443,24 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           });
         }
 
-        function renderFieldsetDevices() {
-          invalidateDeviceTraceCache();
+        function renderFieldsetDevices({ invalidateTraceCache = true } = {}) {
+          if (invalidateTraceCache) {
+            invalidateDeviceTraceCache();
+          }
           if (!fieldsetDevicesContainer) return;
           if (!fieldsetDevices.length) {
             fieldsetDevicesContainer.innerHTML = "<p>No devices defined.</p>";
             return;
           }
+          const visibleDeviceEntries = getFilteredFieldsetDeviceEntries();
+          if (!visibleDeviceEntries.length) {
+            fieldsetDevicesContainer.innerHTML = '<p class="panel-filter-empty">No devices match the current filter.</p>';
+            return;
+          }
           const deviceOptions = getScanPlaneDeviceOptions();
           const canRemoveDevice = fieldsetDevices.length > 1;
-          fieldsetDevicesContainer.innerHTML = fieldsetDevices
-            .map((device, deviceIndex) => {
+          fieldsetDevicesContainer.innerHTML = visibleDeviceEntries
+            .map(({ device, index: deviceIndex }) => {
               const attributeEntries = Object.entries(device.attributes || {});
               const deviceFields = attributeEntries
                 .map(([key, value]) => {
@@ -6397,8 +7580,10 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               summary.textContent = value;
             }
           }
-          invalidateDeviceTraceCache();
-          renderFigure();
+          refreshUiViews({
+            invalidate: { deviceOverlay: true },
+            figure: true,
+          });
         }
 
         function updateGlobalGeometryAttribute(key, value) {
@@ -6481,6 +7666,9 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           const lines = buildBaseSdImportExportLines({
             deviceIndexStrategy: "sequential",
           }).slice();
+          const snapshotPayload = encodeBase64Unicode(
+            JSON.stringify(captureTriOrbStateSnapshot())
+          );
           lines.push("");
           if (!triorbSource) {
             triorbSource = "TriOrbAware";
@@ -6524,6 +7712,9 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           const shapeLines = buildTriOrbShapesXml();
           shapeLines.forEach((line) => lines.push(line));
           lines.push("  </TriOrbMenu>");
+          lines.push(
+            `  <StateSnapshot Format="json" Encoding="base64" Version="${triOrbStateSnapshotVersion}">${snapshotPayload}</StateSnapshot>`
+          );
           lines.push("</TriOrb_SICK_SLS_Editor>");
           return lines.join("\n");
         }
@@ -6639,6 +7830,29 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           return merged;
         }
 
+        function resolveFieldShapeReferences(field) {
+          return Array.isArray(field?.shapeRefs)
+            ? field.shapeRefs
+                .map((shapeRef) =>
+                  findTriOrbShapeById(shapeRef.shapeId) ||
+                  triorbShapes.find((shape) => shape.id === shapeRef.shapeId)
+                )
+                .filter(Boolean)
+            : [];
+        }
+
+        function fieldHasInlineGeometry(field) {
+          return (
+            (Array.isArray(field?.polygons) && field.polygons.length > 0) ||
+            (Array.isArray(field?.circles) && field.circles.length > 0) ||
+            (Array.isArray(field?.rectangles) && field.rectangles.length > 0)
+          );
+        }
+
+        function fieldHasSerializableContent(field) {
+          return fieldHasInlineGeometry(field) || resolveFieldShapeReferences(field).length > 0;
+        }
+
         function buildFieldsetsXml(fieldsetDeviceAttrs = null, { includeUserFieldIds = true } = {}) {
           const lines = [];
           lines.push('    <ScanPlane Index="0">');
@@ -6718,26 +7932,22 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
 
           if (fieldsets.length) {
             fieldsets.forEach((fieldset) => {
+              const mergedFields = mergeFieldsByAttributes(fieldset.fields || []);
+              const serializableFields = mergedFields.filter((field) =>
+                fieldHasSerializableContent(field)
+              );
+              if (!serializableFields.length) {
+                return;
+              }
               const attrText = buildAttributeString(
                 stripLatin9Key(fieldset.attributes),
                 getAttributeOrder("Fieldset")
               );
               lines.push(`        <Fieldset${attrText ? " " + attrText : ""}>`);
-              const mergedFields = mergeFieldsByAttributes(fieldset.fields || []);
-              if (mergedFields.length) {
-                mergedFields.forEach((field) => {
-                  const hasInlineGeometry =
-                    (Array.isArray(field.polygons) && field.polygons.length > 0) ||
-                    (Array.isArray(field.circles) && field.circles.length > 0) ||
-                    (Array.isArray(field.rectangles) && field.rectangles.length > 0);
-                  const shapeRefs = Array.isArray(field.shapeRefs)
-                    ? field.shapeRefs
-                        .map((shapeRef) =>
-                          findTriOrbShapeById(shapeRef.shapeId) ||
-                          triorbShapes.find((shape) => shape.id === shapeRef.shapeId)
-                        )
-                        .filter(Boolean)
-                    : [];
+              if (serializableFields.length) {
+                serializableFields.forEach((field) => {
+                  const hasInlineGeometry = fieldHasInlineGeometry(field);
+                  const shapeRefs = resolveFieldShapeReferences(field);
 
                   if (
                     Array.isArray(field.shapeRefs) &&
@@ -6834,8 +8044,6 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
                   }
                   lines.push("          </Field>");
                 });
-              } else {
-                lines.push("          <!-- No fields -->");
               }
               lines.push("        </Fieldset>");
             });
@@ -7410,21 +8618,22 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             const numericIndex = Number.parseInt(indexValue, 10);
             const planeId = attrs.Id || (Number.isFinite(numericIndex) ? String(numericIndex + 1) : String(planeIndex + 1));
             const nameValue = attrs.Name || `ScanPlane ${planeIndex + 1}`;
-            const userFieldsetsNode = fieldsetsAssigned
-              ? { tag: "UserFieldsets", attributes: {}, text: "", children: [] }
-              : buildFieldsConfigurationUserFieldsets(counter);
+            const children = [
+              { tag: "Index", attributes: {}, text: String(indexValue), children: [] },
+              { tag: "Name", attributes: {}, text: nameValue, children: [] },
+            ];
             if (!fieldsetsAssigned) {
+              const userFieldsetsNode = buildFieldsConfigurationUserFieldsets(counter);
+              if (userFieldsetsNode) {
+                children.push(userFieldsetsNode);
+              }
               fieldsetsAssigned = true;
             }
             return {
               tag: "ScanPlane",
               attributes: { Id: String(planeId) },
               text: "",
-              children: [
-                { tag: "Index", attributes: {}, text: String(indexValue), children: [] },
-                { tag: "Name", attributes: {}, text: nameValue, children: [] },
-                userFieldsetsNode,
-              ],
+              children,
             };
           });
         }
@@ -7432,6 +8641,10 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
         function buildFieldsConfigurationUserFieldsets(counter) {
           const fieldsetNodes = Array.isArray(fieldsets)
             ? fieldsets.map((fieldset, fieldsetIndex) => {
+                const userFields = buildFieldsConfigurationUserFields(fieldset, fieldsetIndex, counter);
+                if (!userFields.length) {
+                  return null;
+                }
                 const attrs = fieldset?.attributes || {};
                 return {
                   tag: "UserFieldset",
@@ -7444,17 +8657,22 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
                       tag: "UserFields",
                       attributes: {},
                       text: "",
-                      children: buildFieldsConfigurationUserFields(fieldset, fieldsetIndex, counter),
+                      children: userFields,
                     },
                   ],
                 };
-              })
+              }).filter(Boolean)
             : [];
+          if (!fieldsetNodes.length) {
+            return null;
+          }
           return { tag: "UserFieldsets", attributes: {}, text: "", children: fieldsetNodes };
         }
 
         function buildFieldsConfigurationUserFields(fieldset, fieldsetIndex, counter) {
-          const fields = Array.isArray(fieldset?.fields) ? mergeFieldsByAttributes(fieldset.fields) : [];
+          const fields = Array.isArray(fieldset?.fields)
+            ? mergeFieldsByAttributes(fieldset.fields).filter((field) => fieldHasSerializableContent(field))
+            : [];
           return fields.map((field, fieldIndex) => {
             const attrs = field?.attributes || {};
             const primaryShapeId = findPrimaryShapeIdForField(field);
@@ -8339,10 +9557,13 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           });
           const addedCount = addSvgShapesToState(additions);
           rebuildTriOrbShapeRegistry();
-          renderTriOrbShapes();
-          renderTriOrbShapeCheckboxes();
-          renderFieldsets();
-          renderFigure();
+          refreshUiViews({
+            invalidate: { triOrbShapes: true },
+            triOrbShapes: true,
+            triOrbShapeCheckboxes: true,
+            fieldsets: true,
+            figure: true,
+          });
           if (warnings.length) {
             alert(`未対応の SVG 要素: ${warnings.join(", ")}`);
           }
@@ -8385,8 +9606,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               `;
             })
             .join("");
-          svgImportModal.classList.add("active");
-          svgImportModal.setAttribute("aria-hidden", "false");
+          setModalVisibility(svgImportModal, true);
           setStatus(
             `${fileName || "SVG"} のインポート: 同名の Shape が見つかりました。インポート/上書きの対象を選択してください。`,
             "warning"
@@ -8394,10 +9614,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
         }
 
         function closeSvgImportModal() {
-          if (svgImportModal) {
-            svgImportModal.classList.remove("active");
-            svgImportModal.setAttribute("aria-hidden", "true");
-          }
+          setModalVisibility(svgImportModal, false);
           if (svgImportDuplicateList) {
             svgImportDuplicateList.innerHTML = "";
           }
@@ -8509,6 +9726,29 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             findFirstByTag(doc, "TriOrb_SICK_SLS_Editor");
           triOrbImportContext = { triOrbRootFound: Boolean(triOrbRoot) };
           console.log("parseXmlToFigure TriOrb root exists", Boolean(triOrbRoot));
+          if (triOrbRoot) {
+            try {
+              const snapshot = readTriOrbStateSnapshot(triOrbRoot);
+              if (snapshot) {
+                restoreTriOrbStateSnapshot(snapshot);
+                const restoredFigure = cloneFigure(currentFigure || defaultFigure);
+                return {
+                  traces: restoredFigure.data || [],
+                  layout: restoredFigure.layout || cloneFigure(defaultFigure).layout,
+                  warning: warningMessage,
+                  triOrbPresent: true,
+                };
+              }
+            } catch (error) {
+              warningMessage = [
+                warningMessage,
+                "TriOrb snapshot could not be restored; falling back to XML parsing.",
+              ]
+                .filter(Boolean)
+                .join(" ");
+              console.warn("TriOrb snapshot restore failed", error);
+            }
+          }
           if (!triOrbRoot) {
             const nodesWithTriOrbInName = [];
             const nodesWithTriOrbAttrs = [];
@@ -8703,13 +9943,23 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           const tracesFromPlotData = parsePlotDataTraces(doc);
           if (tracesFromPlotData.length) {
             const triOrbPresent = Boolean(triOrbDoc.querySelector("TriOrb_SICK_SLS_Editor"));
-            return { traces: tracesFromPlotData, warning: warningMessage, triOrbPresent };
+            return {
+              traces: tracesFromPlotData,
+              layout: cloneFigure(defaultFigure).layout,
+              warning: warningMessage,
+              triOrbPresent,
+            };
           }
 
           const polygonTrace = parsePolygonTrace(doc);
           if (polygonTrace.length) {
             const triOrbPresent = Boolean(triOrbDoc.querySelector("TriOrb_SICK_SLS_Editor"));
-            return { traces: polygonTrace, warning: warningMessage, triOrbPresent };
+            return {
+              traces: polygonTrace,
+              layout: cloneFigure(defaultFigure).layout,
+              warning: warningMessage,
+              triOrbPresent,
+            };
           }
 
           const combinedWarning = [
@@ -8720,6 +9970,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             .join(" ");
           return {
             traces: [],
+            layout: cloneFigure(defaultFigure).layout,
             warning: combinedWarning,
             triOrbPresent: Boolean(triOrbDoc.querySelector("TriOrb_SICK_SLS_Editor")),
           };
@@ -8852,7 +10103,11 @@ function parsePolygonTrace(doc) {
 
         function collectTriOrbShapeDetails(shapeNode) {
           const type = shapeNode.getAttribute("Type") || "Polygon";
-          const result = { id: shapeNode.getAttribute("ID") || createShapeId(), name: shapeNode.getAttribute("Name") || "", type };
+          const result = {
+            id: shapeNode.getAttribute("ID") || createShapeId(),
+            name: sanitizeLoadedShapeName(shapeNode.getAttribute("Name") || "", type),
+            type,
+          };
           if (type === "Polygon") {
             const polygon = findFirstByTag(shapeNode, "Polygon");
             if (polygon) {
@@ -8903,8 +10158,11 @@ function parsePolygonTrace(doc) {
             triorbSource = "";
             triorbShapes = [];
             rebuildTriOrbShapeRegistry();
-            renderTriOrbShapes();
-            renderTriOrbShapeCheckboxes();
+            refreshUiViews({
+              invalidate: { triOrbShapes: true },
+              triOrbShapes: true,
+              triOrbShapeCheckboxes: true,
+            });
             return;
           }
           triorbSource = triOrbNode.getAttribute("Source") || triorbSource || "";
@@ -8913,8 +10171,11 @@ function parsePolygonTrace(doc) {
           if (!shapesParent) {
             triorbShapes = [];
             rebuildTriOrbShapeRegistry();
-            renderTriOrbShapes();
-            renderTriOrbShapeCheckboxes();
+            refreshUiViews({
+              invalidate: { triOrbShapes: true },
+              triOrbShapes: true,
+              triOrbShapeCheckboxes: true,
+            });
             return;
           }
           const nodes = findAllByTag(shapesParent, "Shape");
@@ -8930,8 +10191,11 @@ function parsePolygonTrace(doc) {
           if (!nodes.length) {
             triorbShapes = [];
             rebuildTriOrbShapeRegistry();
-            renderTriOrbShapes();
-            renderTriOrbShapeCheckboxes();
+            refreshUiViews({
+              invalidate: { triOrbShapes: true },
+              triOrbShapes: true,
+              triOrbShapeCheckboxes: true,
+            });
             return;
           }
           triorbShapes = nodes.map((shapeNode, index) => {
@@ -8958,8 +10222,11 @@ function parsePolygonTrace(doc) {
             return shapeEntry;
           });
           rebuildTriOrbShapeRegistry();
-          renderTriOrbShapes();
-          renderTriOrbShapeCheckboxes();
+          refreshUiViews({
+            invalidate: { triOrbShapes: true },
+            triOrbShapes: true,
+            triOrbShapeCheckboxes: true,
+          });
         }
 
         function elementAttributesToObject(element) {
@@ -9074,9 +10341,12 @@ function parsePolygonTrace(doc) {
             fieldsets = [createDefaultFieldset(0)];
             fieldsetDevices = [createDefaultFieldsetDevice(0)];
             fieldsetGlobalGeometry = initializeGlobalGeometry({});
-            renderFieldsets();
-            renderFieldsetDevices();
-            renderFieldsetGlobal();
+            refreshUiViews({
+              invalidate: { fieldsets: true, deviceOverlay: true },
+              fieldsets: true,
+              fieldsetDevices: true,
+              fieldsetGlobal: true,
+            });
             return;
           }
 
@@ -9234,11 +10504,14 @@ function parsePolygonTrace(doc) {
             globalMultipleSamplingInput.value = globalMultipleSampling;
           }
           applyGlobalMultipleSampling(globalMultipleSampling, { rerender: false });
-          renderFieldsets();
-          renderFieldsetDevices();
-          renderFieldsetGlobal();
-          renderTriOrbShapes();
-          renderTriOrbShapeCheckboxes();
+          refreshUiViews({
+            invalidate: { fieldsets: true, deviceOverlay: true, triOrbShapes: true },
+            fieldsets: true,
+            fieldsetDevices: true,
+            fieldsetGlobal: true,
+            triOrbShapes: true,
+            triOrbShapeCheckboxes: true,
+          });
         }
 
         function convertElementToGenericNode(element) {
@@ -9746,16 +11019,83 @@ function parsePolygonTrace(doc) {
             }
             fieldOfViewDegrees = nextValue;
             event.target.value = fieldOfViewDegrees;
-            invalidateDeviceTraceCache();
-            renderFigure();
+            refreshUiViews({
+              invalidate: { deviceOverlay: true },
+              figure: true,
+            });
           });
+        }
+
+        function syncFieldsetCardHighlights() {
+          if (!fieldsetsContainer) {
+            return;
+          }
+          fieldsetsContainer.querySelectorAll(".fieldset-card").forEach((card) => {
+            const fieldsetIndex = Number(card.dataset.fieldsetIndex);
+            const isActive =
+              Number.isInteger(fieldsetInteractionState.hoveredFieldsetIndex) &&
+              fieldsetIndex === fieldsetInteractionState.hoveredFieldsetIndex;
+            card.classList.toggle("is-hovered", isActive);
+          });
+          fieldsetsContainer.querySelectorAll(".field-card").forEach((card) => {
+            const fieldsetIndex = Number(card.dataset.fieldsetIndex);
+            const fieldIndex = Number(card.dataset.fieldIndex);
+            const isActive =
+              Number.isInteger(fieldsetInteractionState.hoveredFieldsetIndex) &&
+              Number.isInteger(fieldsetInteractionState.hoveredFieldIndex) &&
+              fieldsetIndex === fieldsetInteractionState.hoveredFieldsetIndex &&
+              fieldIndex === fieldsetInteractionState.hoveredFieldIndex;
+            card.classList.toggle("is-hovered", isActive);
+          });
+        }
+
+        function setHoveredFieldsetItem(
+          fieldsetIndex,
+          fieldIndex = null,
+          { rerenderFigure = true } = {}
+        ) {
+          const nextFieldsetIndex = Number.isInteger(fieldsetIndex) ? fieldsetIndex : null;
+          const nextFieldIndex = Number.isInteger(fieldIndex) ? fieldIndex : null;
+          if (
+            fieldsetInteractionState.hoveredFieldsetIndex === nextFieldsetIndex &&
+            fieldsetInteractionState.hoveredFieldIndex === nextFieldIndex
+          ) {
+            return;
+          }
+          fieldsetInteractionState.hoveredFieldsetIndex = nextFieldsetIndex;
+          fieldsetInteractionState.hoveredFieldIndex = nextFieldIndex;
+          syncFieldsetCardHighlights();
+          if (rerenderFigure) {
+            renderFigure();
+          }
+        }
+
+        function resolveHoveredFieldsetTargetFromElement(element) {
+          const fieldCard = element?.closest?.(".field-card");
+          if (fieldCard) {
+            return {
+              fieldsetIndex: Number(fieldCard.dataset.fieldsetIndex),
+              fieldIndex: Number(fieldCard.dataset.fieldIndex),
+            };
+          }
+          const fieldsetCard = element?.closest?.(".fieldset-card");
+          if (fieldsetCard) {
+            return {
+              fieldsetIndex: Number(fieldsetCard.dataset.fieldsetIndex),
+              fieldIndex: null,
+            };
+          }
+          return null;
         }
 
         if (addFieldsetDeviceBtn) {
           addFieldsetDeviceBtn.addEventListener("click", () => {
             fieldsetDevices.push(createDefaultFieldsetDevice(fieldsetDevices.length));
-            renderFieldsetDevices();
-            renderFigure();
+            refreshUiViews({
+              invalidate: { deviceOverlay: true },
+              fieldsetDevices: true,
+              figure: true,
+            });
           });
         }
 
@@ -9774,8 +11114,11 @@ function parsePolygonTrace(doc) {
                 return;
               }
               fieldsetDevices.splice(deviceIndex, 1);
-              renderFieldsetDevices();
-              renderFigure();
+              refreshUiViews({
+                invalidate: { deviceOverlay: true },
+                fieldsetDevices: true,
+                figure: true,
+              });
             }
           });
 
@@ -9787,8 +11130,11 @@ function parsePolygonTrace(doc) {
               const device = fieldsetDevices[deviceIndex];
               if (device) {
                 applyScanPlaneDeviceAttributes(device, { deviceName: selectedName });
-                renderFieldsetDevices();
-                renderFigure();
+                refreshUiViews({
+                  invalidate: { deviceOverlay: true },
+                  fieldsetDevices: true,
+                  figure: true,
+                });
               }
             } else if (target.classList.contains("fieldset-device-attr")) {
               const deviceIndex = Number(target.dataset.deviceIndex);
@@ -10813,22 +12159,38 @@ function parsePolygonTrace(doc) {
           }
           const selection = isCase ? bulkEditState.selectedCases : bulkEditState.selectedShapes;
           const lastKey = isCase ? "lastCaseIndex" : "lastShapeIndex";
-          const lastIndex = bulkEditState[lastKey];
-          if (event.shiftKey && Number.isInteger(lastIndex)) {
-            const start = Math.max(0, Math.min(lastIndex, index));
-            const end = Math.min(maxIndex, Math.max(lastIndex, index));
-            for (let cursor = start; cursor <= end; cursor += 1) {
-              selection.add(cursor);
-            }
-          } else if (selection.has(index)) {
-            selection.delete(index);
-          } else {
-            selection.add(index);
-          }
-          bulkEditState[lastKey] = index;
+          const orderedValues = Array.from({ length: maxIndex + 1 }, (_, cursor) => cursor);
+          const result = applyMultiToggleSelection({
+            event,
+            selection,
+            orderedValues,
+            targetValue: index,
+            anchorValue: bulkEditState[lastKey],
+          });
+          bulkEditState[lastKey] = result.anchorValue;
           if (isCase) {
             renderBulkEditCaseToggles();
           } else {
+            renderBulkEditShapeToggles();
+          }
+          renderFigure();
+        }
+
+        function setAllBulkEditSelections(targetType, active) {
+          const isCase = targetType === "case";
+          const selection = isCase ? bulkEditState.selectedCases : bulkEditState.selectedShapes;
+          const values = isCase
+            ? casetableCases.map((_, index) => index)
+            : triorbShapes.map((_, index) => index);
+          selection.clear();
+          if (active) {
+            values.forEach((value) => selection.add(value));
+          }
+          if (isCase) {
+            bulkEditState.lastCaseIndex = active && values.length ? values[values.length - 1] : null;
+            renderBulkEditCaseToggles();
+          } else {
+            bulkEditState.lastShapeIndex = active && values.length ? values[values.length - 1] : null;
             renderBulkEditShapeToggles();
           }
           renderFigure();
@@ -10868,10 +12230,12 @@ function parsePolygonTrace(doc) {
             }
           });
           if (changedCount) {
-            invalidateTriOrbShapeCaches();
-            renderTriOrbShapes();
-            renderTriOrbShapeCheckboxes();
-            renderFieldsets();
+            refreshUiViews({
+              invalidate: { triOrbShapes: true },
+              triOrbShapes: true,
+              triOrbShapeCheckboxes: true,
+              fieldsets: true,
+            });
             renderFigure();
           }
           return changedCount;
@@ -10907,15 +12271,7 @@ function parsePolygonTrace(doc) {
         }
 
         function resetBulkEditModalTransform() {
-          bulkEditModalOffsetX = 0;
-          bulkEditModalOffsetY = 0;
-          bulkEditModalLastDx = 0;
-          bulkEditModalLastDy = 0;
-          if (bulkEditModalWindow) {
-            bulkEditModalWindow.style.transform = "translate(0px, 0px)";
-            bulkEditModalWindow.style.width = "";
-            bulkEditModalWindow.style.height = "";
-          }
+          bulkEditModalController.resetTransform();
         }
 
         function openBulkEditModal() {
@@ -10924,8 +12280,7 @@ function parsePolygonTrace(doc) {
           }
           resetBulkEditForm();
           resetBulkEditModalTransform();
-          bulkEditModal.classList.add("active");
-          bulkEditModal.setAttribute("aria-hidden", "false");
+          setModalVisibility(bulkEditModal, true);
         }
 
         function closeBulkEditModal() {
@@ -10933,8 +12288,7 @@ function parsePolygonTrace(doc) {
             return;
           }
           resetBulkEditForm();
-          bulkEditModal.classList.remove("active");
-          bulkEditModal.setAttribute("aria-hidden", "true");
+          setModalVisibility(bulkEditModal, false);
         }
 
         function renderFieldsetCheckboxes() {
@@ -11400,6 +12754,40 @@ function parsePolygonTrace(doc) {
           };
 
         if (fieldsetsContainer) {
+          fieldsetsContainer.addEventListener("mouseover", (event) => {
+            const nextTarget = resolveHoveredFieldsetTargetFromElement(event.target);
+            if (!nextTarget || !Number.isInteger(nextTarget.fieldsetIndex)) {
+              return;
+            }
+            const previousTarget = resolveHoveredFieldsetTargetFromElement(event.relatedTarget);
+            if (
+              previousTarget &&
+              previousTarget.fieldsetIndex === nextTarget.fieldsetIndex &&
+              previousTarget.fieldIndex === nextTarget.fieldIndex
+            ) {
+              return;
+            }
+            setHoveredFieldsetItem(nextTarget.fieldsetIndex, nextTarget.fieldIndex);
+          });
+          fieldsetsContainer.addEventListener("mouseout", (event) => {
+            const currentTarget = resolveHoveredFieldsetTargetFromElement(event.target);
+            if (!currentTarget) {
+              return;
+            }
+            const nextTarget = resolveHoveredFieldsetTargetFromElement(event.relatedTarget);
+            if (
+              nextTarget &&
+              nextTarget.fieldsetIndex === currentTarget.fieldsetIndex &&
+              nextTarget.fieldIndex === currentTarget.fieldIndex
+            ) {
+              return;
+            }
+            if (nextTarget && Number.isInteger(nextTarget.fieldsetIndex)) {
+              setHoveredFieldsetItem(nextTarget.fieldsetIndex, nextTarget.fieldIndex);
+              return;
+            }
+            setHoveredFieldsetItem(null, null);
+          });
           fieldsetsContainer.addEventListener("click", (event) => {
             const actionTarget = event.target.closest("[data-action]");
             if (!actionTarget) {
@@ -11514,6 +12902,29 @@ function parsePolygonTrace(doc) {
               triOrbSpinnerStep = null;
             }
           });
+          triorbShapesContainer.addEventListener("mouseover", (event) => {
+            const card = event.target?.closest?.(".triorb-shape-card");
+            if (!card || !triorbShapesContainer.contains(card)) {
+              return;
+            }
+            const relatedCard = event.relatedTarget?.closest?.(".triorb-shape-card");
+            if (relatedCard === card) {
+              return;
+            }
+            setHoveredTriOrbShape(card.dataset.shapeId || null);
+          });
+          triorbShapesContainer.addEventListener("mouseout", (event) => {
+            const card = event.target?.closest?.(".triorb-shape-card");
+            if (!card || !triorbShapesContainer.contains(card)) {
+              return;
+            }
+            const relatedCard = event.relatedTarget?.closest?.(".triorb-shape-card");
+            if (relatedCard && triorbShapesContainer.contains(relatedCard)) {
+              setHoveredTriOrbShape(relatedCard.dataset.shapeId || null);
+              return;
+            }
+            setHoveredTriOrbShape(null);
+          });
           triorbShapesContainer.addEventListener("input", (event) => {
             handleTriOrbShapeInput(event);
           });
@@ -11522,6 +12933,10 @@ function parsePolygonTrace(doc) {
           });
           triorbShapesContainer.addEventListener("click", (event) => {
             if (!event.target) return;
+            const card = event.target.closest(".triorb-shape-card");
+            if (card?.dataset?.shapeId) {
+              setSelectedTriOrbShape(card.dataset.shapeId);
+            }
             const action = event.target.dataset.action;
             if (action === "remove-triorb-shape") {
               const index = Number(event.target.dataset.shapeIndex);
@@ -11644,9 +13059,9 @@ function parsePolygonTrace(doc) {
             return;
           }
           const shapeIdsToRemove = new Set(visibleShapes.map(({ shape }) => shape.id));
+          clearTriOrbShapeInteractionForIds(shapeIdsToRemove);
           triorbShapes = triorbShapes.filter((shape) => !shapeIdsToRemove.has(shape?.id));
           rebuildTriOrbShapeRegistry();
-          invalidateTriOrbShapeCaches();
           fieldsets.forEach((fieldset) => {
             (fieldset.fields || []).forEach((field) => {
               if (Array.isArray(field.shapeRefs)) {
@@ -11654,10 +13069,13 @@ function parsePolygonTrace(doc) {
               }
             });
           });
-          renderTriOrbShapes();
-          renderTriOrbShapeCheckboxes();
-          renderFieldsets();
-          renderFigure();
+          refreshUiViews({
+            invalidate: { triOrbShapes: true },
+            triOrbShapes: true,
+            triOrbShapeCheckboxes: true,
+            fieldsets: true,
+            figure: true,
+          });
           setStatus(`${visibleShapes.length} 件の表示中 Shape を削除しました。`, "ok");
         }
 
@@ -11666,6 +13084,7 @@ function parsePolygonTrace(doc) {
             return;
           }
           const removedShape = triorbShapes[shapeIndex];
+          clearTriOrbShapeInteractionForIds(new Set([removedShape?.id]));
           triorbShapes.splice(shapeIndex, 1);
           rebuildTriOrbShapeRegistry();
           fieldsets.forEach((fieldset) => {
@@ -11677,10 +13096,13 @@ function parsePolygonTrace(doc) {
               }
             });
           });
-          renderTriOrbShapes();
-          renderTriOrbShapeCheckboxes();
-          renderFieldsets();
-          renderFigure();
+          refreshUiViews({
+            invalidate: { triOrbShapes: true },
+            triOrbShapes: true,
+            triOrbShapeCheckboxes: true,
+            fieldsets: true,
+            figure: true,
+          });
         }
 
         if (saveTriOrbBtn) {
@@ -11753,69 +13175,58 @@ function parsePolygonTrace(doc) {
         }
         if (newPlotBtn) {
           newPlotBtn.addEventListener("click", () => {
-            fieldsets = [];
-            triorbShapes = [];
+            triOrbStore.fieldsets.items = [];
+            triOrbStore.shapes.items = [];
             createShapePreview = null;
             createShapeDraftId = null;
-            renderFieldsets();
-            renderTriOrbShapes();
-            renderTriOrbShapeCheckboxes();
-            renderFieldsetCheckboxes();
-            renderFieldsetDevices();
-            renderFieldsetGlobal();
-            fieldOfViewDegrees = parseNumeric(fieldOfViewInput?.value, 270);
+            triOrbStore.uiState.fieldOfViewDegrees = parseNumeric(fieldOfViewInput?.value, 270);
+            refreshUiViews({
+              invalidate: { triOrbShapes: true, deviceOverlay: true },
+              fieldsets: true,
+              triOrbShapes: true,
+              triOrbShapeCheckboxes: true,
+              fieldsetCheckboxes: true,
+              fieldsetDevices: true,
+              fieldsetGlobal: true,
+              figure: true,
+            });
             console.debug("New canvas state", {
               fieldsetDevices,
-              fieldOfViewDegrees,
+              fieldOfViewDegrees: triOrbStore.uiState.fieldOfViewDegrees,
             });
-            renderFigure();
             setStatus("New canvas ready.");
           });
         }
-        let createShapeModalOffsetX = 0;
-        let createShapeModalOffsetY = 0;
-        let createShapeDragStartX = 0;
-        let createShapeDragStartY = 0;
-        let isCreateShapeDragging = false;
-        let isCreateShapeResizing = false;
-        let createShapeInitialWidth = 0;
-        let createShapeInitialHeight = 0;
-        let createShapeLastDx = 0;
-        let createShapeLastDy = 0;
-        let createFieldModalOffsetX = 0;
-        let createFieldModalOffsetY = 0;
-        let createFieldModalDragStartX = 0;
-        let createFieldModalDragStartY = 0;
-        let isCreateFieldModalDragging = false;
-        let createFieldModalInitialWidth = 0;
-        let createFieldModalInitialHeight = 0;
-        let isCreateFieldModalResizing = false;
-        let createFieldModalLastDx = 0;
-        let createFieldModalLastDy = 0;
-        let replicateModalOffsetX = 0;
-        let replicateModalOffsetY = 0;
-        let replicateModalDragStartX = 0;
-        let replicateModalDragStartY = 0;
-        let replicateModalInitialWidth = 0;
-        let replicateModalInitialHeight = 0;
-        let replicateModalLastDx = 0;
-        let replicateModalLastDy = 0;
-        let isReplicateModalDragging = false;
-        let isReplicateModalResizing = false;
-        let bulkEditModalOffsetX = 0;
-        let bulkEditModalOffsetY = 0;
-        let bulkEditModalDragStartX = 0;
-        let bulkEditModalDragStartY = 0;
-        let bulkEditModalInitialWidth = 0;
-        let bulkEditModalInitialHeight = 0;
-        let bulkEditModalLastDx = 0;
-        let bulkEditModalLastDy = 0;
-        let isBulkEditModalDragging = false;
-        let isBulkEditModalResizing = false;
+        const createShapeModalController = createModalInteractionController({
+          windowEl: createShapeModalWindow,
+          minWidth: 360,
+          minHeight: 360,
+          realignAfterDrag: true,
+        });
+        const createFieldModalController = createModalInteractionController({
+          windowEl: createFieldModalWindow,
+          minWidth: 320,
+          minHeight: 320,
+          realignAfterDrag: true,
+        });
+        const replicateModalController = createModalInteractionController({
+          windowEl: replicateModalWindow,
+          minWidth: 320,
+          minHeight: 320,
+        });
+        const bulkEditModalController = createModalInteractionController({
+          windowEl: bulkEditModalWindow,
+          minWidth: 360,
+          minHeight: 320,
+        });
+        const modalInteractionControllers = [
+          createShapeModalController,
+          createFieldModalController,
+          replicateModalController,
+          bulkEditModalController,
+        ];
         function ensureCreateShapePosition() {
-          if (createShapeModalWindow) {
-            createShapeModalWindow.style.transform = `translate(${createShapeModalOffsetX}px, ${createShapeModalOffsetY}px)`;
-          }
+          createShapeModalController.ensurePosition();
         }
         function resetCreateShapeForm() {
           createShapeDraftId = null;
@@ -12045,6 +13456,15 @@ function parsePolygonTrace(doc) {
             button.classList.toggle("active", isActive);
             button.setAttribute("aria-pressed", String(isActive));
           });
+          const orderedIndexes = Array.from(indexSet).filter(Number.isFinite).sort((a, b) => a - b);
+          createShapeFieldsetSelectionAnchor = orderedIndexes.length
+            ? orderedIndexes[orderedIndexes.length - 1]
+            : null;
+        }
+
+        function setAllCreateShapeFieldsetSelections(active) {
+          const indexes = active ? fieldsets.map((_, index) => index) : [];
+          setCreateShapeFieldsetSelections(indexes);
         }
 
         function getFieldsetIndexesReferencingShape(shapeId) {
@@ -12129,6 +13549,7 @@ function parsePolygonTrace(doc) {
           renderCreateShapeFieldsetsList();
 
           setCreateShapeFieldsetSelections([]);
+          createShapeFieldsetSelectionAnchor = null;
 
           createShapeDraftId = createShapeId();
 
@@ -12154,16 +13575,12 @@ function parsePolygonTrace(doc) {
 
           updateCreateShapePreview();
 
-          createShapeModalOffsetX = 0;
-
-          createShapeModalOffsetY = 0;
-
+          createShapeModalController.resetTransform();
           ensureCreateShapePosition();
           if (createShapeModal) {
             createShapeModal.dataset.mode = "create";
           }
-          createShapeModal?.classList.add("active");
-          createShapeModal?.setAttribute("aria-hidden", "false");
+          setModalVisibility(createShapeModal, true);
         }
 
 
@@ -12173,6 +13590,7 @@ function parsePolygonTrace(doc) {
           if (shapeIndex < 0) {
             return;
           }
+          setSelectedTriOrbShape(shapeId);
           const shape = triorbShapes[shapeIndex];
           createShapeMode = "edit";
           createShapeEditingId = shape.id;
@@ -12181,6 +13599,9 @@ function parsePolygonTrace(doc) {
           populateCreateShapeForm(shape);
           const referencing = getFieldsetIndexesReferencingShape(shape.id);
           setCreateShapeFieldsetSelections(referencing);
+          createShapeFieldsetSelectionAnchor = referencing.length
+            ? referencing[referencing.length - 1]
+            : null;
           createShapeDraftId = shape.id;
           if (createShapeModalTitle) {
             createShapeModalTitle.textContent = "Edit Shape";
@@ -12193,14 +13614,12 @@ function parsePolygonTrace(doc) {
           }
           updateCreateShapeDimensionVisibility();
           updateCreateShapePreview();
-          createShapeModalOffsetX = 0;
-          createShapeModalOffsetY = 0;
+          createShapeModalController.resetTransform();
           ensureCreateShapePosition();
           if (createShapeModal) {
             createShapeModal.dataset.mode = "edit";
           }
-          createShapeModal?.classList.add("active");
-          createShapeModal?.setAttribute("aria-hidden", "false");
+          setModalVisibility(createShapeModal, true);
         }
 
         function closeCreateShapeModal() {
@@ -12209,6 +13628,7 @@ function parsePolygonTrace(doc) {
           createShapeMode = "create";
           createShapeEditingId = null;
           createShapeOriginal = null;
+          createShapeFieldsetSelectionAnchor = null;
           if (createShapeModalTitle) {
             createShapeModalTitle.textContent = "Add Shape";
           }
@@ -12221,8 +13641,7 @@ function parsePolygonTrace(doc) {
           if (createShapeModal) {
             createShapeModal.dataset.mode = "create";
           }
-          createShapeModal?.classList.remove("active");
-          createShapeModal?.setAttribute("aria-hidden", "true");
+          setModalVisibility(createShapeModal, false);
         }
 
         if (overlayShapeBtn) {
@@ -12302,7 +13721,16 @@ function parsePolygonTrace(doc) {
           createShapeModal.addEventListener("click", (event) => {
             if (event.target?.dataset?.action === "close-create-shape") {
               closeCreateShapeModal();
+              return;
             }
+            const actionButton = event.target.closest("[data-create-shape-selection-action]");
+            if (!actionButton) {
+              return;
+            }
+            event.preventDefault();
+            setAllCreateShapeFieldsetSelections(
+              actionButton.dataset.createShapeSelectionAction === "all"
+            );
           });
         }
         if (createShapeFieldsetList) {
@@ -12312,15 +13740,48 @@ function parsePolygonTrace(doc) {
               return;
             }
             event.preventDefault();
-            const isActive = button.classList.toggle("active");
-            button.setAttribute("aria-pressed", isActive ? "true" : "false");
+            const index = Number(button.dataset.createFieldsetIndex);
+            if (!Number.isFinite(index)) {
+              return;
+            }
+            const selectedIndexes = new Set(getCreateShapeSelectedFieldsets());
+            const orderedValues = Array.from(
+              createShapeFieldsetList.querySelectorAll(".toggle-pill-btn")
+            )
+              .map((entry) => Number(entry.dataset.createFieldsetIndex))
+              .filter(Number.isFinite);
+            const result = applyMultiToggleSelection({
+              event,
+              selection: selectedIndexes,
+              orderedValues,
+              targetValue: index,
+              anchorValue: createShapeFieldsetSelectionAnchor,
+            });
+            setCreateShapeFieldsetSelections(Array.from(selectedIndexes));
+            createShapeFieldsetSelectionAnchor = result.anchorValue;
           });
         }
         if (createFieldModal) {
           createFieldModal.addEventListener("click", (event) => {
             if (event.target?.dataset?.action === "close-create-field") {
               closeCreateFieldModal();
+              return;
             }
+            const actionButton = event.target.closest("[data-create-field-selection-action]");
+            if (!actionButton) {
+              return;
+            }
+            event.preventDefault();
+            const fieldIndex = Number(actionButton.dataset.fieldIndex);
+            const kind = actionButton.dataset.kind;
+            if (!Number.isInteger(fieldIndex) || !kind) {
+              return;
+            }
+            setAllCreateFieldShapeSelections(
+              fieldIndex,
+              kind,
+              actionButton.dataset.createFieldSelectionAction === "all"
+            );
           });
         }
         if (replicateModal) {
@@ -12356,7 +13817,17 @@ function parsePolygonTrace(doc) {
           bulkEditModal.addEventListener("click", (event) => {
             if (event.target?.dataset?.action === "close-bulk-edit") {
               closeBulkEditModal();
+              return;
             }
+            const actionButton = event.target.closest("[data-bulk-selection-action]");
+            if (!actionButton) {
+              return;
+            }
+            event.preventDefault();
+            setAllBulkEditSelections(
+              actionButton.dataset.bulkSelectionTarget,
+              actionButton.dataset.bulkSelectionAction === "all"
+            );
           });
         }
         if (bulkEditModalClose) {
@@ -12475,332 +13946,177 @@ function parsePolygonTrace(doc) {
           replicateIncludePreviousFieldsInput.addEventListener("change", updateReplicatePreview);
         }
         function startCreateShapeDrag(event) {
-          if (!createShapeModalWindow) return;
-          isCreateShapeDragging = true;
-          createShapeDragStartX = event.clientX;
-          createShapeDragStartY = event.clientY;
-          createShapeModalWindow.style.transition = "none";
+          createShapeModalController.startDrag(event);
         }
         function updateCreateShapeDrag(event) {
-          if (!isCreateShapeDragging) return;
-          const dx = event.clientX - createShapeDragStartX;
-          const dy = event.clientY - createShapeDragStartY;
-          if (createShapeModalWindow) {
-            createShapeModalWindow.style.transform = `translate(${createShapeModalOffsetX + dx}px, ${createShapeModalOffsetY + dy}px)`;
-          }
-          createShapeLastDx = dx;
-          createShapeLastDy = dy;
+          createShapeModalController.updatePointer(event);
         }
         function endCreateShapeDrag() {
-          if (!isCreateShapeDragging) return;
-          createShapeModalOffsetX += createShapeLastDx;
-          createShapeModalOffsetY += createShapeLastDy;
-          isCreateShapeDragging = false;
-          if (createShapeModalWindow) {
-            createShapeModalWindow.style.transition = "";
-            ensureCreateShapePosition();
-          }
+          createShapeModalController.endPointer();
         }
         function startCreateShapeResize(event) {
-          if (!createShapeModalWindow) return;
-          isCreateShapeResizing = true;
-          createShapeResizeStartX = event.clientX;
-          createShapeResizeStartY = event.clientY;
-          createShapeInitialWidth = createShapeModalWindow.offsetWidth;
-          createShapeInitialHeight = createShapeModalWindow.offsetHeight;
-          createShapeModalWindow.style.transition = "none";
+          createShapeModalController.startResize(event);
         }
         function updateCreateShapeResize(event) {
-          if (!isCreateShapeResizing || !createShapeModalWindow) return;
-          const dx = event.clientX - createShapeResizeStartX;
-          const dy = event.clientY - createShapeResizeStartY;
-          const width = Math.max(360, createShapeInitialWidth + dx);
-          const height = Math.max(360, createShapeInitialHeight + dy);
-          createShapeModalWindow.style.width = `${width}px`;
-          createShapeModalWindow.style.height = `${height}px`;
+          createShapeModalController.updatePointer(event);
         }
         function endCreateShapeResize() {
-          isCreateShapeResizing = false;
-          if (createShapeModalWindow) {
-            createShapeModalWindow.style.transition = "";
-          }
+          createShapeModalController.endPointer();
         }
         function ensureCreateFieldModalPosition() {
-          if (!createFieldModalWindow) {
-            return;
-          }
-          createFieldModalWindow.style.transform = `translate(${createFieldModalOffsetX}px, ${createFieldModalOffsetY}px)`;
+          createFieldModalController.ensurePosition();
         }
         function startCreateFieldModalDrag(event) {
-          if (!createFieldModalWindow) {
-            return;
-          }
-          isCreateFieldModalDragging = true;
-          createFieldModalDragStartX = event.clientX;
-          createFieldModalDragStartY = event.clientY;
-          createFieldModalWindow.style.transition = "none";
+          createFieldModalController.startDrag(event);
         }
         function updateCreateFieldModalDrag(event) {
-          if (!isCreateFieldModalDragging || !createFieldModalWindow) {
-            return;
-          }
-          const dx = event.clientX - createFieldModalDragStartX;
-          const dy = event.clientY - createFieldModalDragStartY;
-          createFieldModalWindow.style.transform = `translate(${createFieldModalOffsetX + dx}px, ${createFieldModalOffsetY + dy}px)`;
-          createFieldModalLastDx = dx;
-          createFieldModalLastDy = dy;
+          createFieldModalController.updatePointer(event);
         }
         function endCreateFieldModalDrag() {
-          if (!isCreateFieldModalDragging) {
-            return;
-          }
-          createFieldModalOffsetX += createFieldModalLastDx;
-          createFieldModalOffsetY += createFieldModalLastDy;
-          isCreateFieldModalDragging = false;
-          if (createFieldModalWindow) {
-            createFieldModalWindow.style.transition = "";
-            ensureCreateFieldModalPosition();
-          }
+          createFieldModalController.endPointer();
         }
         function startCreateFieldModalResize(event) {
-          if (!createFieldModalWindow) {
-            return;
-          }
-          isCreateFieldModalResizing = true;
-          createFieldModalDragStartX = event.clientX;
-          createFieldModalDragStartY = event.clientY;
-          createFieldModalInitialWidth = createFieldModalWindow.offsetWidth;
-          createFieldModalInitialHeight = createFieldModalWindow.offsetHeight;
-          createFieldModalWindow.style.transition = "none";
+          createFieldModalController.startResize(event);
         }
         function updateCreateFieldModalResize(event) {
-          if (!isCreateFieldModalResizing || !createFieldModalWindow) {
-            return;
-          }
-          const dx = event.clientX - createFieldModalDragStartX;
-          const dy = event.clientY - createFieldModalDragStartY;
-          const width = Math.max(320, createFieldModalInitialWidth + dx);
-          const height = Math.max(320, createFieldModalInitialHeight + dy);
-          createFieldModalWindow.style.width = `${width}px`;
-          createFieldModalWindow.style.height = `${height}px`;
+          createFieldModalController.updatePointer(event);
         }
         function endCreateFieldModalResize() {
-          isCreateFieldModalResizing = false;
-          if (createFieldModalWindow) {
-            createFieldModalWindow.style.transition = "";
-          }
+          createFieldModalController.endPointer();
         }
 
         function startReplicateModalDrag(event) {
-          if (!replicateModalWindow) {
-            return;
-          }
-          isReplicateModalDragging = true;
-          replicateModalDragStartX = event.clientX;
-          replicateModalDragStartY = event.clientY;
-          replicateModalWindow.style.transition = "none";
+          replicateModalController.startDrag(event);
         }
 
         function updateReplicateModalDrag(event) {
-          if (!isReplicateModalDragging || !replicateModalWindow) {
-            return;
-          }
-          const dx = event.clientX - replicateModalDragStartX;
-          const dy = event.clientY - replicateModalDragStartY;
-          replicateModalWindow.style.transform = `translate(${replicateModalOffsetX + dx}px, ${replicateModalOffsetY + dy}px)`;
-          replicateModalLastDx = dx;
-          replicateModalLastDy = dy;
+          replicateModalController.updatePointer(event);
         }
 
         function endReplicateModalDrag() {
-          if (!isReplicateModalDragging) {
-            return;
-          }
-          replicateModalOffsetX += replicateModalLastDx;
-          replicateModalOffsetY += replicateModalLastDy;
-          isReplicateModalDragging = false;
-          if (replicateModalWindow) {
-            replicateModalWindow.style.transition = "";
-          }
+          replicateModalController.endPointer();
         }
 
         function startReplicateModalResize(event) {
-          if (!replicateModalWindow) {
-            return;
-          }
-          isReplicateModalResizing = true;
-          replicateModalDragStartX = event.clientX;
-          replicateModalDragStartY = event.clientY;
-          replicateModalInitialWidth = replicateModalWindow.offsetWidth;
-          replicateModalInitialHeight = replicateModalWindow.offsetHeight;
-          replicateModalWindow.style.transition = "none";
+          replicateModalController.startResize(event);
         }
 
         function updateReplicateModalResize(event) {
-          if (!isReplicateModalResizing || !replicateModalWindow) {
-            return;
-          }
-          const dx = event.clientX - replicateModalDragStartX;
-          const dy = event.clientY - replicateModalDragStartY;
-          const width = Math.max(320, replicateModalInitialWidth + dx);
-          const height = Math.max(320, replicateModalInitialHeight + dy);
-          replicateModalWindow.style.width = `${width}px`;
-          replicateModalWindow.style.height = `${height}px`;
+          replicateModalController.updatePointer(event);
         }
 
         function endReplicateModalResize() {
-          isReplicateModalResizing = false;
-          if (replicateModalWindow) {
-            replicateModalWindow.style.transition = "";
-          }
+          replicateModalController.endPointer();
         }
 
         function startBulkEditModalDrag(event) {
-          if (!bulkEditModalWindow) {
-            return;
-          }
-          isBulkEditModalDragging = true;
-          bulkEditModalDragStartX = event.clientX;
-          bulkEditModalDragStartY = event.clientY;
-          bulkEditModalWindow.style.transition = "none";
+          bulkEditModalController.startDrag(event);
         }
 
         function updateBulkEditModalDrag(event) {
-          if (!isBulkEditModalDragging || !bulkEditModalWindow) {
-            return;
-          }
-          const dx = event.clientX - bulkEditModalDragStartX;
-          const dy = event.clientY - bulkEditModalDragStartY;
-          bulkEditModalWindow.style.transform = `translate(${bulkEditModalOffsetX + dx}px, ${bulkEditModalOffsetY + dy}px)`;
-          bulkEditModalLastDx = dx;
-          bulkEditModalLastDy = dy;
+          bulkEditModalController.updatePointer(event);
         }
 
         function endBulkEditModalDrag() {
-          if (!isBulkEditModalDragging) {
-            return;
-          }
-          bulkEditModalOffsetX += bulkEditModalLastDx;
-          bulkEditModalOffsetY += bulkEditModalLastDy;
-          isBulkEditModalDragging = false;
-          if (bulkEditModalWindow) {
-            bulkEditModalWindow.style.transition = "";
-          }
+          bulkEditModalController.endPointer();
         }
 
         function startBulkEditModalResize(event) {
-          if (!bulkEditModalWindow) {
-            return;
-          }
-          isBulkEditModalResizing = true;
-          bulkEditModalDragStartX = event.clientX;
-          bulkEditModalDragStartY = event.clientY;
-          bulkEditModalInitialWidth = bulkEditModalWindow.offsetWidth;
-          bulkEditModalInitialHeight = bulkEditModalWindow.offsetHeight;
-          bulkEditModalWindow.style.transition = "none";
+          bulkEditModalController.startResize(event);
         }
 
         function updateBulkEditModalResize(event) {
-          if (!isBulkEditModalResizing || !bulkEditModalWindow) {
-            return;
-          }
-          const dx = event.clientX - bulkEditModalDragStartX;
-          const dy = event.clientY - bulkEditModalDragStartY;
-          const width = Math.max(360, bulkEditModalInitialWidth + dx);
-          const height = Math.max(320, bulkEditModalInitialHeight + dy);
-          bulkEditModalWindow.style.width = `${width}px`;
-          bulkEditModalWindow.style.height = `${height}px`;
+          bulkEditModalController.updatePointer(event);
         }
 
         function endBulkEditModalResize() {
-          isBulkEditModalResizing = false;
-          if (bulkEditModalWindow) {
-            bulkEditModalWindow.style.transition = "";
-          }
+          bulkEditModalController.endPointer();
         }
         if (createShapeModalHeader) {
-          createShapeModalHeader.addEventListener("pointerdown", startCreateShapeDrag);
+          bindModalInteraction({
+            dragHandle: createShapeModalHeader,
+            controller: createShapeModalController,
+          });
         }
-        const resizeHandle = document.createElement("div");
-        resizeHandle.className = "modal-resize-handle";
-        if (createShapeModalWindow) {
-          createShapeModalWindow.appendChild(resizeHandle);
-        }
-        resizeHandle.addEventListener("pointerdown", (event) => {
-          event.preventDefault();
-          startCreateShapeResize(event);
+        const resizeHandle = appendModalResizeHandle(createShapeModalWindow);
+        bindModalInteraction({
+          resizeHandle,
+          controller: createShapeModalController,
         });
-        if (createFieldModalHeader) {
-          createFieldModalHeader.addEventListener("pointerdown", startCreateFieldModalDrag);
-        }
-        const fieldResizeHandle = document.createElement("div");
-        fieldResizeHandle.className = "modal-resize-handle field-resize-handle";
-        if (createFieldModalBody) {
-          createFieldModalBody.appendChild(fieldResizeHandle);
-        } else if (createFieldModalWindow) {
-          createFieldModalWindow.appendChild(fieldResizeHandle);
-        }
-        fieldResizeHandle.addEventListener("pointerdown", (event) => {
-          event.preventDefault();
-          startCreateFieldModalResize(event);
+        bindModalInteraction({
+          dragHandle: createFieldModalHeader,
+          controller: createFieldModalController,
         });
-        if (replicateModalHeader) {
-          replicateModalHeader.addEventListener("pointerdown", (event) => {
-            event.preventDefault();
-            startReplicateModalDrag(event);
-          });
-        }
-        if (replicateModalBody || replicateModalWindow) {
-          const replicateResizeHandle = document.createElement("div");
-          replicateResizeHandle.className = "modal-resize-handle field-resize-handle";
-          (replicateModalBody || replicateModalWindow)?.appendChild(replicateResizeHandle);
-          replicateResizeHandle.addEventListener("pointerdown", (event) => {
-            event.preventDefault();
-            startReplicateModalResize(event);
-          });
-        }
-        if (bulkEditModalHeader) {
-          bulkEditModalHeader.addEventListener("pointerdown", (event) => {
-            event.preventDefault();
-            startBulkEditModalDrag(event);
-          });
-        }
-        if (bulkEditModalWindow) {
-          const bulkEditResizeHandle = document.createElement("div");
-          bulkEditResizeHandle.className = "modal-resize-handle";
-          bulkEditModalWindow.appendChild(bulkEditResizeHandle);
-          bulkEditResizeHandle.addEventListener("pointerdown", (event) => {
-            event.preventDefault();
-            startBulkEditModalResize(event);
-          });
-        }
+        const fieldResizeHandle = appendModalResizeHandle(
+          createFieldModalBody || createFieldModalWindow,
+          "modal-resize-handle field-resize-handle"
+        );
+        bindModalInteraction({
+          resizeHandle: fieldResizeHandle,
+          controller: createFieldModalController,
+        });
+        bindModalInteraction({
+          dragHandle: replicateModalHeader,
+          controller: replicateModalController,
+        });
+        const replicateResizeHandle = appendModalResizeHandle(
+          replicateModalBody || replicateModalWindow,
+          "modal-resize-handle field-resize-handle"
+        );
+        bindModalInteraction({
+          resizeHandle: replicateResizeHandle,
+          controller: replicateModalController,
+        });
+        bindModalInteraction({
+          dragHandle: bulkEditModalHeader,
+          controller: bulkEditModalController,
+        });
+        const bulkEditResizeHandle = appendModalResizeHandle(bulkEditModalWindow);
+        bindModalInteraction({
+          resizeHandle: bulkEditResizeHandle,
+          controller: bulkEditModalController,
+        });
         document.addEventListener("pointermove", (event) => {
-          updateCreateShapeDrag(event);
-          updateCreateShapeResize(event);
-          updateCreateFieldModalDrag(event);
-          updateCreateFieldModalResize(event);
-          updateReplicateModalDrag(event);
-          updateReplicateModalResize(event);
-          updateBulkEditModalDrag(event);
-          updateBulkEditModalResize(event);
+          modalInteractionControllers.forEach((controller) => {
+            controller.updatePointer(event);
+          });
         });
         document.addEventListener("pointerup", () => {
-          endCreateShapeDrag();
-          endCreateShapeResize();
-          endCreateFieldModalDrag();
-          endCreateFieldModalResize();
-          endReplicateModalDrag();
-          endReplicateModalResize();
-          endBulkEditModalDrag();
-          endBulkEditModalResize();
+          modalInteractionControllers.forEach((controller) => {
+            controller.endPointer();
+          });
         });
 
         if (toggleLegendBtn) {
           toggleLegendBtn.addEventListener("click", () => {
-            legendVisible = !legendVisible;
-            toggleLegendBtn.textContent = legendVisible ? "Hide Legend" : "Show Legend";
-            setStatus(legendVisible ? "Legend visible." : "Legend hidden.", legendVisible ? "ok" : "warning");
+            triOrbStore.uiState.legendVisible = !triOrbStore.uiState.legendVisible;
+            toggleLegendBtn.textContent = triOrbStore.uiState.legendVisible ? "Hide Legend" : "Show Legend";
+            setStatus(
+              triOrbStore.uiState.legendVisible ? "Legend visible." : "Legend hidden.",
+              triOrbStore.uiState.legendVisible ? "ok" : "warning"
+            );
             renderFigure();
+          });
+        }
+
+        if (fieldsetFilterInput) {
+          fieldsetFilterInput.addEventListener("input", (event) => {
+            listFilterState.fieldsets = event.target.value || "";
+            renderFieldsets({ invalidateTraces: false });
+          });
+        }
+
+        if (fieldsetDeviceFilterInput) {
+          fieldsetDeviceFilterInput.addEventListener("input", (event) => {
+            listFilterState.devices = event.target.value || "";
+            renderFieldsetDevices({ invalidateTraceCache: false });
+          });
+        }
+
+        if (triorbShapeFilterInput) {
+          triorbShapeFilterInput.addEventListener("input", (event) => {
+            listFilterState.shapes = event.target.value || "";
+            renderTriOrbShapes();
           });
         }
 
@@ -12813,11 +14129,12 @@ function parsePolygonTrace(doc) {
           const reader = new FileReader();
           reader.onload = () => {
             try {
-              const { traces, warning, triOrbPresent } = parseXmlToFigure(reader.result);
-              const layout = cloneFigure(defaultFigure).layout;
-              currentFigure = { data: traces, layout };
-              invalidateBaseFigureTraces();
-              renderFigure();
+              const { traces, layout, warning, triOrbPresent } = parseXmlToFigure(reader.result);
+              triOrbStore.uiState.currentFigure = { data: traces, layout };
+              refreshUiViews({
+                invalidate: { baseFigure: true },
+                figure: true,
+              });
               if (warning) {
                 setStatus(`${file.name} loaded with warnings: ${warning}`, "warning");
               } else {
@@ -12885,7 +14202,25 @@ function parsePolygonTrace(doc) {
         plotNode.on("plotly_hover", (event) => {
           if (event?.points?.length) {
             lastHoverPoint = event.points[0];
+            const meta = event.points[0]?.meta || event.points[0]?.data?.meta;
+            if (meta?.isTriOrbShape && meta?.shapeId) {
+              setHoveredTriOrbShape(meta.shapeId, { rerenderFigure: false });
+            } else {
+              setHoveredTriOrbShape(null, { rerenderFigure: false });
+            }
+            if (Number.isInteger(meta?.fieldsetIndex)) {
+              setHoveredFieldsetItem(meta.fieldsetIndex, meta.fieldIndex, {
+                rerenderFigure: false,
+              });
+            } else {
+              setHoveredFieldsetItem(null, null, { rerenderFigure: false });
+            }
           }
+        });
+
+        plotNode.on("plotly_unhover", () => {
+          setHoveredTriOrbShape(null, { rerenderFigure: false });
+          setHoveredFieldsetItem(null, null, { rerenderFigure: false });
         });
 
         plotNode.on("plotly_click", (event) => {
@@ -12895,6 +14230,7 @@ function parsePolygonTrace(doc) {
           if (meta?.kind) {
             console.debug("trigger modal", meta);
             if (meta.isTriOrbShape && meta.shapeId) {
+              setSelectedTriOrbShape(meta.shapeId, { openPanel: true, scrollIntoView: true });
               openCreateShapeModalForEdit(meta.shapeId);
             } else {
               renderShapeModal(meta);
@@ -12936,12 +14272,57 @@ function parsePolygonTrace(doc) {
         }
         document.addEventListener("pointermove", updateModalDrag);
         document.addEventListener("pointerup", endModalDrag);
+        floatingPanelLauncherButtons.forEach((button) => {
+          button.addEventListener("click", () => {
+            toggleFloatingPanel(button.dataset.panelTarget);
+          });
+        });
+        floatingPanels.forEach((panel) => {
+          panel.addEventListener("pointerdown", (event) => {
+            if (event.target.closest("[data-panel-close]")) {
+              closeFloatingPanel(panel);
+              return;
+            }
+            bringFloatingPanelToFront(panel);
+          });
+          panel
+            .querySelector("[data-panel-drag-handle]")
+            ?.addEventListener("pointerdown", handleFloatingPanelPointerDown);
+        });
+        document.addEventListener("pointermove", handleFloatingPanelPointerMove);
+        document.addEventListener("pointerup", handleFloatingPanelPointerUp);
+        window.addEventListener("resize", () => {
+          floatingPanels.forEach((panel) => {
+            if (panel.classList.contains("active")) {
+              constrainFloatingPanelToViewport(panel);
+            }
+          });
+        });
+        syncFloatingPanelLauncherStates();
 
         setupLayoutObservers();
         renderFigure();
 
         window.__triorbTestApi = {
           buildTriOrbXml: () => buildTriOrbXml(),
+          buildLegacyXml: () => buildLegacyXml(),
+          getDocumentState: () => captureTriOrbDocumentState(),
+          getStoreState: () => triOrbStore.captureState(),
+          getUiState: () => captureTriOrbUiState(),
+          getStateSnapshot: () => captureTriOrbStateSnapshot(),
+          loadXml: (xmlText) => {
+            const parsed = parseXmlToFigure(xmlText);
+            triOrbStore.uiState.currentFigure = { data: parsed.traces, layout: parsed.layout };
+            refreshUiViews({
+              invalidate: { baseFigure: true },
+              figure: true,
+            });
+            return parsed;
+          },
+          restoreStateSnapshot: (snapshot) => {
+            restoreTriOrbStateSnapshot(snapshot);
+            renderFigure();
+          },
         };
 
         function setupLayoutObservers() {
