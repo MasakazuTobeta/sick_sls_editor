@@ -6569,8 +6569,8 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           if (!("DisplayOrder" in attributes)) {
             attributes.DisplayOrder = String(index);
           }
-          const staticInputs = normalizeStaticInputs(entry?.static_inputs);
-          const speedActivation = normalizeSpeedActivation(entry?.speed_activation);
+          const staticInputs = normalizeStaticInputs(entry?.static_inputs ?? entry?.staticInputs);
+          const speedActivation = normalizeSpeedActivation(entry?.speed_activation ?? entry?.speedActivation);
           const staticInputsPlacement = entry?.static_inputs_placement || entry?.staticInputsPlacement || "case";
           const speedActivationPlacement =
             entry?.speed_activation_placement || entry?.speedActivationPlacement || "case";
@@ -6948,7 +6948,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             if (!attributes.Name) {
               attributes.Name = `StaticInput ${displayIndex}`;
             }
-            const valueKey = item.value_key || resolveStaticInputValueKey(attributes);
+            const valueKey = item.value_key || item.valueKey || resolveStaticInputValueKey(attributes);
             if (!(valueKey in attributes)) {
               attributes[valueKey] = "DontCare";
             }
@@ -6962,7 +6962,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
 
         function normalizeSpeedActivation(entry) {
           const attributes = { ...(entry?.attributes || {}) };
-          const modeKey = entry?.mode_key || resolveSpeedActivationKey(attributes);
+          const modeKey = entry?.mode_key || entry?.modeKey || resolveSpeedActivationKey(attributes);
           if (!(modeKey in attributes)) {
             attributes[modeKey] = "Off";
           }
