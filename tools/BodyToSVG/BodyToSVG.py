@@ -1,21 +1,25 @@
 """
-Fusion 360 向けの簡易 SVG エクスポート アドイン（Python 版）。
-- 表示中の Body を XY 投影した外径ポリゴンとして SVG へ書き出す。
-- Scripts/Add-Ins 配下にフォルダーごと配置し、Fusion 360 の Add-Ins から実行する。
+Fusion 360 script to export visible bodies as SVG for SICK SLS Editor.
 
-SICK SLS Editor の SVG インポート ワークフロー向けに、Fusion 側で
-ボディ外形を SVG 化する用途を想定しています。
+- Projects visible BRep body outlines onto the XY plane.
+- Approximates curved edges with 5-degree segments.
+- Writes a single SVG file without requiring sketch selection.
 """
+
+import math
+import re
+import traceback
 
 import adsk.core
 import adsk.fusion
-import traceback
-import re
-import math
 
 COMMAND_ID = "SlsEditor_SvgExport"
 COMMAND_NAME = "Export Bodies to SVG (SICK SLS)"
-COMMAND_DESCRIPTION = "表示中の Body を SVG 形式で保存します"
+COMMAND_DESCRIPTION = "Export visible bodies as XY-projected SVG outlines"
+DEFAULT_ARC_STEP_DEGREES = 5.0
+UNIT_SCALE_MM = 10.0
+POINT_TOLERANCE_MM = 1e-3
+COLLINEAR_TOLERANCE = 1e-6
 
 _handlers = []
 
@@ -68,6 +72,10 @@ def _svg_id_from_name(name: str) -> str:
     return result
 
 
+def _project_point(point: adsk.core.Point3D, unit_scale: float) -> tuple[float, float]:
+    return (point.x * unit_scale, -point.y * unit_scale)
+
+
 def _distance_sq(a, b) -> float:
     dx = a[0] - b[0]
     dy = a[1] - b[1]
@@ -76,6 +84,11 @@ def _distance_sq(a, b) -> float:
 
 def _points_close(a, b, tol_sq: float) -> bool:
     return _distance_sq(a, b) <= tol_sq
+
+
+def _append_point(points, point, close_tol_sq: float):
+    if not points or not _points_close(points[-1], point, close_tol_sq):
+        points.append(point)
 
 
 def _simplify_polyline(points, is_closed: bool, collinear_tol: float):
@@ -144,11 +157,76 @@ def _plane_is_parallel_to_xy(plane: adsk.core.Plane) -> bool:
     return plane.normal.isParallelTo(z_axis)
 
 
+def _arc_step_radians(value_degrees: float) -> float:
+    if value_degrees <= 0:
+        value_degrees = DEFAULT_ARC_STEP_DEGREES
+    return math.radians(max(0.1, min(value_degrees, 45.0)))
+
+
+def _curve_segment_count(
+    curve: adsk.core.Curve3D,
+    start_param: float,
+    end_param: float,
+    arc_step_radians: float,
+) -> int:
+    if curve.curveType in (
+        adsk.core.Curve3DTypes.Arc3DCurveType,
+        adsk.core.Curve3DTypes.Circle3DCurveType,
+        adsk.core.Curve3DTypes.EllipticalArc3DCurveType,
+        adsk.core.Curve3DTypes.Ellipse3DCurveType,
+    ):
+        return max(1, int(math.ceil(abs(end_param - start_param) / arc_step_radians)))
+    return 1
+
+
+def _sample_curve_points(
+    co_edge: adsk.fusion.BRepCoEdge,
+    unit_scale: float,
+    close_tol_sq: float,
+    arc_step_radians: float,
+) -> list[tuple[float, float]]:
+    edge = co_edge.edge
+    curve = edge.geometry
+    if not curve:
+        return []
+
+    if curve.curveType == adsk.core.Curve3DTypes.Line3DCurveType:
+        if co_edge.isOpposedToEdge:
+            start_vertex = edge.endVertex
+            end_vertex = edge.startVertex
+        else:
+            start_vertex = edge.startVertex
+            end_vertex = edge.endVertex
+        return [
+            _project_point(start_vertex.geometry, unit_scale),
+            _project_point(end_vertex.geometry, unit_scale),
+        ]
+
+    evaluator = curve.evaluator
+    ok, start_param, end_param = evaluator.getParameterExtents()
+    if not ok:
+        return []
+    if co_edge.isOpposedToEdge:
+        start_param, end_param = end_param, start_param
+
+    segment_count = _curve_segment_count(curve, start_param, end_param, arc_step_radians)
+    points = []
+    for index in range(segment_count + 1):
+        ratio = index / segment_count
+        parameter = start_param + (end_param - start_param) * ratio
+        ok, point = evaluator.getPointAtParameter(parameter)
+        if not ok:
+            continue
+        _append_point(points, _project_point(point, unit_scale), close_tol_sq)
+    return points
+
+
 def _body_polygon_points(
     body: adsk.fusion.BRepBody,
     unit_scale: float,
     close_tol_sq: float,
     collinear_tol: float,
+    arc_step_radians: float,
 ) -> list[tuple[float, float]]:
     best_face = None
     best_area = -1.0
@@ -156,9 +234,7 @@ def _body_polygon_points(
         if face.geometry.surfaceType != adsk.core.SurfaceTypes.PlaneSurfaceType:
             continue
         plane = adsk.core.Plane.cast(face.geometry)
-        if not plane:
-            continue
-        if not _plane_is_parallel_to_xy(plane):
+        if not plane or not _plane_is_parallel_to_xy(plane):
             continue
         if face.area > best_area:
             best_area = face.area
@@ -173,94 +249,77 @@ def _body_polygon_points(
             outer_loop = loop
             break
 
-    if not outer_loop:
-        return []
-
-    count = outer_loop.coEdges.count
-    if count < 1:
+    if not outer_loop or outer_loop.coEdges.count < 1:
         return []
 
     points = []
     co_edge = outer_loop.coEdges.item(0)
-    for _ in range(count):
-        edge = co_edge.edge
-        if co_edge.isOpposedToEdge:
-            start_vertex = edge.endVertex
-            end_vertex = edge.startVertex
-        else:
-            start_vertex = edge.startVertex
-            end_vertex = edge.endVertex
-
-        start_pt = start_vertex.geometry
-        end_pt = end_vertex.geometry
-        start = (start_pt.x * unit_scale, -start_pt.y * unit_scale)
-        end = (end_pt.x * unit_scale, -end_pt.y * unit_scale)
-
-        if not points:
-            points.append(start)
-        if not _points_close(points[-1], end, close_tol_sq):
-            points.append(end)
-
+    for _ in range(outer_loop.coEdges.count):
+        sampled = _sample_curve_points(
+            co_edge,
+            unit_scale,
+            close_tol_sq,
+            arc_step_radians,
+        )
+        for point in sampled:
+            _append_point(points, point, close_tol_sq)
         co_edge = co_edge.next
 
     if len(points) > 1 and _points_close(points[0], points[-1], close_tol_sq):
         points = points[:-1]
 
-    points = _simplify_polyline(points, True, collinear_tol)
-    return points
+    return _simplify_polyline(points, True, collinear_tol)
 
 
 def _export_bodies_to_svg(
     design: adsk.fusion.Design,
     file_path: str,
+    arc_step_degrees: float = DEFAULT_ARC_STEP_DEGREES,
 ) -> tuple[bool, str]:
     bodies = _collect_visible_bodies(design)
     if not bodies:
-        return False, "表示中の Body がありません。"
+        return False, "No visible body could be exported to SVG."
 
-    unit_scale = 10.0
-    close_tol_sq = (1e-4 * unit_scale) ** 2
-    collinear_tol = 1e-6
-
-    def points_to_path(points):
-        if len(points) < 2:
-            return ""
-        commands = [f"M {_format_number(points[0][0])} {_format_number(points[0][1])}"]
-        commands.extend(
-            f"L {_format_number(p[0])} {_format_number(p[1])}" for p in points[1:]
-        )
-        commands.append("Z")
-        return " ".join(commands)
+    close_tol_sq = POINT_TOLERANCE_MM**2
+    arc_step_radians = _arc_step_radians(arc_step_degrees)
 
     paths = []
     all_points = []
     skipped = 0
     for body in bodies:
-        points = _body_polygon_points(body, unit_scale, close_tol_sq, collinear_tol)
+        points = _body_polygon_points(
+            body,
+            UNIT_SCALE_MM,
+            close_tol_sq,
+            COLLINEAR_TOLERANCE,
+            arc_step_radians,
+        )
         if len(points) < 2:
             skipped += 1
             continue
-        path = points_to_path(points)
-        if path:
-            paths.append((path, body.name))
-            all_points.extend(points)
+        paths.append((points, body.name))
+        all_points.extend(points)
 
     if not paths:
-        return False, "SVG に出力できる Body がありません。"
+        return False, "No XY-projected body outline could be generated."
 
-    min_x = min(p[0] for p in all_points)
-    min_y = min(p[1] for p in all_points)
-    max_x = max(p[0] for p in all_points)
-    max_y = max(p[1] for p in all_points)
+    min_x = min(point[0] for point in all_points)
+    min_y = min(point[1] for point in all_points)
+    max_x = max(point[0] for point in all_points)
+    max_y = max(point[1] for point in all_points)
 
-    width = max_x - min_x
-    height = max_y - min_y
-    if width <= 0:
-        width = 1.0
-    if height <= 0:
-        height = 1.0
+    width = max(max_x - min_x, 1.0)
+    height = max(max_y - min_y, 1.0)
 
-    stroke_width = 1.0
+    def points_to_path(points):
+        commands = [f"M {_format_number(points[0][0])} {_format_number(points[0][1])}"]
+        commands.extend(
+            f"L {_format_number(point[0])} {_format_number(point[1])}"
+            for point in points[1:]
+        )
+        commands.append("Z")
+        return " ".join(commands)
+
     svg_lines = [
         '<?xml version="1.0" encoding="UTF-8"?>',
         (
@@ -269,12 +328,16 @@ def _export_bodies_to_svg(
             f'viewBox="0 0 {_format_number(width)} {_format_number(height)}" '
             'overflow="visible">'
         ),
-        f'<g fill="none" stroke-width="{_format_number(stroke_width)}" '
+        (
+            "<desc>Curved edges are approximated with "
+            f"{_format_number(math.degrees(arc_step_radians))}-degree segments.</desc>"
+        ),
+        '<g fill="none" stroke-width="1.0000" '
         'stroke-linecap="round" stroke-linejoin="round">',
     ]
 
     used_ids = {}
-    for index, (path, name) in enumerate(paths):
+    for index, (points, name) in enumerate(paths):
         base_id = _svg_id_from_name(name or "body")
         count = used_ids.get(base_id, 0) + 1
         used_ids[base_id] = count
@@ -282,7 +345,8 @@ def _export_bodies_to_svg(
         svg_lines.append(
             f'<path id="{_escape_xml_attr(path_id)}" '
             f'data-name="{_escape_xml_attr(name)}" '
-            f'd="{path}" stroke="{_color_for_index(index)}"/>'
+            f'd="{points_to_path(points)}" '
+            f'stroke="{_color_for_index(index)}"/>'
         )
 
     svg_lines.append("</g>")
@@ -292,8 +356,7 @@ def _export_bodies_to_svg(
         handle.write("\n".join(svg_lines))
 
     if skipped:
-        return True, f"一部の Body をスキップしました ({skipped})"
-
+        return True, f"Skipped {skipped} body/bodies without an XY outer loop."
     return True, ""
 
 
@@ -305,29 +368,35 @@ class _CommandExecuteHandler(adsk.core.CommandEventHandler):
         app, ui = _app_and_ui()
         design = adsk.fusion.Design.cast(app.activeProduct) if app else None
         if not design:
-            _show_error(ui, "Design ワークスペースで実行してください。")
+            _show_error(ui, "Open a Fusion design workspace before running this script.")
             return
 
         inputs = args.command.commandInputs
         file_name_input = inputs.itemById("sls-filename")
+        arc_step_input = inputs.itemById("sls-arc-step-deg")
 
         folder_dialog = ui.createFolderDialog()
-        folder_dialog.title = "SVG の出力先フォルダーを選択"
+        folder_dialog.title = "Select an output folder for the SVG"
         if folder_dialog.showDialog() != adsk.core.DialogResults.DialogOK:
             return
 
         base_name = str(file_name_input.value or "bodies.svg")
         base_name = re.sub(r"\.(svg|dxf)$", "", base_name, flags=re.IGNORECASE)
         file_path = f"{folder_dialog.folder}/{base_name}.svg"
+        arc_step_degrees = float(arc_step_input.value or DEFAULT_ARC_STEP_DEGREES)
 
-        succeeded, error_message = _export_bodies_to_svg(design, file_path)
+        succeeded, info_message = _export_bodies_to_svg(
+            design,
+            file_path,
+            arc_step_degrees,
+        )
         if succeeded:
-            message = f"SVG を保存しました:\n{file_path}"
-            if error_message:
-                message = f"{message}\n{error_message}"
+            message = f"SVG saved:\n{file_path}"
+            if info_message:
+                message = f"{message}\n{info_message}"
             ui.messageBox(message, "SVG Export")
         else:
-            _show_error(ui, error_message or "SVG の保存に失敗しました。")
+            _show_error(ui, info_message or "Failed to save the SVG.")
 
 
 class _CommandCreatedHandler(adsk.core.CommandCreatedEventHandler):
@@ -337,8 +406,16 @@ class _CommandCreatedHandler(adsk.core.CommandCreatedEventHandler):
     def notify(self, args: adsk.core.CommandCreatedEventArgs):
         command = args.command
         inputs = command.commandInputs
-
-        inputs.addStringValueInput("sls-filename", "ファイル名", "bodies.svg")
+        inputs.addStringValueInput("sls-filename", "File name", "bodies.svg")
+        inputs.addFloatSpinnerCommandInput(
+            "sls-arc-step-deg",
+            "Arc step (deg)",
+            "",
+            0.1,
+            45.0,
+            0.5,
+            DEFAULT_ARC_STEP_DEGREES,
+        )
 
         on_execute = _CommandExecuteHandler()
         command.execute.add(on_execute)
@@ -355,7 +432,9 @@ def run(_context):
         command_definition = command_definitions.itemById(COMMAND_ID)
         if not command_definition:
             command_definition = command_definitions.addButtonDefinition(
-                COMMAND_ID, COMMAND_NAME, COMMAND_DESCRIPTION
+                COMMAND_ID,
+                COMMAND_NAME,
+                COMMAND_DESCRIPTION,
             )
 
         on_created = _CommandCreatedHandler()
@@ -370,7 +449,7 @@ def run(_context):
 
 
 def stop(_context):
-    app, ui = _app_and_ui()
+    _, ui = _app_and_ui()
     if not ui:
         return
 

@@ -38,11 +38,11 @@ XML 生成・読み込み時には `<SdImportExport xmlns:xsd="http://www.w3.org
 
 詳細な操作手順は [Manual.md](Manual.md) の利用マニュアルにまとめています。初期設定から SVG 取り込み、Fieldset 作成、複製、保存までの流れを参照してください。
 
-## Fusion 360 から SVG を書き出す Python サンプル
-- `tools/fusion360_svg_export/fusion360_svg_export.py` に、表示中の Body を XY 平面に投影して SVG へエクスポートする Fusion 360 アドイン（Python 版）の最小実装を追加しました。
-- Scripts/Add-Ins 配下に `fusion360_svg_export` フォルダーごとコピーし、Fusion 360 の Add-Ins ダイアログから Python アドインとして読み込んでください。アドイン用マニフェストは `tools/fusion360_svg_export/fusion360_svg_export.manifest` を同じフォルダーに置いてください。
-- コマンド実行後は表示中の BRep Body を自動で検出し、出力先フォルダーとファイル名を指定すると SVG を保存できます（Sketch 選択は不要です）。SICK SLS Editor 側の SVG インポートと同じワークフローで利用できます。
-- ポリゴンの切れ目（パス分割）は Body の平面フェースに合わせた外形ポリラインとして出力します。エッジ単位に分けたい場合は Body をフェースごとに分割してください。
+## Fusion 360 から SVG を書き出す Python スクリプト
+- `tools/BodyToSVG/BodyToSVG.py` は、表示中の BRep Body を XY 平面へ投影して SVG 化する Fusion 360 用 Python スクリプトです。
+- `tools/BodyToSVG` フォルダーを Fusion 360 の `Scripts` 配下へコピーし、`BodyToSVG.manifest` とあわせて Scripts ダイアログから読み込んでください。
+- コマンド実行後は表示中の Body を自動検出し、保存先フォルダーとファイル名を指定すると SVG を保存できます。Sketch 選択は不要です。
+- 円弧や楕円弧を含むエッジは、実行時に指定した角度刻みのポリラインへ補間して出力します。デフォルトは 5 度刻みです。
 
 ## フロントエンド構成
 - Flask 側から渡される Plotly 図・TriOrb・Casetable 等の初期データは `templates/index.html` で `window.appBootstrapData` にまとめ、`static/js/app.js` から参照します。
