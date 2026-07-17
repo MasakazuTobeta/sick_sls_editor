@@ -786,6 +786,8 @@ document.addEventListener("DOMContentLoaded", () => {
         let deviceOverlayVersion = 0;
         let triOrbShapeTraceVersion = 0;
         let fieldsetTraceVersion = 0;
+        let plotRenderInFlight = false;
+        let plotRenderQueued = false;
         invalidateBaseFigureTraces();
 
         rebuildTriOrbShapeRegistry();
@@ -1415,9 +1417,9 @@ document.addEventListener("DOMContentLoaded", () => {
         function cloneTraceForRender(trace) {
           return {
             ...trace,
-            line: trace?.line ? { ...trace.line } : trace?.line,
-            marker: trace?.marker ? { ...trace.marker } : trace?.marker,
-            meta: trace?.meta ? { ...trace.meta } : trace?.meta,
+            ...(trace?.line ? { line: { ...trace.line } } : {}),
+            ...(trace?.marker ? { marker: { ...trace.marker } } : {}),
+            ...(trace?.meta ? { meta: { ...trace.meta } } : {}),
           };
         }
 
@@ -1470,8 +1472,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 ...(trace.line || {}),
                 width: Math.max(baseWidth + 1.5, 4),
               };
-            } else {
-              trace.opacity = 0.16;
             }
           });
           return traces;
@@ -1508,6 +1508,10 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         function renderFigure() {
+          if (plotRenderInFlight) {
+            plotRenderQueued = true;
+            return;
+          }
           syncPlotSize();
           const baseData = resolveBaseFigureTraces();
           const deviceTraces = resolveDeviceOverlayTraces();
@@ -1578,19 +1582,31 @@ document.addEventListener("DOMContentLoaded", () => {
           if (bulkEditPreviewTraces.length) {
             appendTraces(bulkEditPreviewTraces);
           }
-          const activeShapeId = getActiveTriOrbShapeHighlightId();
-          const activeFieldsetTarget = getActiveFieldsetInteraction();
-          const tracesForRender =
-            activeShapeId || activeFieldsetTarget
-              ? combinedTraces.map((trace) =>
-                  trace?.meta?.isTriOrbShape || Number.isInteger(trace?.meta?.fieldsetIndex)
-                    ? cloneTraceForRender(trace)
-                    : trace
-                )
-              : combinedTraces;
+          // Plotly may normalize trace objects in place. Always hand it fresh trace
+          // wrappers so cached traces remain safe for the next queued render.
+          const tracesForRender = combinedTraces.map((trace) => cloneTraceForRender(trace));
           applyTriOrbInteractionHighlights(tracesForRender);
           applyFieldsetInteractionHighlights(tracesForRender);
-          Plotly.react(plotNode, tracesForRender, layout, figureConfig);
+          plotRenderInFlight = true;
+          let renderResult;
+          try {
+            renderResult = Plotly.react(plotNode, tracesForRender, layout, figureConfig);
+          } catch (error) {
+            plotRenderInFlight = false;
+            console.error("Plotly render failed", error);
+            return;
+          }
+          Promise.resolve(renderResult)
+            .catch((error) => {
+              console.error("Plotly render failed", error);
+            })
+            .finally(() => {
+              plotRenderInFlight = false;
+              if (plotRenderQueued) {
+                plotRenderQueued = false;
+                renderFigure();
+              }
+            });
         }
 
         function buildFieldsetTraces() {
@@ -4374,7 +4390,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           const fieldsetName =
             createFieldsetNameInput?.value?.trim() || defaultFieldsetName();
           const latinKey = createFieldsetLatinInput?.value?.trim() || generateLatin9Key();
-          const entries = [];
+          const candidates = [];
           createFieldModalFieldShapeSelections.forEach((selection, fieldIndex) => {
             const allShapeIds = [];
             shapeKinds.forEach((kind) => {
@@ -4383,7 +4399,7 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
             });
             const fieldName =
               createFieldNameInputs[fieldIndex]?.value?.trim() || getDefaultFieldName(fieldIndex);
-            entries.push({
+            candidates.push({
               attributes: {
                 Name: fieldName,
                 Fieldtype: fieldTypeLabels[fieldIndex] || fieldTypeLabels[0],
@@ -4395,6 +4411,14 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
               shapeRefs: allShapeIds.map((shapeId) => ({ shapeId })),
             });
           });
+          let entries = candidates.filter((entry) => entry.shapeRefs.length);
+          if (!entries.length) {
+            if (isAppendingToExisting) {
+              setStatus("追加する Shape を選択してください。", "warning");
+              return false;
+            }
+            entries = candidates.length ? [candidates[0]] : [];
+          }
           if (isAppendingToExisting) {
             targetFieldset.fields = Array.isArray(targetFieldset.fields)
               ? targetFieldset.fields.concat(entries)
@@ -5422,6 +5446,18 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           }
           if (shapeIds.has(triOrbInteractionState.selectedShapeId)) {
             triOrbInteractionState.selectedShapeId = null;
+          }
+        }
+
+        function clearTriOrbShapeInteraction({ rerenderFigure = true } = {}) {
+          const changed = Boolean(
+            triOrbInteractionState.hoveredShapeId || triOrbInteractionState.selectedShapeId
+          );
+          triOrbInteractionState.hoveredShapeId = null;
+          triOrbInteractionState.selectedShapeId = null;
+          syncTriOrbShapeCardHighlights();
+          if (changed && rerenderFigure) {
+            renderFigure();
           }
         }
 
@@ -7008,6 +7044,29 @@ function buildCircleTrace(circle, colorSet, label, fieldType, fieldsetIndex, fie
           casetableConfiguration.children = Array.isArray(casetableConfiguration.children)
             ? casetableConfiguration.children
             : [];
+          let inputDelayNode = casetableConfiguration.children.find(
+            (child) => child?.tag === "InputDelay"
+          );
+          if (!inputDelayNode) {
+            inputDelayNode = { tag: "InputDelay", attributes: {}, text: "0", children: [] };
+            const useSpeedIndex = casetableConfiguration.children.findIndex(
+              (child) => child?.tag === "UseSpeed"
+            );
+            const followingConfigIndex = casetableConfiguration.children.findIndex(
+              (child) => child?.tag === "CaseSequenceEnabled" || child?.tag === "ShowPermanentPreset"
+            );
+            const insertionIndex = useSpeedIndex >= 0
+              ? useSpeedIndex + 1
+              : followingConfigIndex >= 0
+                ? followingConfigIndex
+                : casetableConfiguration.children.length;
+            casetableConfiguration.children.splice(insertionIndex, 0, inputDelayNode);
+          } else if (
+            typeof inputDelayNode.text !== "string" ||
+            !inputDelayNode.text.trim().length
+          ) {
+            inputDelayNode.text = "0";
+          }
           return casetableConfiguration;
         }
 
@@ -11660,7 +11719,7 @@ function parsePolygonTrace(doc) {
             return;
           }
           const nameValue = getCasetableConfigTextValue("Name", "");
-          const inputDelayValue = getCasetableConfigTextValue("InputDelay", "");
+          const inputDelayValue = getCasetableConfigTextValue("InputDelay", "0");
           const staticInputs = ensureCasetableConfigStaticInputs();
           const staticButtons = staticInputs
             .slice(0, casetableConfigurationStaticInputsCount)
@@ -12926,15 +12985,24 @@ function parsePolygonTrace(doc) {
             setHoveredTriOrbShape(null);
           });
           triorbShapesContainer.addEventListener("input", (event) => {
+            if (event.target instanceof HTMLSelectElement) {
+              return;
+            }
             handleTriOrbShapeInput(event);
           });
           triorbShapesContainer.addEventListener("change", (event) => {
-            handleTriOrbShapeInput(event);
+            if (event.target instanceof HTMLSelectElement) {
+              clearTriOrbShapeInteraction({ rerenderFigure: false });
+              handleTriOrbShapeInput(event);
+            }
           });
           triorbShapesContainer.addEventListener("click", (event) => {
             if (!event.target) return;
             const card = event.target.closest(".triorb-shape-card");
-            if (card?.dataset?.shapeId) {
+            const interactiveTarget = event.target.closest(
+              "input, select, textarea, button, a, [role='button']"
+            );
+            if (!interactiveTarget && card?.dataset?.shapeId) {
               setSelectedTriOrbShape(card.dataset.shapeId);
             }
             const action = event.target.dataset.action;
@@ -13177,9 +13245,29 @@ function parsePolygonTrace(doc) {
           newPlotBtn.addEventListener("click", () => {
             triOrbStore.fieldsets.items = [];
             triOrbStore.shapes.items = [];
+            rebuildTriOrbShapeRegistry();
+            triOrbShapeCardCache.clear();
+            triOrbShapesListInitialized = false;
             createShapePreview = null;
             createShapeDraftId = null;
+            fieldModalPreview = null;
+            triOrbInteractionState.hoveredShapeId = null;
+            triOrbInteractionState.selectedShapeId = null;
+            fieldsetInteractionState.hoveredFieldsetIndex = null;
+            fieldsetInteractionState.hoveredFieldIndex = null;
+            casetableCases = [];
+            if (Array.isArray(casetableEvals?.evals)) {
+              casetableEvals.evals.forEach((evalEntry) => {
+                evalEntry.cases = [];
+              });
+            }
+            caseToggleStates = [];
+            caseFieldAssignments = [];
+            bulkEditState.selectedCases.clear();
+            bulkEditState.selectedShapes.clear();
+            setCasetableConfigTextValue("InputDelay", "0");
             triOrbStore.uiState.fieldOfViewDegrees = parseNumeric(fieldOfViewInput?.value, 270);
+            regenerateFieldsConfiguration({ rerender: false });
             refreshUiViews({
               invalidate: { triOrbShapes: true, deviceOverlay: true },
               fieldsets: true,
@@ -13188,6 +13276,9 @@ function parsePolygonTrace(doc) {
               fieldsetCheckboxes: true,
               fieldsetDevices: true,
               fieldsetGlobal: true,
+              casetableConfiguration: true,
+              casetableCases: true,
+              casetableFieldsConfiguration: true,
               figure: true,
             });
             console.debug("New canvas state", {
