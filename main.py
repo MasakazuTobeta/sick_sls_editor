@@ -656,4 +656,5 @@ app = create_app()
 
 if __name__ == "__main__":
     # デバッグ目的で直接起動された場合は Flask の開発サーバーを利用する。
-    app.run(debug=True)
+    # LAN 上の別ホストからもアクセスできるよう、全 IPv4 インターフェースで待ち受ける。
+    app.run(host="0.0.0.0", debug=True)

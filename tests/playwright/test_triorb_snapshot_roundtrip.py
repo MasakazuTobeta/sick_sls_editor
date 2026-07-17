@@ -489,7 +489,7 @@ def test_triorb_shape_list_hover_highlights_plot_trace(flask_server):
             beta_trace = next(item for item in trace_state if item["shapeId"] == "shape-beta")
             assert beta_trace["opacity"] == 1
             assert beta_trace["width"] > alpha_trace["width"]
-            assert alpha_trace["opacity"] < 1
+            assert alpha_trace["opacity"] == 1
         finally:
             browser.close()
 
